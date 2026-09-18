@@ -1,0 +1,7 @@
+{
+  "project":{"name":"Millennium Dawn Farsi Localization","id":19621,"url":"https://paratranz.cn/projects/19621","participants":8},
+  "stats":{"files":0,"strings":0,"translated":0,"reviewed":0,"words":0,"translation_percent":0,"review_percent":0},
+  "sections":{},
+  "milestones":[{"threshold":1,"icon":"🎉","label":"اولین ۱٪"},{"threshold":10,"icon":"🌱","label":"۱۰٪"},{"threshold":25,"icon":"📈","label":"۲۵٪"},{"threshold":50,"icon":"🔥","label":"۵۰٪"},{"threshold":75,"icon":"🚀","label":"۷۵٪"},{"threshold":100,"icon":"🏁","label":"۱۰۰٪"}],
+  "updated_at":null,"source":"ParaTranz API"
+}

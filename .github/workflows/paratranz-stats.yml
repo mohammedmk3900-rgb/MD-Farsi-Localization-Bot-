@@ -1,34 +1,34 @@
-name: Update ParaTranz Stats
+name: Update ParaTranz Discord Stats
 
 on:
   workflow_dispatch:
 
   schedule:
-    # Every 6 hours
     - cron: "0 */6 * * *"
 
 permissions:
   contents: read
   actions: write
 
+concurrency:
+  group: paratranz-discord-stats
+  cancel-in-progress: true
+
 jobs:
-  update-stats:
-    name: Update Discord project statistics
+  update:
+    name: Sync ParaTranz statistics to Discord
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     env:
       PARATRANZ_PROJECT_ID: "19621"
       PROJECT_PARTICIPANTS: "8"
-
       PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-
-      # Stored as a GitHub Actions repository variable.
-      # The script creates it automatically on the first run.
       DISCORD_STATS_MESSAGE_ID: ${{ vars.DISCORD_STATS_MESSAGE_ID }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -36,17 +36,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Run ParaTranz statistics updater
-        id: stats
-        run: |
-          python scripts/paratranz_stats.py
+      - name: Sync statistics
+        id: sync
+        run: python scripts/paratranz_stats.py
 
       - name: Save Discord message ID
-        if: steps.stats.outputs.message_id != ''
-        env:
-          MESSAGE_ID: ${{ steps.stats.outputs.message_id }}
-        run: |
-          gh variable set DISCORD_STATS_MESSAGE_ID \
-            --body "$MESSAGE_ID"
+        if: steps.sync.outputs.message_id != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          MESSAGE_ID: ${{ steps.sync.outputs.message_id }}
+        run: gh variable set DISCORD_STATS_MESSAGE_ID --body "$MESSAGE_ID"

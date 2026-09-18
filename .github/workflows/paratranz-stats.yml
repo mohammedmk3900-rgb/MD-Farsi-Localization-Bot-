@@ -37,6 +37,7 @@ jobs:
 
       - name: Validate Python
         run: |
+          set -euo pipefail
           python -m py_compile \
             scripts/paratranz_stats.py \
             scripts/paratranz_progress.py \
@@ -51,6 +52,7 @@ jobs:
 
       - name: Verify snapshot
         run: |
+          set -euo pipefail
           python - <<'PY'
           import json
           from pathlib import Path
@@ -83,6 +85,7 @@ jobs:
       - name: Persist Command Center state
         if: always()
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -106,4 +109,15 @@ jobs:
           fi
 
           git commit -m "chore: update Discord Command Center state"
-          git push
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              echo "State pushed successfully."
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Push attempt $attempt failed; retrying after backoff..."
+              sleep $((attempt * 5))
+            fi
+          done
+          echo "Failed to push Command Center state after 3 attempts." >&2
+          exit 1

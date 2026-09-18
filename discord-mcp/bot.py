@@ -90,12 +90,12 @@ class IndexerBot(discord.Client):
         log.info("Historical sync #%s: %d messages", getattr(channel, "name", channel.id), total)
 
     async def on_message(self,message:discord.Message)->None:
-        if message.guild is None or message.guild.id!=GUILD_ID or message.author.bot: return
+        if message.guild is None or message.guild.id!=GUILD_ID : return
         index.upsert_messages([serialize(message)])
         index.set_cursor(str(message.channel.id),newest_message_id=str(message.id),complete=False)
 
     async def on_message_edit(self,before:discord.Message,after:discord.Message)->None:
-        if after.guild is None or after.guild.id!=GUILD_ID or after.author.bot: return
+        if after.guild is None or after.guild.id!=GUILD_ID : return
         index.upsert_messages([serialize(after)])
 
     async def on_message_delete(self,message:discord.Message)->None:

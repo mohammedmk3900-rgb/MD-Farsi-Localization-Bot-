@@ -6,7 +6,7 @@ on:
     - cron: "0 */6 * * *"
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 concurrency:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   update:
-    name: Sync ParaTranz statistics and progress
+    name: Sync ParaTranz Discord data
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -25,6 +25,7 @@ jobs:
       PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       DISCORD_PROGRESS_WEBHOOK_URL: ${{ secrets.DISCORD_PROGRESS_WEBHOOK_URL }}
+      DISCORD_ACHIEVEMENTS_WEBHOOK_URL: ${{ secrets.DISCORD_ACHIEVEMENTS_WEBHOOK_URL }}
       DISCORD_STATS_MESSAGE_ID: ${{ vars.DISCORD_STATS_MESSAGE_ID }}
       DISCORD_PROGRESS_MESSAGE_ID: ${{ vars.DISCORD_PROGRESS_MESSAGE_ID }}
 
@@ -58,3 +59,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           MESSAGE_ID: ${{ steps.progress.outputs.message_id }}
         run: gh variable set DISCORD_PROGRESS_MESSAGE_ID --body "$MESSAGE_ID"
+
+      - name: Check achievements
+        run: python scripts/paratranz_achievements.py
+
+      - name: Commit achievement state
+        run: |
+          if git diff --quiet -- data/achievements.json; then
+            echo "No achievement state changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/achievements.json
+          git commit -m "chore: update achievement state"
+          git push

@@ -10,20 +10,6 @@ STATE="data/achievements.json"; VISUAL="https://raw.githubusercontent.com/mohamm
 MILESTONES={1:("🎉","اولین ۱٪","اولین نقطه عطف ترجمه ثبت شد!"),10:("🌱","۱۰٪ — آغاز جدی","ده درصد مسیر ترجمه پشت سر گذاشته شد."),25:("📈","۲۵٪ — یک‌چهارم مسیر","یک‌چهارم پروژه ترجمه شده است."),50:("🔥","۵۰٪ — نیمه راه","پروژه به نیمه مسیر ترجمه رسید."),75:("🚀","۷۵٪ — نزدیک به پایان","بخش بزرگی از ترجمه تکمیل شده است."),100:("🏁","۱۰۰٪ — تکمیل ترجمه","ترجمه پروژه به پایان رسید.")}
 
 def fail(m):print(f"ERROR: {m}",file=sys.stderr);sys.exit(1)
-def get_files():
-    if not TOKEN:fail("PARATRANZ_TOKEN is not set.")
-    h={"Accept":"application/json","Authorization":TOKEN,"User-Agent":"MD-Farsi-Localization-Achievements/4.0"}
-    try:
-        with urlopen(Request(f"{API}/projects/{PROJECT_ID}/files",headers=h),timeout=30) as r:return json.loads(r.read().decode())
-    except HTTPError as e:fail(f"HTTP {e.code}: {e.read().decode(errors='replace')[:800]}")
-    except (URLError,json.JSONDecodeError) as e:fail(str(e))
-def post(url,payload):
-    h={"Accept":"application/json","Content-Type":"application/json","User-Agent":"MD-Farsi-Localization-Achievements/4.0"}
-    try:
-        with urlopen(Request(url,data=json.dumps(payload,ensure_ascii=False).encode(),headers=h,method="POST"),timeout=30) as r:
-            raw=r.read().decode();return json.loads(raw) if raw else None
-    except HTTPError as e:fail(f"Discord HTTP {e.code}: {e.read().decode(errors='replace')[:800]}")
-    except (URLError,json.JSONDecodeError) as e:fail(str(e))
 def stats():
     try:
         with open("data/command_center.json",encoding="utf-8") as f:s=json.load(f)

@@ -29,7 +29,7 @@ def fail(message):
 def request_json(url, method="GET", payload=None, auth=False):
     headers = {
         "Accept": "application/json",
-        "User-Agent": "MD-Farsi-Localization-Achievements/2.0",
+        "User-Agent": "MD-Farsi-Localization-Achievements/3.0",
     }
     if auth:
         if not TOKEN:
@@ -79,21 +79,28 @@ def post_achievement(threshold, total, translated):
     icon, name, detail = MILESTONES[threshold]
     now = datetime.now(timezone.utc)
     payload = {
-        "username": "MD Farsi Localization • Achievements",
+        "username": "MD Farsi Localization • Command Center",
         "embeds": [{
-            "author": {"name": "MD Farsi Localization • Achievements"},
-            "title": f"{icon} {name}",
+            "author": {"name": "MD FARSI LOCALIZATION  •  ACHIEVEMENTS"},
+            "title": f"{icon}  ACHIEVEMENT UNLOCKED",
             "url": "https://paratranz.cn/projects/19621",
             "image": {"url": VISUAL_URL},
             "description": (
-                f"## {detail}\n\n"
-                f"**Millennium Dawn Farsi Localization** به **{threshold}%** رسید! 🎮\n\n"
-                f"📝 **{translated:,} / {total:,}** رشته ترجمه شده\n\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "💪 ادامه می‌دیم تا ۱۰۰٪!"
+                "### Millennium Dawn Farsi Localization\n\n"
+                f"## {name}\n"
+                f"**{detail}**\n\n"
+                f"📊 **{threshold}% milestone reached**\n"
+                f"📝 **{translated:,} / {total:,}** strings translated\n\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "✨ یک مرحله دیگر از مسیر فارسی‌سازی ثبت شد."
             ),
             "color": 0xF1C40F,
-            "footer": {"text": "MD Farsi Localization • Achievement Unlocked"},
+            "fields": [
+                {"name": "🏆 MILESTONE", "value": f"**{threshold}%**", "inline": True},
+                {"name": "📝 TRANSLATED", "value": f"**{translated:,}**", "inline": True},
+                {"name": "📦 TOTAL", "value": f"**{total:,}**", "inline": True},
+            ],
+            "footer": {"text": "MD Farsi Localization  •  Achievement System"},
             "timestamp": now.isoformat(),
         }],
     }

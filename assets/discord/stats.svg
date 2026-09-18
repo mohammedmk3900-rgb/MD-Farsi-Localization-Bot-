@@ -1,37 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520">
-<defs>
- <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#080b18"/><stop offset=".55" stop-color="#101a38"/><stop offset="1" stop-color="#263b78"/></linearGradient>
- <radialGradient id="glow"><stop stop-color="#6d7cff" stop-opacity=".5"/><stop offset="1" stop-color="#6d7cff" stop-opacity="0"/></radialGradient>
- <linearGradient id="line" x1="0" x2="1"><stop stop-color="#6675ff"/><stop offset="1" stop-color="#31d7ff"/></linearGradient>
- <filter id="blur"><feGaussianBlur stdDeviation="22"/></filter>
-</defs>
-<rect width="1600" height="520" rx="28" fill="url(#bg)"/>
-<circle cx="1320" cy="250" r="300" fill="url(#glow)" filter="url(#blur)"/>
-<g stroke="#fff" stroke-opacity=".055"><path d="M0 80h1600M0 160h1600M0 240h1600M0 320h1600M0 400h1600M160 0v520M320 0v520M480 0v520M640 0v520M800 0v520M960 0v520M1120 0v520M1280 0v520M1440 0v520"/></g>
-<g transform="translate(76 70)">
- <rect width="580" height="110" rx="22" fill="#fff" fill-opacity=".055" stroke="#fff" stroke-opacity=".12"/>
- <circle cx="42" cy="55" r="17" fill="#6d7cff"/><circle cx="42" cy="55" r="7" fill="#fff"/>
- <text x="78" y="48" fill="#fff" font-family="Arial" font-size="22" font-weight="700">MILLENNIUM DAWN</text>
- <text x="78" y="77" fill="#aeb8dc" font-family="Arial" font-size="18">FARSI LOCALIZATION • COMMAND CENTER</text>
-</g>
-<text x="76" y="265" fill="#fff" font-family="Arial" font-size="64" font-weight="800">PROJECT STATISTICS</text>
-<text x="78" y="307" fill="#b8c1df" font-family="Arial" font-size="25">Live translation • review • contributors • automation</text>
-<g transform="translate(76 355)">
- <rect width="260" height="82" rx="18" fill="#fff" fill-opacity=".055" stroke="#fff" stroke-opacity=".1"/>
- <text x="22" y="34" fill="#8f9cff" font-family="Arial" font-size="15" font-weight="700">DATA SOURCE</text>
- <text x="22" y="62" fill="#fff" font-family="Arial" font-size="22" font-weight="700">PARATRANZ API</text>
- <rect x="182" y="23" width="55" height="35" rx="17" fill="#2ecc71" fill-opacity=".18"/><circle cx="199" cy="40" r="6" fill="#2ecc71"/>
-</g>
-<g transform="translate(360 355)">
- <rect width="260" height="82" rx="18" fill="#fff" fill-opacity=".055" stroke="#fff" stroke-opacity=".1"/>
- <text x="22" y="34" fill="#8f9cff" font-family="Arial" font-size="15" font-weight="700">SYNC MODE</text>
- <text x="22" y="62" fill="#fff" font-family="Arial" font-size="22" font-weight="700">AUTOMATED</text>
-</g>
-<g transform="translate(1190 92)">
- <circle cx="150" cy="150" r="126" fill="none" stroke="#fff" stroke-opacity=".09" stroke-width="24"/>
- <circle cx="150" cy="150" r="126" fill="none" stroke="url(#line)" stroke-width="24" stroke-dasharray="210 800" stroke-linecap="round" transform="rotate(-90 150 150)"/>
- <text x="150" y="142" text-anchor="middle" fill="#fff" font-family="Arial" font-size="45" font-weight="800">LIVE</text>
- <text x="150" y="174" text-anchor="middle" fill="#aeb8dc" font-family="Arial" font-size="18">SYNC ENGINE</text>
-</g>
-<text x="76" y="485" fill="#6f7ca5" font-family="Arial" font-size="15" letter-spacing="3">MD-FARSI-LOCALIZATION • DISCORD AUTOMATION</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#070b17"/><stop offset=".55" stop-color="#111d3d"/><stop offset="1" stop-color="#263b78"/></linearGradient><linearGradient id="cyan"><stop stop-color="#6d7cff"/><stop offset="1" stop-color="#31d7ff"/></linearGradient><linearGradient id="green"><stop stop-color="#35e58a"/><stop offset="1" stop-color="#7affc0"/></linearGradient><radialGradient id="glow"><stop stop-color="#6d7cff" stop-opacity=".42"/><stop offset="1" stop-color="#6d7cff" stop-opacity="0"/></radialGradient></defs><rect width="1600" height="520" rx="28" fill="url(#bg)"/><circle cx="1300" cy="250" r="330" fill="url(#glow)"/><g stroke="#fff" stroke-opacity=".055"><path d="M0 100h1600"/><path d="M0 200h1600"/><path d="M0 300h1600"/><path d="M0 400h1600"/><path d="M160 0v520"/><path d="M320 0v520"/><path d="M480 0v520"/><path d="M640 0v520"/><path d="M800 0v520"/><path d="M960 0v520"/><path d="M1120 0v520"/><path d="M1280 0v520"/><path d="M1440 0v520"/></g>
+<text x="76" y="82" fill="#91a0ff" font-family="Arial" font-size="18" font-weight="700" letter-spacing="4">MD FARSI LOCALIZATION • COMMAND CENTER</text>
+<text x="76" y="164" fill="#fff" font-family="Arial" font-size="62" font-weight="800">PROJECT STATISTICS</text>
+<text x="78" y="207" fill="#b8c1df" font-family="Arial" font-size="24">آمار زنده پروژه فارسی‌سازی Millennium Dawn</text>
+<g transform="translate(76 255)"><rect width="860" height="72" rx="20" fill="#fff" fill-opacity=".055" stroke="#fff" stroke-opacity=".1"/><text x="24" y="31" fill="#aeb8dc" font-family="Arial" font-size="15" font-weight="700">TRANSLATION • ترجمه</text><text x="24" y="58" fill="#fff" font-family="Arial" font-size="24" font-weight="800">0.46%</text><rect x="170" y="24" width="650" height="24" rx="12" fill="#000" fill-opacity=".25"/><rect x="170" y="24" width="3.0" height="24" rx="12" fill="url(#cyan)"/></g>
+<g transform="translate(76 345)"><rect width="410" height="82" rx="18" fill="#fff" fill-opacity=".055"/><text x="22" y="30" fill="#8f9cff" font-family="Arial" font-size="14" font-weight="700">STRINGS</text><text x="22" y="61" fill="#fff" font-family="Arial" font-size="24" font-weight="800">1,064 / 231,157</text></g>
+<g transform="translate(510 345)"><rect width="410" height="82" rx="18" fill="#fff" fill-opacity=".055"/><text x="22" y="30" fill="#8f9cff" font-family="Arial" font-size="14" font-weight="700">REVIEW • بازبینی</text><text x="22" y="61" fill="#fff" font-family="Arial" font-size="24" font-weight="800">0.04%</text></g>
+<g transform="translate(1040 86)"><circle cx="220" cy="170" r="140" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="24"/><circle cx="220" cy="170" r="140" fill="none" stroke="url(#cyan)" stroke-width="24" stroke-dasharray="4.1 880" stroke-linecap="round" transform="rotate(-90 220 170)"/><text x="220" y="164" text-anchor="middle" fill="#fff" font-family="Arial" font-size="43" font-weight="800">0.46%</text><text x="220" y="197" text-anchor="middle" fill="#aeb8dc" font-family="Arial" font-size="18">ترجمه</text></g>
+<text x="76" y="484" fill="#6f7ca5" font-family="Arial" font-size="15" letter-spacing="3">LIVE DATA • PARATRANZ API • AUTOMATED SYNC</text></svg>

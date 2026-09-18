@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "project_id": 19621,
+  "snapshots": [
+    {
+      "timestamp": "2026-09-18T14:22:18.044360+00:00",
+      "epoch": 1789741338,
+      "files": 294,
+      "strings": 231157,
+      "translated": 1064,
+      "reviewed": 95,
+      "words": 3104060,
+      "translation_percent": 0.4603,
+      "review_percent": 0.0411
+    }
+  ]
+}

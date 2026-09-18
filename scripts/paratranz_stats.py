@@ -14,7 +14,8 @@ PROJECT_ID = os.getenv("PARATRANZ_PROJECT_ID", "19621")
 
 PARATRANZ_TOKEN = os.getenv("PARATRANZ_TOKEN")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
-DISCORD_MESSAGE_ID = os.getenv("DISCORD_STATS_MESSAGE_ID", "").strip()
+STATE_FILE = "data/discord_messages.json"
+VISUAL_URL = "https://raw.githubusercontent.com/mohammedmk3900-rgb/MD-Farsi-Localization-Bot-/main/assets/discord/stats.svg"
 
 # Your current real participant count.
 # Change this when the project membership changes.
@@ -146,6 +147,28 @@ def format_number(value: int) -> str:
     return f"{value:,}"
 
 
+def load_message_id():
+    try:
+        with open(STATE_FILE, encoding="utf-8") as file:
+            return str(json.load(file).get("stats", "")).strip()
+    except (FileNotFoundError, ValueError, TypeError):
+        return ""
+
+
+def save_message_id(message_id: str):
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    state = {"stats": "", "progress": ""}
+    try:
+        with open(STATE_FILE, encoding="utf-8") as file:
+            state.update(json.load(file))
+    except (FileNotFoundError, ValueError, TypeError):
+        pass
+    state["stats"] = str(message_id)
+    with open(STATE_FILE, "w", encoding="utf-8") as file:
+        json.dump(state, file, ensure_ascii=False, indent=2)
+        file.write("\n")
+
+
 def build_embed(stats):
     now = datetime.now(timezone.utc)
     translation = stats["translation_percent"]
@@ -156,8 +179,10 @@ def build_embed(stats):
         return "🟦" * filled + "⬜" * (size - filled)
 
     return {
+        "author": {"name": "MD Farsi Localization • Statistics"},
         "title": "📊 آمار پروژه",
         "url": "https://paratranz.cn/projects/19621",
+        "image": {"url": VISUAL_URL},
         "description": (
             "╭────────────────────────╮\n"
             "   **Millennium Dawn Farsi Localization**\n"
@@ -254,7 +279,7 @@ def edit_discord_message(embed):
 
     url = (
         f"{DISCORD_WEBHOOK_URL}"
-        f"/messages/{DISCORD_MESSAGE_ID}"
+        f"/messages/{discord_message_id}"
     )
 
     payload = {
@@ -305,9 +330,11 @@ def main():
     )
 
     # Try editing the existing message first.
-    if DISCORD_MESSAGE_ID:
+    discord_message_id = load_message_id()
+
+    if discord_message_id:
         print(
-            f"Updating Discord message {DISCORD_MESSAGE_ID}..."
+            f"Updating Discord message {discord_message_id}..."
         )
 
         result = edit_discord_message(embed)
@@ -316,8 +343,9 @@ def main():
             print("Discord message updated successfully.")
             write_github_output(
                 "message_id",
-                DISCORD_MESSAGE_ID,
+                discord_message_id,
             )
+            save_message_id(discord_message_id)
             return
 
     # No message ID exists, or the old message could not be edited.
@@ -332,6 +360,7 @@ def main():
         )
 
     message_id = str(result["id"])
+    save_message_id(message_id)
 
     print(
         f"Discord stats message created: {message_id}"

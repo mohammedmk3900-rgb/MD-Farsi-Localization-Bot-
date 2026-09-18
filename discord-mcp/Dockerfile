@@ -8,7 +8,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY server.py .
+COPY server.py indexer.py ./
+
+VOLUME ["/app/data"]
+ENV DISCORD_DB_PATH=/app/data/discord.db
 
 EXPOSE 8000
 

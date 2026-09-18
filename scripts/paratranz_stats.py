@@ -270,16 +270,16 @@ def send_new_discord_message(embed):
     )
 
 
-def edit_discord_message(embed):
+def edit_discord_message(embed, message_id):
     if not DISCORD_WEBHOOK_URL:
         fail("DISCORD_WEBHOOK_URL is not set.")
 
-    if not DISCORD_MESSAGE_ID:
+    if not message_id:
         return None
 
     url = (
         f"{DISCORD_WEBHOOK_URL}"
-        f"/messages/{discord_message_id}"
+        f"/messages/{message_id}"
     )
 
     payload = {

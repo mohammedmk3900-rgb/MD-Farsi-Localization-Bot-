@@ -1,1 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="420" viewBox="0 0 1600 420"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#241a05"/><stop offset="1" stop-color="#9a7210"/></linearGradient><radialGradient id="r"><stop stop-color="#f1c40f" stop-opacity=".6"/><stop offset="1" stop-color="#f1c40f" stop-opacity="0"/></radialGradient></defs><rect width="1600" height="420" fill="url(#g)"/><circle cx="1340" cy="210" r="260" fill="url(#r)"/><g fill="none" stroke="#fff" stroke-opacity=".08"><path d="M0 80H1600M0 160H1600M0 240H1600M0 320H1600M80 0V420M160 0V420M240 0V420M320 0V420M400 0V420M480 0V420M560 0V420M640 0V420M720 0V420M800 0V420M880 0V420M960 0V420M1040 0V420M1120 0V420M1200 0V420M1280 0V420M1360 0V420M1440 0V420M1520 0V420"/></g><circle cx="1340" cy="210" r="82" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="3"/><path d="M1340 154l17 35 39 6-28 27 7 39-35-18-35 18 7-39-28-27 39-6z" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round"/><text x="70" y="82" fill="#fff" fill-opacity=".7" font-family="Arial" font-size="24" font-weight="700">MILLENNIUM DAWN</text><text x="70" y="170" fill="#fff" font-family="Arial" font-size="64" font-weight="800">ACHIEVEMENT UNLOCKED</text><text x="70" y="218" fill="#fff" fill-opacity=".82" font-family="Arial" font-size="27">Milestones • Community progress</text><rect x="70" y="285" width="500" height="52" rx="26" fill="#fff" fill-opacity=".08" stroke="#fff" stroke-opacity=".2"/><text x="95" y="319" fill="#fff" fill-opacity=".8" font-family="Arial" font-size="19">FARSI LOCALIZATION • MILESTONE SYSTEM</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1a1103"/><stop offset=".55" stop-color="#4b2e08"/><stop offset="1" stop-color="#8a5a0b"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#ffd86b" stop-opacity=".55"/><stop offset="1" stop-color="#ffd86b" stop-opacity="0"/></radialGradient>
+ <linearGradient id="gold" x1="0" x2="1"><stop stop-color="#ffe58a"/><stop offset=".5" stop-color="#f1c40f"/><stop offset="1" stop-color="#fff1ad"/></linearGradient>
+</defs>
+<rect width="1600" height="520" rx="28" fill="url(#bg)"/>
+<circle cx="1280" cy="255" r="310" fill="url(#glow)"/>
+<g stroke="#fff" stroke-opacity=".06"><path d="M0 100h1600M0 200h1600M0 300h1600M0 400h1600M160 0v520M320 0v520M480 0v520M640 0v520M800 0v520M960 0v520M1120 0v520M1280 0v520M1440 0v520"/></g>
+<text x="76" y="92" fill="#ffe59a" font-family="Arial" font-size="18" font-weight="700" letter-spacing="4">MILLENNIUM DAWN • FARSI</text>
+<text x="76" y="180" fill="#fff" font-family="Arial" font-size="66" font-weight="800">ACHIEVEMENT</text>
+<text x="78" y="224" fill="#ead7ad" font-family="Arial" font-size="25">Milestones are tracked automatically from live project data</text>
+<g transform="translate(76 280)">
+ <rect width="720" height="108" rx="24" fill="#000" fill-opacity=".2" stroke="#fff" stroke-opacity=".12"/>
+ <circle cx="64" cy="54" r="34" fill="url(#gold)"/>
+ <path d="M64 30l7 17 19 2-14 12 4 19-16-10-16 10 4-19-14-12 19-2z" fill="#5b3905"/>
+ <text x="122" y="46" fill="#ffe8a8" font-family="Arial" font-size="16" font-weight="700">MILESTONE SYSTEM</text>
+ <text x="122" y="76" fill="#fff" font-family="Arial" font-size="26" font-weight="800">ACHIEVEMENT UNLOCKED</text>
+</g>
+<g transform="translate(1110 76)">
+ <circle cx="170" cy="170" r="138" fill="#000" fill-opacity=".18" stroke="#f1c40f" stroke-opacity=".35" stroke-width="4"/>
+ <circle cx="170" cy="170" r="105" fill="none" stroke="url(#gold)" stroke-width="18"/>
+ <path d="M112 156h116l-13 76H125z" fill="url(#gold)"/>
+ <path d="M112 156H86q0 58 46 58M228 156h27q0 58-46 58" fill="none" stroke="#f1c40f" stroke-width="14"/>
+ <rect x="148" y="232" width="44" height="20" rx="5" fill="#f1c40f"/>
+ <rect x="128" y="252" width="84" height="12" rx="6" fill="#f1c40f"/>
+ <text x="170" y="125" text-anchor="middle" fill="#fff" font-family="Arial" font-size="18" font-weight="700">MILESTONE</text>
+</g>
+<text x="76" y="455" fill="#fff" font-family="Arial" font-size="24" font-weight="700">PROGRESS • RECOGNITION • COMMUNITY</text>
+<text x="76" y="492" fill="#a8894c" font-family="Arial" font-size="15" letter-spacing="3">MD-FARSI-LOCALIZATION • ACHIEVEMENT SYSTEM</text>
+</svg>

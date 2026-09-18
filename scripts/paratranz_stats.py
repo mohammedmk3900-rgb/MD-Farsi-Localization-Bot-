@@ -35,7 +35,7 @@ def http_json(
 ):
     request_headers = {
         "Accept": "application/json",
-        "User-Agent": "Millennium-Dawn-Farsi-Localization-Stats/1.0",
+        "User-Agent": "MD-Farsi-Localization-Stats/3.0",
     }
 
     if headers:
@@ -173,81 +173,33 @@ def build_embed(stats):
     now = datetime.now(timezone.utc)
     translation = stats["translation_percent"]
     review = stats["review_percent"]
-
-    def bar(percent, size=16):
+    def bar(percent, size=18):
         filled = min(size, max(0, round(percent / 100 * size)))
-        return "🟦" * filled + "⬜" * (size - filled)
-
+        return "🟦" * filled + "⬛" * (size - filled)
     return {
-        "author": {"name": "MD Farsi Localization • Statistics"},
-        "title": "📊 آمار پروژه",
+        "author": {"name": "MD FARSI LOCALIZATION  •  COMMAND CENTER"},
+        "title": "📊  PROJECT STATISTICS",
         "url": "https://paratranz.cn/projects/19621",
-        "image": {"url": VISUAL_URL},
         "description": (
-            "╭────────────────────────╮\n"
-            "   **Millennium Dawn Farsi Localization**\n"
-            "   همگام‌سازی خودکار با ParaTranz\n"
-            "╰────────────────────────╯\n\n"
-            f"🌐 **ترجمه**  {format_percent(translation)}\n"
-            f"{bar(translation)}\n\n"
-            f"🔎 **بازبینی**  {format_percent(review)}\n"
-            f"{bar(review)}"
+            "### Millennium Dawn Farsi Localization\n"
+            "**LIVE  ●  PARATRANZ SYNC  •  AUTOMATED**\n\n"
+            f"🌐 **Translation**  **{format_percent(translation)}**\n{bar(translation)}\n\n"
+            f"🔎 **Review**  **{format_percent(review)}**\n{bar(review)}\n\n"
+            "آخرین وضعیت پروژه به‌صورت خودکار از ParaTranz دریافت شده است."
         ),
-        "color": 0x3498DB,
+        "color": 0x5865F2,
+        "image": {"url": VISUAL_URL},
         "fields": [
-            {
-                "name": "📦 وضعیت پروژه",
-                "value": (
-                    f"**{format_number(stats['files'])}** فایل  •  "
-                    f"**{format_number(stats['strings'])}** رشته\n"
-                    f"**{format_number(stats['words'])}** کلمه  •  "
-                    f"**{format_number(stats['participants'])}** مشارکت‌کننده"
-                ),
-                "inline": False,
-            },
-            {
-                "name": "📄 فایل‌ها",
-                "value": f"**{format_number(stats['files'])}**",
-                "inline": True,
-            },
-            {
-                "name": "📝 کل رشته‌ها",
-                "value": f"**{format_number(stats['strings'])}**",
-                "inline": True,
-            },
-            {
-                "name": "🌐 ترجمه‌شده",
-                "value": (
-                    f"**{format_number(stats['translated'])}**\n"
-                    f"{format_percent(stats['translation_percent'])}"
-                ),
-                "inline": True,
-            },
-            {
-                "name": "🔎 بازبینی‌شده",
-                "value": (
-                    f"**{format_number(stats['reviewed'])}**\n"
-                    f"{format_percent(stats['review_percent'])}"
-                ),
-                "inline": True,
-            },
-            {
-                "name": "👥 مشارکت‌کنندگان",
-                "value": f"**{format_number(stats['participants'])} نفر**",
-                "inline": True,
-            },
-            {
-                "name": "📚 کل کلمات",
-                "value": f"**{format_number(stats['words'])}**",
-                "inline": True,
-            },
+            {"name": "📦 PROJECT", "value": f"**{format_number(stats['files'])}** files\n**{format_number(stats['words'])}** words", "inline": True},
+            {"name": "📝 STRINGS", "value": f"**{format_number(stats['strings'])}** total\n**{format_number(stats['translated'])}** translated", "inline": True},
+            {"name": "🔎 REVIEW", "value": f"**{format_number(stats['reviewed'])}** reviewed\n**{format_percent(stats['review_percent'])}**", "inline": True},
+            {"name": "👥 CONTRIBUTORS", "value": f"**{format_number(stats['participants'])}** participants", "inline": True},
+            {"name": "📈 TRANSLATION", "value": f"**{format_number(stats['translated'])} / {format_number(stats['strings'])}**\n**{format_percent(stats['translation_percent'])}** complete", "inline": True},
+            {"name": "⚙️ AUTOMATION", "value": "**LIVE**\n6-hour sync cycle", "inline": True},
         ],
-        "footer": {
-            "text": "MD Farsi Localization • Auto Sync • ParaTranz"
-        },
+        "footer": {"text": "MD Farsi Localization  •  Live Data  •  ParaTranz"},
         "timestamp": now.isoformat(),
     }
-
 
 def send_new_discord_message(embed):
     if not DISCORD_WEBHOOK_URL:

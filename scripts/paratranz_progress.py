@@ -175,13 +175,13 @@ def send_new(embed):
     return str(result["id"])
 
 
-def edit_existing(embed):
-    if not DISCORD_WEBHOOK_URL or not DISCORD_MESSAGE_ID:
+def edit_existing(embed, message_id):
+    if not DISCORD_WEBHOOK_URL or not message_id:
         return False
 
     try:
         http_json(
-            f"{DISCORD_WEBHOOK_URL}/messages/{DISCORD_MESSAGE_ID}",
+            f"{DISCORD_WEBHOOK_URL}/messages/{message_id}",
             method="PATCH",
             payload={"embeds": [embed]},
         )
@@ -196,10 +196,7 @@ def main():
         stats = get_stats()
         embed = build_embed(stats)
         discord_message_id = load_message_id()
-        if discord_message_id:
-            global DISCORD_MESSAGE_ID
-            DISCORD_MESSAGE_ID = discord_message_id
-        if edit_existing(embed):
+        if edit_existing(embed, discord_message_id):
             message_id = discord_message_id
             save_message_id(message_id)
             print("Progress message updated successfully.")

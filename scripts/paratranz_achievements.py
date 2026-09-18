@@ -1,128 +1,47 @@
 #!/usr/bin/env python3
-import json
-import os
-import sys
+import json, os, sys
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-API = "https://paratranz.cn/api"
-PROJECT_ID = os.getenv("PARATRANZ_PROJECT_ID", "19621")
-TOKEN = os.getenv("PARATRANZ_TOKEN")
-WEBHOOK = os.getenv("DISCORD_ACHIEVEMENTS_WEBHOOK_URL")
-VISUAL_URL = "https://raw.githubusercontent.com/mohammedmk3900-rgb/MD-Farsi-Localization-Bot-/main/assets/discord/achievement.svg"
-STATE_FILE = "data/achievements.json"
+API="https://paratranz.cn/api"; PROJECT_ID=os.getenv("PARATRANZ_PROJECT_ID","19621")
+TOKEN=os.getenv("PARATRANZ_TOKEN"); WEBHOOK=os.getenv("DISCORD_ACHIEVEMENTS_WEBHOOK_URL")
+STATE="data/achievements.json"; VISUAL="https://raw.githubusercontent.com/mohammedmk3900-rgb/MD-Farsi-Localization-Bot-/main/assets/discord/achievement.svg"
+MILESTONES={1:("🎉","اولین ۱٪","اولین نقطه عطف ترجمه ثبت شد!"),10:("🌱","۱۰٪ — آغاز جدی","ده درصد مسیر ترجمه پشت سر گذاشته شد."),25:("📈","۲۵٪ — یک‌چهارم مسیر","یک‌چهارم پروژه ترجمه شده است."),50:("🔥","۵۰٪ — نیمه راه","پروژه به نیمه مسیر ترجمه رسید."),75:("🚀","۷۵٪ — نزدیک به پایان","بخش بزرگی از ترجمه تکمیل شده است."),100:("🏁","۱۰۰٪ — تکمیل ترجمه","ترجمه پروژه به پایان رسید.")}
 
-MILESTONES = {
-    1: ("🎉", "اولین ۱٪", "اولین نقطه عطف ترجمه ثبت شد!"),
-    10: ("🌱", "۱۰٪ — آغاز جدی", "ده درصد مسیر ترجمه پشت سر گذاشته شد."),
-    25: ("📈", "۲۵٪ — یک‌چهارم مسیر", "یک‌چهارم پروژه ترجمه شده است."),
-    50: ("🔥", "۵۰٪ — نیمه راه", "پروژه به نیمه مسیر ترجمه رسید."),
-    75: ("🚀", "۷۵٪ — نزدیک به پایان", "بخش بزرگی از ترجمه تکمیل شده است."),
-    100: ("🏁", "۱۰۰٪ — تکمیل ترجمه", "ترجمه پروژه به پایان رسید."),
-}
-
-def fail(message):
-    print(f"ERROR: {message}", file=sys.stderr)
-    sys.exit(1)
-
-def request_json(url, method="GET", payload=None, auth=False):
-    headers = {
-        "Accept": "application/json",
-        "User-Agent": "MD-Farsi-Localization-Achievements/3.0",
-    }
-    if auth:
-        if not TOKEN:
-            fail("PARATRANZ_TOKEN is not set.")
-        headers["Authorization"] = TOKEN
-    body = None
-    if payload is not None:
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        headers["Content-Type"] = "application/json"
+def fail(m):print(f"ERROR: {m}",file=sys.stderr);sys.exit(1)
+def get_files():
+    if not TOKEN:fail("PARATRANZ_TOKEN is not set.")
+    h={"Accept":"application/json","Authorization":TOKEN,"User-Agent":"MD-Farsi-Localization-Achievements/4.0"}
     try:
-        with urlopen(Request(url, data=body, headers=headers, method=method), timeout=30) as response:
-            raw = response.read().decode("utf-8")
-            return json.loads(raw) if raw else None
-    except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        fail(f"HTTP {exc.code}: {detail[:1000]}")
-    except URLError as exc:
-        fail(f"Network error: {exc}")
-
-def get_stats():
-    files = request_json(
-        f"{API}/projects/{PROJECT_ID}/files",
-        auth=True,
-    )
-    if not isinstance(files, list):
-        fail("ParaTranz returned an unexpected files response.")
-    total = sum(int(item.get("total") or 0) for item in files)
-    translated = sum(int(item.get("translated") or 0) for item in files)
-    percent = (translated / total * 100) if total else 0
-    return total, translated, percent
-
-def load_state():
+        with urlopen(Request(f"{API}/projects/{PROJECT_ID}/files",headers=h),timeout=30) as r:return json.loads(r.read().decode())
+    except HTTPError as e:fail(f"HTTP {e.code}: {e.read().decode(errors='replace')[:800]}")
+    except (URLError,json.JSONDecodeError) as e:fail(str(e))
+def post(url,payload):
+    h={"Accept":"application/json","Content-Type":"application/json","User-Agent":"MD-Farsi-Localization-Achievements/4.0"}
     try:
-        with open(STATE_FILE, encoding="utf-8") as file:
-            value = json.load(file)
-        return {int(item) for item in value}
-    except (FileNotFoundError, ValueError, TypeError):
-        return set()
-
-def save_state(announced):
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, "w", encoding="utf-8") as file:
-        json.dump(sorted(announced), file, ensure_ascii=False, indent=2)
-        file.write("\n")
-
-def post_achievement(threshold, total, translated):
-    icon, name, detail = MILESTONES[threshold]
-    now = datetime.now(timezone.utc)
-    payload = {
-        "username": "MD Farsi Localization • Command Center",
-        "embeds": [{
-            "author": {"name": "MD FARSI LOCALIZATION  •  ACHIEVEMENTS"},
-            "title": f"{icon}  ACHIEVEMENT UNLOCKED",
-            "url": "https://paratranz.cn/projects/19621",
-            "image": {"url": VISUAL_URL},
-            "description": (
-                "### Millennium Dawn Farsi Localization\n\n"
-                f"## {name}\n"
-                f"**{detail}**\n\n"
-                f"📊 **{threshold}% milestone reached**\n"
-                f"📝 **{translated:,} / {total:,}** strings translated\n\n"
-                "━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                "✨ یک مرحله دیگر از مسیر فارسی‌سازی ثبت شد."
-            ),
-            "color": 0xF1C40F,
-            "fields": [
-                {"name": "🏆 MILESTONE", "value": f"**{threshold}%**", "inline": True},
-                {"name": "📝 TRANSLATED", "value": f"**{translated:,}**", "inline": True},
-                {"name": "📦 TOTAL", "value": f"**{total:,}**", "inline": True},
-            ],
-            "footer": {"text": "MD Farsi Localization  •  Achievement System"},
-            "timestamp": now.isoformat(),
-        }],
-    }
-    request_json(f"{WEBHOOK}?wait=true", method="POST", payload=payload)
-
+        with urlopen(Request(url,data=json.dumps(payload,ensure_ascii=False).encode(),headers=h,method="POST"),timeout=30) as r:
+            raw=r.read().decode();return json.loads(raw) if raw else None
+    except HTTPError as e:fail(f"Discord HTTP {e.code}: {e.read().decode(errors='replace')[:800]}")
+    except (URLError,json.JSONDecodeError) as e:fail(str(e))
+def stats():
+    fs=get_files()
+    if not isinstance(fs,list):fail("Unexpected ParaTranz response.")
+    total=sum(int(x.get("total") or 0) for x in fs);tr=sum(int(x.get("translated") or 0) for x in fs)
+    return total,tr,(tr/total*100 if total else 0)
+def load():
+    try:
+        with open(STATE,encoding="utf-8") as f:return {int(x) for x in json.load(f)}
+    except (FileNotFoundError,ValueError,TypeError):return set()
+def save(s):
+    os.makedirs("data",exist_ok=True)
+    with open(STATE,"w",encoding="utf-8") as f:json.dump(sorted(s),f,ensure_ascii=False,indent=2);f.write("\n")
 def main():
-    if not WEBHOOK:
-        fail("DISCORD_ACHIEVEMENTS_WEBHOOK_URL is not set.")
-    total, translated, percent = get_stats()
-    announced = load_state()
-    newly = [m for m in MILESTONES if percent >= m and m not in announced]
-
-    for threshold in newly:
-        post_achievement(threshold, total, translated)
-        announced.add(threshold)
-
-    save_state(announced)
-    print(
-        f"Progress: {percent:.2f}% | "
-        f"Translated: {translated}/{total} | "
-        f"New achievements: {len(newly)}"
-    )
-
-if __name__ == "__main__":
-    main()
+    if not WEBHOOK:fail("DISCORD_ACHIEVEMENTS_WEBHOOK_URL is not set.")
+    total,tr,p=stats();done=load();new=[n for n in MILESTONES if p>=n and n not in done]
+    for n in new:
+        icon,name,detail=MILESTONES[n];now=datetime.now(timezone.utc)
+        payload={"username":"MD Farsi Localization • Command Center","embeds":[{"author":{"name":"MD FARSI LOCALIZATION • ACHIEVEMENTS"},"title":f"{icon}  دستاورد باز شد  •  ACHIEVEMENT UNLOCKED","url":f"https://paratranz.cn/projects/{PROJECT_ID}","image":{"url":VISUAL+"?v="+str(int(now.timestamp()))},"description":f"### 🇮🇷 فارسی‌سازی Millennium Dawn\n\n## {name}\n**{detail}**\n\n🏆 **نقطه عطف {n}% ثبت شد**\n📝 **{tr:,} / {total:,}** رشته ترجمه شده\n\n✨ یک مرحله دیگر از مسیر فارسی‌سازی ثبت شد.","color":0xF1C40F,"fields":[{"name":"🏆 MILESTONE • نقطه عطف","value":f"**{n}%**","inline":True},{"name":"📝 TRANSLATED • ترجمه","value":f"**{tr:,}**","inline":True},{"name":"📦 TOTAL • کل","value":f"**{total:,}**","inline":True}],"footer":{"text":"MD Farsi Localization • Achievement System • سیستم دستاوردها"},"timestamp":now.isoformat()}]}
+        post(WEBHOOK+"?wait=true",payload);done.add(n)
+    save(done);print(f"Progress: {p:.2f}% | New achievements: {len(new)}")
+if __name__=="__main__":main()

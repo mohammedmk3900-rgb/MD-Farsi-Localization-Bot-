@@ -32,6 +32,9 @@ def api_files():
 
 def main():
     files=api_files()
+    for item in files:
+        if not isinstance(item,dict):
+            fail("ParaTranz returned a malformed file entry.")
     total=sum(int(x.get("total") or 0) for x in files)
     translated=sum(int(x.get("translated") or 0) for x in files)
     reviewed=sum(int(x.get("reviewed") or 0) for x in files)

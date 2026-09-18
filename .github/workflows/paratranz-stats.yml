@@ -2,7 +2,6 @@ name: Update ParaTranz Discord Stats
 
 on:
   workflow_dispatch:
-
   schedule:
     - cron: "0 */6 * * *"
 
@@ -11,12 +10,12 @@ permissions:
   actions: write
 
 concurrency:
-  group: paratranz-discord-stats
+  group: paratranz-discord-sync
   cancel-in-progress: true
 
 jobs:
   update:
-    name: Sync ParaTranz statistics to Discord
+    name: Sync ParaTranz statistics and progress
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -25,7 +24,9 @@ jobs:
       PROJECT_PARTICIPANTS: "8"
       PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      DISCORD_PROGRESS_WEBHOOK_URL: ${{ secrets.DISCORD_PROGRESS_WEBHOOK_URL }}
       DISCORD_STATS_MESSAGE_ID: ${{ vars.DISCORD_STATS_MESSAGE_ID }}
+      DISCORD_PROGRESS_MESSAGE_ID: ${{ vars.DISCORD_PROGRESS_MESSAGE_ID }}
 
     steps:
       - name: Checkout
@@ -37,12 +38,23 @@ jobs:
           python-version: "3.12"
 
       - name: Sync statistics
-        id: sync
+        id: stats
         run: python scripts/paratranz_stats.py
 
-      - name: Save Discord message ID
-        if: steps.sync.outputs.message_id != ''
+      - name: Save statistics message ID
+        if: steps.stats.outputs.message_id != ''
         env:
           GH_TOKEN: ${{ github.token }}
-          MESSAGE_ID: ${{ steps.sync.outputs.message_id }}
+          MESSAGE_ID: ${{ steps.stats.outputs.message_id }}
         run: gh variable set DISCORD_STATS_MESSAGE_ID --body "$MESSAGE_ID"
+
+      - name: Sync progress
+        id: progress
+        run: python scripts/paratranz_progress.py
+
+      - name: Save progress message ID
+        if: steps.progress.outputs.message_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MESSAGE_ID: ${{ steps.progress.outputs.message_id }}
+        run: gh variable set DISCORD_PROGRESS_MESSAGE_ID --body "$MESSAGE_ID"

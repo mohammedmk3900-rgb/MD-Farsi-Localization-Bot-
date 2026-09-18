@@ -11,7 +11,8 @@ PARATRANZ_BASE_URL = "https://paratranz.cn/api"
 PROJECT_ID = os.getenv("PARATRANZ_PROJECT_ID", "19621")
 PARATRANZ_TOKEN = os.getenv("PARATRANZ_TOKEN")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_PROGRESS_WEBHOOK_URL")
-DISCORD_MESSAGE_ID = os.getenv("DISCORD_PROGRESS_MESSAGE_ID", "").strip()
+STATE_FILE = "data/discord_messages.json"
+VISUAL_URL = "https://raw.githubusercontent.com/mohammedmk3900-rgb/MD-Farsi-Localization-Bot-/main/assets/discord/progress.svg"
 
 
 def fail(message: str) -> None:
@@ -89,12 +90,35 @@ def milestone(percent: float) -> tuple[str, str]:
     return milestones[-1][1], milestones[-1][2]
 
 
+def load_message_id():
+    try:
+        with open(STATE_FILE, encoding="utf-8") as file:
+            return str(json.load(file).get("progress", "")).strip()
+    except (FileNotFoundError, ValueError, TypeError):
+        return ""
+
+
+def save_message_id(message_id: str):
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    state = {"stats": "", "progress": ""}
+    try:
+        with open(STATE_FILE, encoding="utf-8") as file:
+            state.update(json.load(file))
+    except (FileNotFoundError, ValueError, TypeError):
+        pass
+    state["progress"] = str(message_id)
+    with open(STATE_FILE, "w", encoding="utf-8") as file:
+        json.dump(state, file, ensure_ascii=False, indent=2)
+        file.write("\n")
+
+
 def build_embed(stats):
     files, total, translated, reviewed, percent, review_percent = stats
     title, milestone_text = milestone(percent)
     now = datetime.now(timezone.utc)
 
     return {
+        "author": {"name": "MD Farsi Localization • Progress"},
         "title": "📈 پیشرفت پروژه",
         "description": (
             "╭────────────────────────╮\n"
@@ -105,6 +129,7 @@ def build_embed(stats):
             f"### **{percent:.2f}%** ترجمه شده"
         ),
         "url": "https://paratranz.cn/projects/19621",
+        "image": {"url": VISUAL_URL},
         "color": 0x2ECC71,
         "fields": [
             {
@@ -170,11 +195,17 @@ def main():
     try:
         stats = get_stats()
         embed = build_embed(stats)
+        discord_message_id = load_message_id()
+        if discord_message_id:
+            global DISCORD_MESSAGE_ID
+            DISCORD_MESSAGE_ID = discord_message_id
         if edit_existing(embed):
-            message_id = DISCORD_MESSAGE_ID
+            message_id = discord_message_id
+            save_message_id(message_id)
             print("Progress message updated successfully.")
         else:
             message_id = send_new(embed)
+            save_message_id(message_id)
             print(f"Progress message created: {message_id}")
 
         output = os.getenv("GITHUB_OUTPUT")

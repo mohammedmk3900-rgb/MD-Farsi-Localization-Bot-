@@ -24,14 +24,18 @@ def req(url,method="GET",payload=None):
     except HTTPError as e: raise RuntimeError(f"HTTP {e.code}: {e.read().decode(errors='replace')[:800]}")
     except (URLError,json.JSONDecodeError) as e: raise RuntimeError(str(e))
 
-def get_stats():
-    if not TOKEN: fail("PARATRANZ_TOKEN is not set.")
-    fs=req(f"{API}/projects/{PROJECT_ID}/files")
-    if not isinstance(fs,list): fail("ParaTranz returned an unexpected files response.")
-    total=sum(int(x.get("total") or 0) for x in fs); translated=sum(int(x.get("translated") or 0) for x in fs)
-    reviewed=sum(int(x.get("reviewed") or 0) for x in fs); words=sum(int(x.get("words") or 0) for x in fs)
-    return {"files":len(fs),"strings":total,"translated":translated,"reviewed":reviewed,"words":words,
-            "translation_percent":translated/total*100 if total else 0,"review_percent":reviewed/total*100 if total else 0,"participants":PARTICIPANTS}
+def load_snapshot():
+    try:
+        with open("data/command_center.json",encoding="utf-8") as f:
+            s=json.load(f)
+        p=s["project"]; pr=s["progress"]
+        return {"files":p["files"],"strings":p["strings"],"translated":p["translated"],
+                "reviewed":p["reviewed"],"words":p["words"],
+                "translation_percent":pr["translation_percent"],
+                "review_percent":pr["review_percent"],
+                "participants":int(os.getenv("PROJECT_PARTICIPANTS","8"))}
+    except (FileNotFoundError,KeyError,TypeError,ValueError) as e:
+        raise RuntimeError(f"Command Center snapshot unavailable: {e}")
 
 def load_id():
     try:
@@ -79,7 +83,7 @@ def edit(e,mid):
 
 def main():
     try:
-        s=get_stats(); e=build_embed(s); m=load_id(); m=m if edit(e,m) else send(e); save_id(m)
+        s=load_snapshot(); e=build_embed(s); m=load_id(); m=m if edit(e,m) else send(e); save_id(m)
         out=os.getenv("GITHUB_OUTPUT")
         if out:
             with open(out,"a",encoding="utf-8") as f:f.write(f"message_id={m}\n")

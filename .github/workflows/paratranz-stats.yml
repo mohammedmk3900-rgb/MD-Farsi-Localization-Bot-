@@ -35,6 +35,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Validate Python
+        run: python -m py_compile scripts/paratranz_stats.py scripts/paratranz_progress.py scripts/paratranz_achievements.py scripts/build_dashboard_data.py
+
       - name: Sync statistics
         id: stats
         run: python scripts/paratranz_stats.py

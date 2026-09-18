@@ -337,7 +337,7 @@ def main():
             f"Updating Discord message {discord_message_id}..."
         )
 
-        result = edit_discord_message(embed)
+        result = edit_discord_message(embed, discord_message_id)
 
         if result is not None:
             print("Discord message updated successfully.")

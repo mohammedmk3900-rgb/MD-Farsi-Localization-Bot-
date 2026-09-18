@@ -16,7 +16,7 @@ jobs:
   update:
     name: Sync ParaTranz Discord Command Center
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
 
     env:
       PARATRANZ_PROJECT_ID: "19621"
@@ -45,8 +45,26 @@ jobs:
             scripts/build_discord_visuals.py \
             scripts/build_dashboard_data.py
 
-      - name: Record real progress snapshot
+      - name: Collect Command Center snapshot
+        id: snapshot
         run: python scripts/command_center_snapshot.py
+
+      - name: Verify snapshot
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("data/command_center.json")
+          if not p.exists():
+              raise SystemExit("Snapshot was not created.")
+          d=json.loads(p.read_text(encoding="utf-8"))
+          for key in ("schema","timestamp","project","progress","health","automation"):
+              if key not in d:
+                  raise SystemExit(f"Snapshot missing: {key}")
+          if d["schema"] != 3:
+              raise SystemExit(f"Unsupported snapshot schema: {d['schema']}")
+          print("Snapshot verified:", d["project"]["translated"], "/", d["project"]["strings"])
+          PY
 
       - name: Generate Discord visuals
         run: python scripts/build_discord_visuals.py

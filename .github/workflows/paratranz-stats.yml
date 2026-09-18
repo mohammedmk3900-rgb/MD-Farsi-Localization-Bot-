@@ -41,12 +41,12 @@ jobs:
             scripts/paratranz_stats.py \
             scripts/paratranz_progress.py \
             scripts/paratranz_achievements.py \
-            scripts/build_discord_history.py \
+            scripts/command_center_snapshot.py \
             scripts/build_discord_visuals.py \
             scripts/build_dashboard_data.py
 
       - name: Record real progress snapshot
-        run: python scripts/build_discord_history.py
+        run: python scripts/command_center_snapshot.py
 
       - name: Generate Discord visuals
         run: python scripts/build_discord_visuals.py
@@ -72,6 +72,7 @@ jobs:
             data/discord_messages.json \
             data/achievements.json \
             data/discord_history.json \
+            data/command_center.json \
             assets/discord/stats.svg \
             assets/discord/progress.svg \
             assets/discord/progress-history.svg

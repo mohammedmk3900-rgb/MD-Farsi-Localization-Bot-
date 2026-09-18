@@ -97,11 +97,14 @@ def build_embed(stats):
     return {
         "title": "📈 پیشرفت پروژه",
         "description": (
-            "**Millennium Dawn Farsi Localization**\n"
-            "پیشرفت ترجمه به‌صورت خودکار از ParaTranz دریافت می‌شود.\n\n"
+            "╭────────────────────────╮\n"
+            "   **Millennium Dawn Farsi Localization**\n"
+            "   وضعیت زنده پروژه از ParaTranz\n"
+            "╰────────────────────────╯\n\n"
             f"{progress_bar(percent)}\n"
-            f"**{percent:.2f}%** ترجمه شده"
+            f"### **{percent:.2f}%** ترجمه شده"
         ),
+        "url": "https://paratranz.cn/projects/19621",
         "color": 0x2ECC71,
         "fields": [
             {
@@ -126,7 +129,7 @@ def build_embed(stats):
             },
         ],
         "footer": {
-            "text": "Millennium Dawn Farsi Localization • ParaTranz"
+            "text": "MD Farsi Localization • Live Progress • ParaTranz"
         },
         "timestamp": now.isoformat(),
     }

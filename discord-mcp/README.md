@@ -1,69 +1,55 @@
-# Discord MCP — Read-Only Bridge
+# Discord MCP — Read-Only Automatic History Bridge
 
-A small, read-only Model Context Protocol (MCP) server for the Millennium Dawn Farsi Localization Discord server.
+Discord Gateway + MCP service for the Millennium Dawn Farsi Localization server.
 
 ## Architecture
 
-Discord Server → Discord Bot (read-only) → Remote MCP Server → ChatGPT Custom App
+Discord Server → Discord Bot Gateway → SQLite History Index → Remote MCP → ChatGPT
 
-The server exposes only read operations:
+The service automatically performs an initial/resumable history backfill and then keeps the index current from Discord Gateway events.
 
-- `get_server_overview`
-- `list_channels`
-- `list_roles`
-- `read_channel`
-- `search_messages`
+## Automatic behavior
 
-No Discord messages, roles, channels, or permissions are modified by this project.
+- New message → indexed automatically.
+- Edited message → indexed version updated.
+- Deleted message → retained as a deletion tombstone and excluded from search.
+- Restart → resumes historical work or performs incremental catch-up.
+- SQLite WAL → bot and MCP can safely share the database.
+- Discord permissions remain authoritative; inaccessible channels are skipped.
 
-## Requirements
+## MCP tools
 
-- Python 3.11+
-- A Discord bot token
-- The Discord server (guild) ID
-- A host that can expose the MCP endpoint over HTTPS
+- get_server_overview
+- list_channels
+- sync_channel_history
+- sync_server_history
+- get_sync_status
+- search_index
+- read_channel
 
 ## Configuration
 
-Copy `.env.example` to `.env`:
+Required environment variables:
 
-```env
-DISCORD_BOT_TOKEN=replace_me
-DISCORD_GUILD_ID=replace_me
-MCP_HOST=0.0.0.0
-MCP_PORT=8000
-```
+- DISCORD_BOT_TOKEN
+- DISCORD_GUILD_ID
+- MCP_HOST (default 0.0.0.0)
+- MCP_PORT (default 8000)
+- DISCORD_DB_PATH (default /app/data/discord.db)
+- DISCORD_BACKFILL_ON_START (default true)
+- DISCORD_BACKFILL_CONCURRENCY (default 2)
+- LOG_LEVEL (default INFO)
 
-Never commit a real token.
+Never commit a real bot token.
 
-For the Discord bot, grant only the permissions needed to view the target channels and read message history. Keep the bot read-only.
+## Discord permissions
 
-## Run locally
-
-```bash
-python -m venv .venv
-# Windows:
-.venv\\Scripts\\activate
-# Linux/macOS:
-# source .venv/bin/activate
-
-pip install -r requirements.txt
-python server.py
-```
-
-The Streamable HTTP MCP endpoint is served by the FastMCP server.
+The bot must be able to view the target channels and read message history. Enable Message Content Intent in the Discord Developer Portal.
 
 ## Docker
 
-```bash
-docker build -t md-discord-mcp .
-docker run --rm -p 8000:8000 --env-file .env md-discord-mcp
-```
-
-Put the service behind HTTPS before connecting it to ChatGPT.
+The container runs both the Discord Gateway indexer and the MCP server. Persist /app/data so the SQLite history survives restarts. Put the MCP endpoint behind HTTPS before connecting a remote client.
 
 ## Security
 
-This bridge deliberately starts with read-only capabilities. Do not add message sending, moderation, role management, or other write tools until there is a separate permission model and explicit authorization flow.
-
-The bot token must be supplied as a deployment secret/environment variable, never in source control.
+The project intentionally exposes read-only MCP capabilities. It does not send messages, moderate, change roles, or bypass Discord permissions.

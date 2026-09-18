@@ -55,14 +55,39 @@ class IndexerBot(discord.Client):
         await asyncio.gather(*(one(c) for c in channels))
         log.info("Automatic backfill finished; indexed_messages=%d",index.count())
 
-    async def backfill_channel(self,channel:discord.abc.Messageable)->None:
-        total=0; newest=None; oldest=None
-        async for message in channel.history(limit=None,oldest_first=False):
-            item=serialize(message); index.upsert_messages([item]); total+=1
-            if newest is None: newest=item["id"]
-            oldest=item["id"]
-        index.set_cursor(str(channel.id),newest_message_id=newest,oldest_message_id=oldest,complete=True)
-        log.info("Backfilled #%s: %d messages",getattr(channel,"name",channel.id),total)
+    async def backfill_channel(self, channel: discord.abc.Messageable) -> None:
+        channel_id = str(channel.id)
+        cursor = index.get_cursor(channel_id) or {}
+        newest_id = cursor.get("newest_message_id")
+        oldest_id = cursor.get("oldest_message_id")
+        complete = bool(cursor.get("complete"))
+        total = 0
+
+        if complete and newest_id:
+            # Incremental catch-up after the newest indexed message.
+            after = discord.Object(id=int(newest_id))
+            async for message in channel.history(limit=None, after=after, oldest_first=True):
+                item = serialize(message)
+                index.upsert_messages([item])
+                index.set_cursor(channel_id, newest_message_id=item["id"], complete=True)
+                total += 1
+            log.info("Incremental sync #%s: %d new messages", getattr(channel, "name", channel.id), total)
+            return
+
+        # Resume an incomplete historical backfill from its oldest cursor.
+        before = discord.Object(id=int(oldest_id)) if oldest_id else None
+        newest = newest_id
+        oldest = oldest_id
+        async for message in channel.history(limit=None, before=before, oldest_first=False):
+            item = serialize(message)
+            index.upsert_messages([item])
+            total += 1
+            if newest is None:
+                newest = item["id"]
+            oldest = item["id"]
+
+        index.set_cursor(channel_id, newest_message_id=newest, oldest_message_id=oldest, complete=True)
+        log.info("Historical sync #%s: %d messages", getattr(channel, "name", channel.id), total)
 
     async def on_message(self,message:discord.Message)->None:
         if message.guild is None or message.guild.id!=GUILD_ID or message.author.bot: return

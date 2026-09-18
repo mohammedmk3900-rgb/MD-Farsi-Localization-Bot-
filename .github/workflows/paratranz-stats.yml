@@ -14,17 +14,17 @@ concurrency:
 
 jobs:
   update:
-    name: Sync ParaTranz Discord data
+    name: Sync ParaTranz Discord Command Center
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
 
     env:
       PARATRANZ_PROJECT_ID: "19621"
       PROJECT_PARTICIPANTS: "8"
-      PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
-      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-      DISCORD_PROGRESS_WEBHOOK_URL: ${{ secrets.DISCORD_PROGRESS_WEBHOOK_URL }}
-      DISCORD_ACHIEVEMENTS_WEBHOOK_URL: ${{ secrets.DISCORD_ACHIEVEMENTS_WEBHOOK_URL }}
+      PARATRANZ_TOKEN: \${{ secrets.PARATRANZ_TOKEN }}
+      DISCORD_WEBHOOK_URL: \${{ secrets.DISCORD_WEBHOOK_URL }}
+      DISCORD_PROGRESS_WEBHOOK_URL: \${{ secrets.DISCORD_PROGRESS_WEBHOOK_URL }}
+      DISCORD_ACHIEVEMENTS_WEBHOOK_URL: \${{ secrets.DISCORD_ACHIEVEMENTS_WEBHOOK_URL }}
 
     steps:
       - name: Checkout
@@ -36,7 +36,20 @@ jobs:
           python-version: "3.12"
 
       - name: Validate Python
-        run: python -m py_compile scripts/paratranz_stats.py scripts/paratranz_progress.py scripts/paratranz_achievements.py scripts/build_dashboard_data.py
+        run: |
+          python -m py_compile \
+            scripts/paratranz_stats.py \
+            scripts/paratranz_progress.py \
+            scripts/paratranz_achievements.py \
+            scripts/build_discord_history.py \
+            scripts/build_discord_visuals.py \
+            scripts/build_dashboard_data.py
+
+      - name: Record real progress snapshot
+        run: python scripts/build_discord_history.py
+
+      - name: Generate Discord visuals
+        run: python scripts/build_discord_visuals.py
 
       - name: Sync statistics
         id: stats
@@ -49,15 +62,24 @@ jobs:
       - name: Check achievements
         run: python scripts/paratranz_achievements.py
 
-      - name: Persist bot state
+      - name: Persist Command Center state
         if: always()
         run: |
-          if git diff --quiet -- data/discord_messages.json data/achievements.json; then
-            echo "No bot state changes."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/discord_messages.json data/achievements.json
-          git commit -m "chore: persist Discord bot state"
+
+          git add \
+            data/discord_messages.json \
+            data/achievements.json \
+            data/discord_history.json \
+            assets/discord/stats.svg \
+            assets/discord/progress.svg \
+            assets/discord/progress-history.svg
+
+          if git diff --cached --quiet; then
+            echo "No Command Center state changes."
+            exit 0
+          fi
+
+          git commit -m "chore: update Discord Command Center state"
           git push

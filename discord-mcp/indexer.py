@@ -39,6 +39,10 @@ class MessageIndex:
         return len(messages)
     def mark_deleted(self,message_id:str)->None:
         with self._connect() as db: db.execute("UPDATE messages SET deleted=1,content='' WHERE id=?",(message_id,))
+    def mark_deleted(self, message_id: str) -> None:
+        with self._connect() as db:
+            db.execute("UPDATE messages SET deleted=1, content='' WHERE id=?", (message_id,))
+
     def set_cursor(self,channel_id:str,newest_message_id:str|None=None,oldest_message_id:str|None=None,complete:bool=False)->None:
         with self._connect() as db:
             db.execute("""INSERT INTO channel_cursors(channel_id,newest_message_id,oldest_message_id,complete)

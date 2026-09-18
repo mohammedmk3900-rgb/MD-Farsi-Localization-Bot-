@@ -23,7 +23,7 @@ def fail(message: str) -> None:
 def http_json(url: str, method: str = "GET", headers=None, payload=None):
     request_headers = {
         "Accept": "application/json",
-        "User-Agent": "Millennium-Dawn-Farsi-Localization-Progress/1.0",
+        "User-Agent": "MD-Farsi-Localization-Progress/3.0",
     }
     if headers:
         request_headers.update(headers)
@@ -114,51 +114,33 @@ def save_message_id(message_id: str):
 
 def build_embed(stats):
     files, total, translated, reviewed, percent, review_percent = stats
-    title, milestone_text = milestone(percent)
+    title, detail = milestone(percent)
     now = datetime.now(timezone.utc)
-
     return {
-        "author": {"name": "MD Farsi Localization • Progress"},
-        "title": "📈 پیشرفت پروژه",
-        "description": (
-            "╭────────────────────────╮\n"
-            "   **Millennium Dawn Farsi Localization**\n"
-            "   وضعیت زنده پروژه از ParaTranz\n"
-            "╰────────────────────────╯\n\n"
-            f"{progress_bar(percent)}\n"
-            f"### **{percent:.2f}%** ترجمه شده"
-        ),
+        "author": {"name": "MD FARSI LOCALIZATION  •  COMMAND CENTER"},
+        "title": "📈  LIVE TRANSLATION PROGRESS",
         "url": "https://paratranz.cn/projects/19621",
-        "image": {"url": VISUAL_URL},
+        "description": (
+            "### Millennium Dawn Farsi Localization\n"
+            "**PROGRESS ENGINE  ●  ONLINE  •  LIVE DATA**\n\n"
+            f"## **{percent:.2f}%**\n"
+            f"{progress_bar(percent)}\n"
+            f"**{translated:,}** translated  /  **{total:,}** strings\n\n"
+            f"🎯 **{title}**\n{detail}"
+        ),
         "color": 0x2ECC71,
+        "image": {"url": VISUAL_URL},
         "fields": [
-            {
-                "name": "🎯 نقطه فعلی",
-                "value": f"**{title}**\n{milestone_text}",
-                "inline": False,
-            },
-            {
-                "name": "📝 ترجمه‌شده",
-                "value": f"**{translated:,}** از **{total:,}** رشته",
-                "inline": True,
-            },
-            {
-                "name": "🔎 بازبینی‌شده",
-                "value": f"**{reviewed:,}**\n{review_percent:.2f}%",
-                "inline": True,
-            },
-            {
-                "name": "📄 فایل‌ها",
-                "value": f"**{files:,}**",
-                "inline": True,
-            },
+            {"name": "📝 TRANSLATED", "value": f"**{translated:,}**\n{percent:.2f}%", "inline": True},
+            {"name": "🔎 REVIEWED", "value": f"**{reviewed:,}**\n{review_percent:.2f}%", "inline": True},
+            {"name": "📄 FILES", "value": f"**{files:,}**", "inline": True},
+            {"name": "⚡ ENGINE", "value": "**ONLINE**\nParaTranz API", "inline": True},
+            {"name": "🔄 SYNC", "value": "**AUTOMATED**\nEvery 6 hours", "inline": True},
+            {"name": "🎯 NEXT", "value": f"**{max(0, 100-percent):.2f}%** remaining", "inline": True},
         ],
-        "footer": {
-            "text": "MD Farsi Localization • Live Progress • ParaTranz"
-        },
+        "footer": {"text": "MD Farsi Localization  •  Live Progress  •  ParaTranz"},
         "timestamp": now.isoformat(),
     }
-
 
 def send_new(embed):
     if not DISCORD_WEBHOOK_URL:
@@ -168,7 +150,7 @@ def send_new(embed):
     result = http_json(
         f"{DISCORD_WEBHOOK_URL}{separator}wait=true",
         method="POST",
-        payload={"username": "MD Farsi Localization • Progress", "embeds": [embed]},
+        payload={"username": "MD Farsi Localization • Command Center", "embeds": [embed]},
     )
     if not result or "id" not in result:
         fail("Discord did not return a message ID.")

@@ -1,328 +1,88 @@
 #!/usr/bin/env python3
-
-import json
-import os
-import sys
+import json, os, sys
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
+API="https://paratranz.cn/api"
+PROJECT_ID=os.getenv("PARATRANZ_PROJECT_ID","19621")
+TOKEN=os.getenv("PARATRANZ_TOKEN")
+WEBHOOK=os.getenv("DISCORD_WEBHOOK_URL")
+STATE="data/discord_messages.json"
+VISUAL="https://raw.githubusercontent.com/mohammedmk3900-rgb/MD-Farsi-Localization-Bot-/main/assets/discord/stats.svg"
+PARTICIPANTS=int(os.getenv("PROJECT_PARTICIPANTS","8"))
 
-PARATRANZ_BASE_URL = "https://paratranz.cn/api"
-PROJECT_ID = os.getenv("PARATRANZ_PROJECT_ID", "19621")
-
-PARATRANZ_TOKEN = os.getenv("PARATRANZ_TOKEN")
-DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
-STATE_FILE = "data/discord_messages.json"
-VISUAL_URL = "https://raw.githubusercontent.com/mohammedmk3900-rgb/MD-Farsi-Localization-Bot-/main/assets/discord/stats.svg"
-
-# Your current real participant count.
-# Change this when the project membership changes.
-PARTICIPANTS = int(os.getenv("PROJECT_PARTICIPANTS", "8"))
-
-
-def fail(message: str) -> None:
-    print(f"ERROR: {message}", file=sys.stderr)
-    sys.exit(1)
-
-
-def http_json(
-    url: str,
-    method: str = "GET",
-    headers: dict | None = None,
-    payload: dict | None = None,
-):
-    request_headers = {
-        "Accept": "application/json",
-        "User-Agent": "MD-Farsi-Localization-Stats/3.0",
-    }
-
-    if headers:
-        request_headers.update(headers)
-
-    body = None
-
-    if payload is not None:
-        body = json.dumps(payload).encode("utf-8")
-        request_headers["Content-Type"] = "application/json"
-
-    request = Request(
-        url,
-        data=body,
-        headers=request_headers,
-        method=method,
-    )
-
+def fail(msg): print(f"ERROR: {msg}",file=sys.stderr); sys.exit(1)
+def req(url,method="GET",payload=None):
+    h={"Accept":"application/json","User-Agent":"MD-Farsi-Localization-Stats/4.0"}
+    if TOKEN:h["Authorization"]=TOKEN
+    body=json.dumps(payload,ensure_ascii=False).encode() if payload is not None else None
+    if body:h["Content-Type"]="application/json"
     try:
-        with urlopen(request, timeout=30) as response:
-            raw = response.read().decode("utf-8")
+        with urlopen(Request(url,data=body,headers=h,method=method),timeout=30) as r:
+            raw=r.read().decode(); return json.loads(raw) if raw else None
+    except HTTPError as e: raise RuntimeError(f"HTTP {e.code}: {e.read().decode(errors='replace')[:800]}")
+    except (URLError,json.JSONDecodeError) as e: raise RuntimeError(str(e))
 
-            if not raw:
-                return None
+def get_stats():
+    if not TOKEN: fail("PARATRANZ_TOKEN is not set.")
+    fs=req(f"{API}/projects/{PROJECT_ID}/files")
+    if not isinstance(fs,list): fail("ParaTranz returned an unexpected files response.")
+    total=sum(int(x.get("total") or 0) for x in fs); translated=sum(int(x.get("translated") or 0) for x in fs)
+    reviewed=sum(int(x.get("reviewed") or 0) for x in fs); words=sum(int(x.get("words") or 0) for x in fs)
+    return {"files":len(fs),"strings":total,"translated":translated,"reviewed":reviewed,"words":words,
+            "translation_percent":translated/total*100 if total else 0,"review_percent":reviewed/total*100 if total else 0,"participants":PARTICIPANTS}
 
-            return json.loads(raw)
-
-    except HTTPError as exc:
-        response_body = exc.read().decode("utf-8", errors="replace")
-        fail(
-            f"HTTP {exc.code} from {url}\n"
-            f"Response: {response_body[:1000]}"
-        )
-
-    except URLError as exc:
-        fail(f"Network error while requesting {url}: {exc}")
-
-    except json.JSONDecodeError as exc:
-        fail(f"Invalid JSON returned by {url}: {exc}")
-
-
-def get_paratranz_files():
-    if not PARATRANZ_TOKEN:
-        fail("PARATRANZ_TOKEN is not set.")
-
-    url = f"{PARATRANZ_BASE_URL}/projects/{PROJECT_ID}/files"
-
-    return http_json(
-        url,
-        headers={
-            "Authorization": PARATRANZ_TOKEN,
-        },
-    )
-
-
-def calculate_stats(files):
-    if not isinstance(files, list):
-        fail("ParaTranz returned an unexpected files response.")
-
-    total_strings = 0
-    translated_strings = 0
-    reviewed_strings = 0
-    total_words = 0
-
-    for file_info in files:
-        total_strings += int(file_info.get("total") or 0)
-        translated_strings += int(file_info.get("translated") or 0)
-        reviewed_strings += int(file_info.get("reviewed") or 0)
-        total_words += int(file_info.get("words") or 0)
-
-    file_count = len(files)
-
-    translation_percent = (
-        (translated_strings / total_strings) * 100
-        if total_strings
-        else 0
-    )
-
-    review_percent = (
-        (reviewed_strings / total_strings) * 100
-        if total_strings
-        else 0
-    )
-
-    return {
-        "files": file_count,
-        "strings": total_strings,
-        "translated": translated_strings,
-        "reviewed": reviewed_strings,
-        "words": total_words,
-        "translation_percent": translation_percent,
-        "review_percent": review_percent,
-        "participants": PARTICIPANTS,
-    }
-
-
-def format_percent(value: float) -> str:
-    # Keep useful precision without showing ugly floating-point noise.
-    if value >= 1:
-        return f"{value:.2f}%"
-
-    if value >= 0.1:
-        return f"{value:.2f}%"
-
-    return f"{value:.2f}%"
-
-
-def format_number(value: int) -> str:
-    return f"{value:,}"
-
-
-def load_message_id():
+def load_id():
     try:
-        with open(STATE_FILE, encoding="utf-8") as file:
-            return str(json.load(file).get("stats", "")).strip()
-    except (FileNotFoundError, ValueError, TypeError):
-        return ""
-
-
-def save_message_id(message_id: str):
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    state = {"stats": "", "progress": ""}
+        with open(STATE,encoding="utf-8") as f:return str(json.load(f).get("stats","")).strip()
+    except (FileNotFoundError,ValueError,TypeError):return ""
+def save_id(mid):
+    os.makedirs("data",exist_ok=True); state={"stats":"","progress":""}
     try:
-        with open(STATE_FILE, encoding="utf-8") as file:
-            state.update(json.load(file))
-    except (FileNotFoundError, ValueError, TypeError):
-        pass
-    state["stats"] = str(message_id)
-    with open(STATE_FILE, "w", encoding="utf-8") as file:
-        json.dump(state, file, ensure_ascii=False, indent=2)
-        file.write("\n")
+        with open(STATE,encoding="utf-8") as f: state.update(json.load(f))
+    except (FileNotFoundError,ValueError,TypeError): pass
+    state["stats"]=str(mid)
+    with open(STATE,"w",encoding="utf-8") as f: json.dump(state,f,ensure_ascii=False,indent=2); f.write("\n")
 
+def next_sync(now):
+    h=((now.hour//6)+1)*6
+    target=(now.replace(hour=0,minute=0,second=0,microsecond=0).timestamp()+86400) if h>=24 else now.replace(hour=h,minute=0,second=0,microsecond=0).timestamp()
+    return datetime.fromtimestamp(target,timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-def build_embed(stats):
-    now = datetime.now(timezone.utc)
-    translation = stats["translation_percent"]
-    review = stats["review_percent"]
-    def bar(percent, size=18):
-        filled = min(size, max(0, round(percent / 100 * size)))
-        return "🟦" * filled + "⬛" * (size - filled)
-    return {
-        "author": {"name": "MD FARSI LOCALIZATION  •  COMMAND CENTER"},
-        "title": "📊  PROJECT STATISTICS",
-        "url": "https://paratranz.cn/projects/19621",
-        "description": (
-            "### Millennium Dawn Farsi Localization\n"
-            "**LIVE  ●  PARATRANZ SYNC  •  AUTOMATED**\n\n"
-            f"🌐 **Translation**  **{format_percent(translation)}**\n{bar(translation)}\n\n"
-            f"🔎 **Review**  **{format_percent(review)}**\n{bar(review)}\n\n"
-            "آخرین وضعیت پروژه به‌صورت خودکار از ParaTranz دریافت شده است."
-        ),
-        "color": 0x5865F2,
-        "image": {"url": VISUAL_URL},
-        "fields": [
-            {"name": "📦 PROJECT", "value": f"**{format_number(stats['files'])}** files\n**{format_number(stats['words'])}** words", "inline": True},
-            {"name": "📝 STRINGS", "value": f"**{format_number(stats['strings'])}** total\n**{format_number(stats['translated'])}** translated", "inline": True},
-            {"name": "🔎 REVIEW", "value": f"**{format_number(stats['reviewed'])}** reviewed\n**{format_percent(stats['review_percent'])}**", "inline": True},
-            {"name": "👥 CONTRIBUTORS", "value": f"**{format_number(stats['participants'])}** participants", "inline": True},
-            {"name": "📈 TRANSLATION", "value": f"**{format_number(stats['translated'])} / {format_number(stats['strings'])}**\n**{format_percent(stats['translation_percent'])}** complete", "inline": True},
-            {"name": "⚙️ AUTOMATION", "value": "**LIVE**\n6-hour sync cycle", "inline": True},
-        ],
-        "footer": {"text": "MD Farsi Localization  •  Live Data  •  ParaTranz"},
-        "timestamp": now.isoformat(),
-    }
+def build_embed(s):
+    now=datetime.now(timezone.utc); visual=VISUAL+"?v="+str(int(now.timestamp()))
+    remaining=max(0,100-s["translation_percent"])
+    return {"author":{"name":"MD FARSI LOCALIZATION  •  COMMAND CENTER"},
+      "title":"📊  آمار پروژه  •  PROJECT STATISTICS","url":f"https://paratranz.cn/projects/{PROJECT_ID}",
+      "description":f"### 🇮🇷 فارسی‌سازی Millennium Dawn\n**🟢 LIVE  •  داده واقعی  •  همگام‌سازی خودکار**\n\n🌐 **پیشرفت ترجمه:** **{s['translation_percent']:.2f}%**\n🔎 **پیشرفت بازبینی:** **{s['review_percent']:.2f}%**\n\nآخرین وضعیت مستقیماً از ParaTranz دریافت شده است.",
+      "color":0x5865F2,"image":{"url":visual},
+      "fields":[
+       {"name":"📦 PROJECT • پروژه","value":f"**{s['files']:,}** فایل\n**{s['words']:,}** کلمه","inline":True},
+       {"name":"📝 STRINGS • رشته‌ها","value":f"**{s['strings']:,}** کل\n**{s['translated']:,}** ترجمه‌شده","inline":True},
+       {"name":"🔎 REVIEW • بازبینی","value":f"**{s['reviewed']:,}** بازبینی‌شده\n**{s['review_percent']:.2f}%**","inline":True},
+       {"name":"👥 CONTRIBUTORS • مشارکت","value":f"**{s['participants']:,}** مشارکت‌کننده","inline":True},
+       {"name":"📈 REMAINING • باقی‌مانده","value":f"**{remaining:.2f}%**\nتا تکمیل ترجمه","inline":True},
+       {"name":"⚡ AUTOMATION • خودکارسازی","value":"**ONLINE**\nهر ۶ ساعت","inline":True}],
+      "footer":{"text":f"MD Farsi Localization • آخرین Sync: {now.strftime('%Y-%m-%d %H:%M UTC')} • بعدی: {next_sync(now)}"},
+      "timestamp":now.isoformat()}
 
-def send_new_discord_message(embed):
-    if not DISCORD_WEBHOOK_URL:
-        fail("DISCORD_WEBHOOK_URL is not set.")
-
-    # wait=true makes Discord return the created message,
-    # including its message ID.
-    separator = "&" if "?" in DISCORD_WEBHOOK_URL else "?"
-    url = f"{DISCORD_WEBHOOK_URL}{separator}wait=true"
-
-    payload = {
-        "username": "ParaTranz Stats",
-        "embeds": [embed],
-    }
-
-    return http_json(
-        url,
-        method="POST",
-        payload=payload,
-    )
-
-
-def edit_discord_message(embed, message_id):
-    if not DISCORD_WEBHOOK_URL:
-        fail("DISCORD_WEBHOOK_URL is not set.")
-
-    if not message_id:
-        return None
-
-    url = (
-        f"{DISCORD_WEBHOOK_URL}"
-        f"/messages/{message_id}"
-    )
-
-    payload = {
-        "embeds": [embed],
-    }
-
-    try:
-        return http_json(
-            url,
-            method="PATCH",
-            payload=payload,
-        )
-
-    except SystemExit:
-        # If the stored message was deleted or became unavailable,
-        # the workflow will recreate it.
-        print(
-            "Stored Discord message could not be edited. "
-            "A new message will be created."
-        )
-        return None
-
-
-def write_github_output(name: str, value: str):
-    github_output = os.getenv("GITHUB_OUTPUT")
-
-    if not github_output:
-        return
-
-    with open(github_output, "a", encoding="utf-8") as output:
-        output.write(f"{name}={value}\n")
-
+def send(e):
+    if not WEBHOOK:fail("DISCORD_WEBHOOK_URL is not set.")
+    sep="&" if "?" in WEBHOOK else "?"; r=req(WEBHOOK+sep+"wait=true",method="POST",payload={"username":"MD Farsi Localization • Command Center","embeds":[e]})
+    if not r or "id" not in r:fail("Discord did not return a message ID.")
+    return str(r["id"])
+def edit(e,mid):
+    if not WEBHOOK or not mid:return False
+    try:req(f"{WEBHOOK}/messages/{mid}",method="PATCH",payload={"embeds":[e]});return True
+    except RuntimeError as ex:print(f"Recreating stats message: {ex}");return False
 
 def main():
-    print(f"Fetching ParaTranz project {PROJECT_ID}...")
-
-    files = get_paratranz_files()
-    stats = calculate_stats(files)
-    embed = build_embed(stats)
-
-    print(
-        f"Files: {stats['files']}\n"
-        f"Strings: {stats['strings']}\n"
-        f"Translated: {stats['translated']} "
-        f"({format_percent(stats['translation_percent'])})\n"
-        f"Reviewed: {stats['reviewed']} "
-        f"({format_percent(stats['review_percent'])})"
-    )
-
-    # Try editing the existing message first.
-    discord_message_id = load_message_id()
-
-    if discord_message_id:
-        print(
-            f"Updating Discord message {discord_message_id}..."
-        )
-
-        result = edit_discord_message(embed, discord_message_id)
-
-        if result is not None:
-            print("Discord message updated successfully.")
-            write_github_output(
-                "message_id",
-                discord_message_id,
-            )
-            save_message_id(discord_message_id)
-            return
-
-    # No message ID exists, or the old message could not be edited.
-    print("Creating a new Discord stats message...")
-
-    result = send_new_discord_message(embed)
-
-    if not result or "id" not in result:
-        fail(
-            "Discord did not return a message ID. "
-            "Make sure the webhook URL is correct."
-        )
-
-    message_id = str(result["id"])
-    save_message_id(message_id)
-
-    print(
-        f"Discord stats message created: {message_id}"
-    )
-
-    write_github_output(
-        "message_id",
-        message_id,
-    )
-
-
-if __name__ == "__main__":
-    main()
+    try:
+        s=get_stats(); e=build_embed(s); m=load_id(); m=m if edit(e,m) else send(e); save_id(m)
+        out=os.getenv("GITHUB_OUTPUT")
+        if out:
+            with open(out,"a",encoding="utf-8") as f:f.write(f"message_id={m}\n")
+        print(f"Stats synced: {s['translation_percent']:.2f}% translation / {s['review_percent']:.2f}% review")
+    except RuntimeError as ex:fail(str(ex))
+if __name__=="__main__":main()

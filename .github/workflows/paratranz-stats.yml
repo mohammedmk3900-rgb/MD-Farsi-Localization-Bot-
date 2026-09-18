@@ -1,0 +1,52 @@
+name: Update ParaTranz Stats
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    # Every 6 hours
+    - cron: "0 */6 * * *"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  update-stats:
+    name: Update Discord project statistics
+    runs-on: ubuntu-latest
+
+    env:
+      PARATRANZ_PROJECT_ID: "19621"
+      PROJECT_PARTICIPANTS: "8"
+
+      PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+      # Stored as a GitHub Actions repository variable.
+      # The script creates it automatically on the first run.
+      DISCORD_STATS_MESSAGE_ID: ${{ vars.DISCORD_STATS_MESSAGE_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run ParaTranz statistics updater
+        id: stats
+        run: |
+          python scripts/paratranz_stats.py
+
+      - name: Save Discord message ID
+        if: steps.stats.outputs.message_id != ''
+        env:
+          MESSAGE_ID: ${{ steps.stats.outputs.message_id }}
+        run: |
+          gh variable set DISCORD_STATS_MESSAGE_ID \
+            --body "$MESSAGE_ID"
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -39,6 +39,10 @@ jobs:
         id: stats
         run: python scripts/paratranz_stats.py
 
+      - name: Sync progress
+        id: progress
+        run: python scripts/paratranz_progress.py
+
       - name: Check achievements
         run: python scripts/paratranz_achievements.py
 

@@ -20,11 +20,13 @@ def req(url,method="GET",payload=None):
     except HTTPError as e: raise RuntimeError(f"HTTP {e.code}: {e.read().decode(errors='replace')[:800]}")
     except (URLError,json.JSONDecodeError) as e: raise RuntimeError(str(e))
 def get():
-    if not TOKEN:fail("PARATRANZ_TOKEN is not set.")
-    fs=req(f"{API}/projects/{PROJECT_ID}/files")
-    if not isinstance(fs,list):fail("Unexpected ParaTranz response.")
-    total=sum(int(x.get("total") or 0) for x in fs); tr=sum(int(x.get("translated") or 0) for x in fs); rv=sum(int(x.get("reviewed") or 0) for x in fs)
-    return len(fs),total,tr,rv,(tr/total*100 if total else 0),(rv/total*100 if total else 0)
+    try:
+        with open("data/command_center.json",encoding="utf-8") as f:s=json.load(f)
+        p=s["project"]; pr=s["progress"]
+        return p["files"],p["strings"],p["translated"],p["reviewed"],pr["translation_percent"],pr["review_percent"]
+    except (FileNotFoundError,KeyError,TypeError,ValueError) as e:
+        fail(f"Command Center snapshot unavailable: {e}")
+
 def mid():
     try:
         with open(STATE,encoding="utf-8") as f:return str(json.load(f).get("progress","")).strip()

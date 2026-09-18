@@ -24,7 +24,10 @@ def load():
     except (FileNotFoundError,ValueError,TypeError):return set()
 def save(s):
     os.makedirs("data",exist_ok=True)
-    with open(STATE,"w",encoding="utf-8") as f:json.dump(sorted(s),f,ensure_ascii=False,indent=2);f.write("\n")
+    tmp=STATE+".tmp"
+    with open(tmp,"w",encoding="utf-8") as f:
+        json.dump(sorted(s),f,ensure_ascii=False,indent=2); f.write("\n")
+    os.replace(tmp, STATE)
 def main():
     if not WEBHOOK:fail("DISCORD_ACHIEVEMENTS_WEBHOOK_URL is not set.")
     total,tr,p=stats();done=load();new=[n for n in MILESTONES if p>=n and n not in done]

@@ -148,15 +148,38 @@ def format_number(value: int) -> str:
 
 def build_embed(stats):
     now = datetime.now(timezone.utc)
+    translation = stats["translation_percent"]
+    review = stats["review_percent"]
+
+    def bar(percent, size=16):
+        filled = min(size, max(0, round(percent / 100 * size)))
+        return "🟦" * filled + "⬜" * (size - filled)
 
     return {
         "title": "📊 آمار پروژه",
+        "url": "https://paratranz.cn/projects/19621",
         "description": (
-            "آمار **Millennium Dawn Farsi Localization** "
-            "به‌صورت خودکار از ParaTranz دریافت شده است."
+            "╭────────────────────────╮\n"
+            "   **Millennium Dawn Farsi Localization**\n"
+            "   همگام‌سازی خودکار با ParaTranz\n"
+            "╰────────────────────────╯\n\n"
+            f"🌐 **ترجمه**  {format_percent(translation)}\n"
+            f"{bar(translation)}\n\n"
+            f"🔎 **بازبینی**  {format_percent(review)}\n"
+            f"{bar(review)}"
         ),
         "color": 0x3498DB,
         "fields": [
+            {
+                "name": "📦 وضعیت پروژه",
+                "value": (
+                    f"**{format_number(stats['files'])}** فایل  •  "
+                    f"**{format_number(stats['strings'])}** رشته\n"
+                    f"**{format_number(stats['words'])}** کلمه  •  "
+                    f"**{format_number(stats['participants'])}** مشارکت‌کننده"
+                ),
+                "inline": False,
+            },
             {
                 "name": "📄 فایل‌ها",
                 "value": f"**{format_number(stats['files'])}**",
@@ -195,7 +218,7 @@ def build_embed(stats):
             },
         ],
         "footer": {
-            "text": "Millennium Dawn Farsi Localization • ParaTranz"
+            "text": "MD Farsi Localization • Auto Sync • ParaTranz"
         },
         "timestamp": now.isoformat(),
     }

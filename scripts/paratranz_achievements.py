@@ -10,6 +10,7 @@ API = "https://paratranz.cn/api"
 PROJECT_ID = os.getenv("PARATRANZ_PROJECT_ID", "19621")
 TOKEN = os.getenv("PARATRANZ_TOKEN")
 WEBHOOK = os.getenv("DISCORD_ACHIEVEMENTS_WEBHOOK_URL")
+VISUAL_URL = "https://raw.githubusercontent.com/mohammedmk3900-rgb/MD-Farsi-Localization-Bot-/main/assets/discord/achievement.svg"
 STATE_FILE = "data/achievements.json"
 
 MILESTONES = {
@@ -80,8 +81,10 @@ def post_achievement(threshold, total, translated):
     payload = {
         "username": "MD Farsi Localization • Achievements",
         "embeds": [{
+            "author": {"name": "MD Farsi Localization • Achievements"},
             "title": f"{icon} {name}",
             "url": "https://paratranz.cn/projects/19621",
+            "image": {"url": VISUAL_URL},
             "description": (
                 f"## {detail}\n\n"
                 f"**Millennium Dawn Farsi Localization** به **{threshold}%** رسید! 🎮\n\n"

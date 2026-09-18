@@ -20,27 +20,36 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+env:
+  PARATRANZ_PROJECT_ID: "19621"
+  PROJECT_PARTICIPANTS: "8"
+
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      PARATRANZ_PROJECT_ID: "19621"
-      PROJECT_PARTICIPANTS: "8"
       PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Build live dashboard data
         run: python scripts/build_dashboard_data.py
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dashboard
+
   deploy:
     needs: build
     runs-on: ubuntu-latest

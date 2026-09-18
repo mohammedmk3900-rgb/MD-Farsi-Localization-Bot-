@@ -1,39 +1,24 @@
 name: Discord MCP
-
 on:
   pull_request:
-    paths:
-      - "discord-mcp/**"
-      - ".github/workflows/discord-mcp.yml"
+    paths: ["discord-mcp/**",".github/workflows/discord-mcp.yml"]
   push:
-    branches:
-      - main
-      - "feat/**"
-    paths:
-      - "discord-mcp/**"
-      - ".github/workflows/discord-mcp.yml"
-
+    branches: [main,"feat/**"]
+    paths: ["discord-mcp/**",".github/workflows/discord-mcp.yml"]
 permissions:
   contents: read
-
 jobs:
   validate:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: discord-mcp
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         run: pip install -r requirements.txt
-
       - name: Compile
-        run: python -m py_compile server.py
+        run: python -m py_compile server.py indexer.py bot.py run.py

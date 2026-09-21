@@ -1,16 +1,43 @@
 # 🇮🇷 MD Farsi Localization
 
-## Command Center V8 — Localization Operations Platform
+## Command Center V9 — Polyglot Localization Operations Platform
 
-سامانه یکپارچه فارسی‌سازی **Millennium Dawn**؛ متصل به ParaTranz، Discord و یک داشبورد عمومی سریع و بدون Secret.
+سامانه یکپارچه فارسی‌سازی **Millennium Dawn**؛ متصل به ParaTranz، Discord و یک Command Center عمومی، با مرزبندی روشن بین اتوماسیون و تصمیم انسانی.
 
 ### معماری
 
-```
-ParaTranz → Python Core V8 → State / History
-                 ├→ Discord Automation
-                 └→ Public Data Contract → React + TypeScript Dashboard
-```
+~~~text
+                         ParaTranz
+                             │
+                      🐍 Python Core
+                             │
+          ┌──────────────────┼──────────────────┐
+          │                  │                  │
+      Analytics          Discord Sync       Data Contract
+          │                  │                  │
+          └──────────────────┼──────────────────┘
+                             │
+                 ┌───────────┴───────────┐
+                 │                       │
+            🦀 Rust Engine          ⚛️ React + TS
+            token validation         Command Center
+                 │                       │
+                 └───────────┬───────────┘
+                             │
+                      🟦 TS API Gateway
+                       optional / read-only
+~~~
+
+### نقش زبان‌ها
+
+- 🐍 **Python 3.12+** — orchestration، ParaTranz، analytics، persistence و Discord automation.
+- 🦀 **Rust** — validation قطعی و سریع برای tokenهای حساس HOI4/Paradox.
+- 🟦 **TypeScript / Node.js** — API gateway فقط‌خواندنی برای deploymentهای نیازمند HTTP API.
+- ⚛️ **React + TypeScript + Vite** — داشبورد عمومی و Command Center.
+- 🗄️ **SQLite + JSON** — persistence محلی و history؛ بدون تحمیل سرویس خارجی.
+- ⚙️ **GitHub Actions** — CI، validation و انتشار.
+
+هیچ زبانی صرفاً برای افزایش تعداد زبان‌ها اضافه نشده است.
 
 ### مرز اتوماسیون
 
@@ -23,17 +50,12 @@ ParaTranz → Python Core V8 → State / History
 
 **ParaTranz** منبع حقیقت داده‌های ترجمه است و **ParaTranz Terms** منبع حقیقت واژه‌نامه رسمی. Discord و Dashboard لایه‌های نمایش و عملیات هستند.
 
-### پشته فنی
-
-- Python 3.12+ — Core / collector / analytics / state / Discord
-- React 19 + TypeScript + Vite — Command Center
-- SQLite + JSON — history و snapshots
-- GitHub Actions — automation و deployment
-- Rust — فقط در صورت نیاز اثبات‌شده با profiling
-
 ### امنیت
 
-داشبورد عمومی فقط داده‌های پاک‌شده و بدون Secret دریافت می‌کند. Token و Webhook وارد payload عمومی نمی‌شوند.
+- Secretها فقط در runtimeهای خصوصی CI استفاده می‌شوند.
+- public dashboard فقط contract پاک‌سازی‌شده را دریافت می‌کند.
+- API عمومی فقط داده‌های public را می‌خواند.
+- Rust engine هیچ credential یا webhookی دریافت نمی‌کند.
 
 **ParaTranz Project: 19621**  
-**Command Center: V8**
+**Command Center: V9**

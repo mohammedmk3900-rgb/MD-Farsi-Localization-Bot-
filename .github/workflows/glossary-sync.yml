@@ -1,0 +1,49 @@
+name: Sync Translation Glossary to Discord
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 */6 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: glossary-discord-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    name: Sync external glossary
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GLOSSARY_SOURCE_URL: ${{ secrets.GLOSSARY_SOURCE_URL }}
+      DISCORD_GLOSSARY_WEBHOOK_URL: ${{ secrets.DISCORD_GLOSSARY_WEBHOOK_URL }}
+      GLOSSARY_MAX_ENTRIES: "1000"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate
+        run: python -m py_compile scripts/paratranz_glossary_sync.py
+      - name: Sync glossary
+        run: python scripts/paratranz_glossary_sync.py
+      - name: Persist glossary state
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/glossary.json data/discord_messages.json
+          if git diff --cached --quiet; then
+            echo "No glossary state changes."
+            exit 0
+          fi
+          git commit -m "chore: sync translation glossary"
+          git pull --rebase origin main
+          git push origin HEAD:main

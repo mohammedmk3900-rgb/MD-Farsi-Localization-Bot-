@@ -27,7 +27,7 @@ class V9ContractTests(unittest.TestCase):
         self.assertNotIn("PARATRANZ_TOKEN", raw)
         self.assertNotIn("DISCORD_", raw)
         payload = json.loads(raw)
-        self.assertEqual(payload.get("schema"), 8)
+        self.assertEqual(payload.get("schema"), 9)
 
     def test_rust_contract_files_exist(self):
         self.assertTrue(Path("rust/Cargo.toml").exists())

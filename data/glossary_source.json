@@ -1,0 +1,5 @@
+{
+  "source_url": "",
+  "format": "auto",
+  "description": "Set GLOSSARY_SOURCE_URL as a GitHub Actions secret to the glossary website or feed."
+}

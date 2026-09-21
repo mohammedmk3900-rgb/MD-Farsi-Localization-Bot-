@@ -1,177 +1,274 @@
 #!/usr/bin/env python3
-"""Sync an external glossary website into the Discord Persian glossary channel."""
+"""Sync ParaTranz project Terms into the Discord Persian glossary channel."""
 from __future__ import annotations
-import csv, hashlib, html, io, json, os, re, sys
+
+import hashlib
+import json
+import os
+import re
+import sys
 from datetime import datetime, timezone
-from html.parser import HTMLParser
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-SOURCE_URL=os.getenv("GLOSSARY_SOURCE_URL","").strip()
-WEBHOOK=os.getenv("DISCORD_GLOSSARY_WEBHOOK_URL","").strip()
-STATE="data/glossary.json"
-MESSAGE_STATE="data/discord_messages.json"
-MAX_ENTRIES=int(os.getenv("GLOSSARY_MAX_ENTRIES","1000"))
+API_BASE = "https://paratranz.cn/api"
+PROJECT_ID = int(os.getenv("PARATRANZ_PROJECT_ID", "19621"))
+TOKEN = os.getenv("PARATRANZ_TOKEN", "").strip()
+WEBHOOK = os.getenv("DISCORD_GLOSSARY_WEBHOOK_URL", "").strip()
+STATE = "data/glossary.json"
+MESSAGE_STATE = "data/discord_messages.json"
+OFFICIAL_DOC = "data/glossary_official.md"
+MAX_ENTRIES = int(os.getenv("GLOSSARY_MAX_ENTRIES", "5000"))
+PAGE_SIZE = 1000
 
-def fail(m): print("ERROR: "+m,file=sys.stderr); sys.exit(1)
-def fetch(url):
-    req=Request(url,headers={"Accept":"application/json,text/csv,text/html,text/plain;q=0.9,*/*;q=0.8","User-Agent":"MD-Farsi-Localization-Glossary/1.0"})
+
+def fail(message: str) -> None:
+    print("ERROR: " + message, file=sys.stderr)
+    raise SystemExit(1)
+
+
+def request_json(method: str, url: str):
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "MD-Farsi-Localization-Glossary/2.0",
+        "Authorization": TOKEN,
+    }
+    req = Request(url, headers=headers, method=method)
     try:
-        with urlopen(req,timeout=30) as r: return r.read(),r.headers.get("Content-Type","")
-    except (HTTPError,URLError) as e: raise RuntimeError(f"Glossary source request failed: {e}") from e
+        with urlopen(req, timeout=30) as response:
+            raw = response.read().decode("utf-8")
+            return json.loads(raw) if raw else {}
+    except (HTTPError, URLError) as exc:
+        raise RuntimeError(f"ParaTranz request failed: {exc}") from exc
 
-class TableParser(HTMLParser):
-    def __init__(self):
-        super().__init__(); self.rows=[]; self.row=[]; self.cell=[]; self.in_cell=False
-    def handle_starttag(self,tag,attrs):
-        if tag=="tr": self.row=[]
-        elif tag in {"td","th"}: self.cell=[]; self.in_cell=True
-    def handle_data(self,data):
-        if self.in_cell: self.cell.append(data)
-    def handle_endtag(self,tag):
-        if tag in {"td","th"} and self.in_cell:
-            self.row.append(" ".join("".join(self.cell).split())); self.cell=[]; self.in_cell=False
-        elif tag=="tr" and self.row: self.rows.append(self.row); self.row=[]
 
-def clean(v): return re.sub(r"\s+"," ",html.unescape(str(v or ""))).strip()
-def pair(a,b):
-    a,b=clean(a),clean(b)
-    return {"source":a,"target":b} if a and b and a.casefold()!=b.casefold() else None
+def fetch_terms() -> list[dict]:
+    if not TOKEN:
+        raise RuntimeError("PARATRANZ_TOKEN is not set.")
 
-def parse_json(text):
-    data=json.loads(text); out=[]
-    if isinstance(data,dict):
-        for k,v in data.items():
-            if isinstance(v,str):
-                p=pair(k,v)
-            elif isinstance(v,dict):
-                p=pair(v.get("source") or v.get("english") or v.get("en") or v.get("term"),
-                       v.get("target") or v.get("persian") or v.get("fa") or v.get("farsi") or v.get("translation"))
-            else: p=None
-            if p: out.append(p)
-    elif isinstance(data,list):
-        for item in data:
-            if isinstance(item,dict):
-                p=pair(item.get("source") or item.get("english") or item.get("en") or item.get("term"),
-                       item.get("target") or item.get("persian") or item.get("fa") or item.get("farsi") or item.get("translation"))
-            elif isinstance(item,(list,tuple)) and len(item)>=2: p=pair(item[0],item[1])
-            else: p=None
-            if p: out.append(p)
-    return out
+    entries: list[dict] = []
+    page = 1
 
-def parse_delimited(text,delimiter):
-    rows=list(csv.reader(io.StringIO(text),delimiter=delimiter))
-    if not rows: return []
-    h=[clean(x).lower() for x in rows[0]]
-    src=next((i for i,x in enumerate(h) if x in {"source","english","en","term","key"}),0)
-    dst=next((i for i,x in enumerate(h) if x in {"target","persian","fa","farsi","translation"}),1 if len(h)>1 else 0)
-    header=any(x in {"source","english","en","term","target","persian","fa","farsi","translation"} for x in h)
-    out=[]
-    for row in rows[1 if header else 0:]:
-        if len(row)>max(src,dst):
-            p=pair(row[src],row[dst])
-            if p: out.append(p)
-    return out
+    while len(entries) < MAX_ENTRIES:
+        data = request_json(
+            "GET",
+            f"{API_BASE}/projects/{PROJECT_ID}/terms?page={page}&pageSize={PAGE_SIZE}",
+        )
 
-def parse_html(text):
-    p=TableParser(); p.feed(text)
-    if not p.rows: return []
-    h=[clean(x).lower() for x in p.rows[0]]
-    src=next((i for i,x in enumerate(h) if x in {"source","english","en","term","key"}),0)
-    dst=next((i for i,x in enumerate(h) if x in {"target","persian","fa","farsi","translation"}),1)
-    out=[]
-    for row in p.rows[1:]:
-        if len(row)>max(src,dst):
-            x=pair(row[src],row[dst])
-            if x: out.append(x)
-    return out
+        if isinstance(data, list):
+            batch = data
+            page_count = None
+        elif isinstance(data, dict):
+            batch = data.get("results") or data.get("items") or data.get("data") or []
+            page_count = data.get("pageCount")
+        else:
+            batch = []
+            page_count = None
 
-def parse_text(text):
-    out=[]
-    for line in text.splitlines():
-        line=clean(line)
-        if not line or line.startswith("#"): continue
-        parts=re.split(r"\s*(?:=>|→|->|\|)\s*",line,maxsplit=1)
-        if len(parts)==2:
-            p=pair(parts[0],parts[1])
-            if p: out.append(p)
-    return out
+        if not isinstance(batch, list) or not batch:
+            break
 
-def parse(body,ctype):
-    text=body.decode("utf-8-sig",errors="replace"); ctype=ctype.lower()
-    if "json" in ctype or text.lstrip().startswith(("{","[")):
-        try: x=parse_json(text)
-        except json.JSONDecodeError: x=[]
-        if x: return x
-    if "html" in ctype or "<table" in text.lower():
-        x=parse_html(text)
-        if x: return x
-    if "\t" in text[:2000]:
-        x=parse_delimited(text,"\t")
-        if x: return x
-    if "," in text[:2000]:
-        x=parse_delimited(text,",")
-        if x: return x
-    return parse_text(text)
+        for item in batch:
+            if not isinstance(item, dict):
+                continue
+            term = str(item.get("term") or "").strip()
+            translation = str(item.get("translation") or "").strip()
+            if not term or not translation:
+                continue
+            entries.append({
+                "id": item.get("id"),
+                "source": term,
+                "target": translation,
+                "note": str(item.get("note") or "").strip(),
+                "updated_at": item.get("updatedAt"),
+                "variants": item.get("variants") or [],
+            })
 
-def normalize(entries):
-    unique={}
-    for x in entries: unique[x["source"].casefold()]=x
-    out=sorted(unique.values(),key=lambda x:x["source"].casefold())
-    if not out: raise RuntimeError("No glossary entries were found in the source.")
-    return out[:MAX_ENTRIES]
+        if page_count is not None and page >= int(page_count):
+            break
+        if len(batch) < PAGE_SIZE:
+            break
+        page += 1
 
-def load(path,default):
+    if not entries:
+        raise RuntimeError(f"No ParaTranz Terms found for project {PROJECT_ID}.")
+
+    unique = {}
+    for entry in entries:
+        unique[entry["source"].casefold()] = entry
+
+    return sorted(unique.values(), key=lambda x: x["source"].casefold())[:MAX_ENTRIES]
+
+
+def load_json(path: str, default):
     try:
-        with open(path,encoding="utf-8") as f: return json.load(f)
-    except (FileNotFoundError,json.JSONDecodeError,TypeError,ValueError): return default
+        with open(path, encoding="utf-8") as handle:
+            return json.load(handle)
+    except (FileNotFoundError, json.JSONDecodeError, TypeError, ValueError):
+        return default
 
-def save(path,data):
-    os.makedirs(os.path.dirname(path) or ".",exist_ok=True); tmp=path+".tmp"
-    with open(tmp,"w",encoding="utf-8") as f: json.dump(data,f,ensure_ascii=False,indent=2); f.write("\n")
-    os.replace(tmp,path)
 
-def discord(method,url,payload):
-    r=Request(url,data=json.dumps(payload,ensure_ascii=False).encode(),headers={"Accept":"application/json","Content-Type":"application/json","User-Agent":"MD-Farsi-Localization-Glossary/1.0"},method=method)
-    with urlopen(r,timeout=30) as x:
-        raw=x.read().decode(); return json.loads(raw) if raw else {}
+def save_json(path: str, value) -> None:
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as handle:
+        json.dump(value, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+    os.replace(tmp, path)
 
-def build_embed(entries):
-    now=datetime.now(timezone.utc)
-    shown=entries[:25]
-    lines=[f"**{x['source']}** → {x['target']}" for x in shown]
-    if len(entries)>25: lines.append(f"… و **{len(entries)-25:,}** مدخل دیگر")
-    digest=hashlib.sha256(json.dumps(entries,ensure_ascii=False,sort_keys=True).encode()).hexdigest()[:12]
-    return {"author":{"name":"MD FARSI LOCALIZATION • COMMAND CENTER"},"title":"📚 واژه‌نامه ترجمه • GLOSSARY",
-      "description":"واژه‌نامه پروژه به‌صورت خودکار از منبع تعیین‌شده همگام می‌شود.\n\n"+"\n".join(lines),
-      "fields":[{"name":"📚 تعداد مدخل","value":f"**{len(entries):,}**","inline":True},
-                {"name":"🔐 نسخه","value":digest,"inline":True},
-                {"name":"🔄 وضعیت","value":"به‌روزرسانی خودکار","inline":True}],
-      "footer":{"text":f"آخرین Sync: {now.strftime('%Y-%m-%d %H:%M UTC')} • منبع خارجی"},
-      "timestamp":now.isoformat()}
 
-def main():
-    if not SOURCE_URL: fail("GLOSSARY_SOURCE_URL is not set.")
-    if not WEBHOOK: fail("DISCORD_GLOSSARY_WEBHOOK_URL is not set.")
-    body,ctype=fetch(SOURCE_URL); entries=normalize(parse(body,ctype))
-    old=load(STATE,{}); old_entries=old.get("entries",[]) if isinstance(old,dict) else []
-    if entries==old_entries:
-        print(f"Glossary unchanged: {len(entries):,} entries"); return
-    save(STATE,{"schema":1,"source_url":SOURCE_URL,"updated_at":datetime.now(timezone.utc).isoformat(),"entries":entries})
-    mid=str(load(MESSAGE_STATE,{}).get("glossary","")).strip()
-    embed=build_embed(entries)
-    if mid:
+def discord(method: str, url: str, payload: dict):
+    request = Request(
+        url,
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "User-Agent": "MD-Farsi-Localization-Glossary/2.0",
+        },
+        method=method,
+    )
+    with urlopen(request, timeout=30) as response:
+        raw = response.read().decode("utf-8")
+        return json.loads(raw) if raw else {}
+
+
+def official_embeds() -> list[dict]:
+    try:
+        with open(OFFICIAL_DOC, encoding="utf-8") as handle:
+            text = handle.read().strip()
+    except FileNotFoundError:
+        raise RuntimeError(f"Missing official glossary document: {OFFICIAL_DOC}")
+
+    chunks = []
+    current = []
+    current_len = 0
+
+    for paragraph in re.split(r"\n\s*\n", text):
+        paragraph = paragraph.strip()
+        if not paragraph:
+            continue
+        addition = len(paragraph) + (2 if current else 0)
+        if current and current_len + addition > 3800:
+            chunks.append("\n\n".join(current))
+            current = [paragraph]
+            current_len = len(paragraph)
+        else:
+            current.append(paragraph)
+            current_len += addition
+
+    if current:
+        chunks.append("\n\n".join(current))
+
+    if len(chunks) > 10:
+        raise RuntimeError("Official glossary document requires more than 10 Discord embeds.")
+
+    return [
+        {
+            "title": (
+                "📚 واژه‌نامهٔ رسمی ترجمهٔ فارسی Millennium Dawn"
+                if index == 0
+                else f"📚 واژه‌نامهٔ رسمی • بخش {index + 1}"
+            ),
+            "description": chunk,
+        }
+        for index, chunk in enumerate(chunks)
+    ]
+
+
+def live_embed(entries: list[dict]) -> dict:
+    now = datetime.now(timezone.utc)
+    digest = hashlib.sha256(
+        json.dumps(entries, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    ).hexdigest()[:12]
+
+    lines = [f"**{x['source']}** → {x['target']}" for x in entries[:35]]
+    if len(entries) > 35:
+        lines.append(f"… و **{len(entries) - 35:,}** اصطلاح دیگر")
+
+    return {
+        "author": {"name": "MD FARSI LOCALIZATION • COMMAND CENTER"},
+        "title": "📖 واژه‌نامهٔ زنده • ParaTranz Terms",
+        "description": (
+            "این فهرست مستقیماً از بخش **Terms** پروژه ParaTranz "
+            f"#{PROJECT_ID} دریافت می‌شود.\n\n" + "\n".join(lines)
+        ),
+        "fields": [
+            {"name": "📚 تعداد Terms", "value": f"**{len(entries):,}**", "inline": True},
+            {"name": "🔐 Snapshot", "value": digest, "inline": True},
+            {"name": "🔄 Sync", "value": "خودکار • هر ۶ ساعت", "inline": True},
+        ],
+        "footer": {
+            "text": f"ParaTranz Project {PROJECT_ID} • {now.strftime('%Y-%m-%d %H:%M UTC')}"
+        },
+        "timestamp": now.isoformat(),
+    }
+
+
+def upsert_message(state: dict, key: str, payload: dict) -> None:
+    message_id = str(state.get(key, "")).strip()
+
+    if message_id:
         try:
-            discord("PATCH",f"{WEBHOOK}/messages/{mid}",{"embeds":[embed]})
-            print(f"Glossary updated: {len(entries):,} entries"); return
-        except HTTPError: pass
-    result=discord("POST",WEBHOOK+"?wait=true",{"username":"MD Farsi Localization • Command Center","embeds":[embed]})
-    if not result.get("id"): fail("Discord did not return a glossary message ID.")
-    state=load(MESSAGE_STATE,{})
-    if not isinstance(state,dict): state={}
-    state["glossary"]=str(result["id"]); save(MESSAGE_STATE,state)
-    print(f"Glossary message created: {len(entries):,} entries")
+            discord("PATCH", f"{WEBHOOK}/messages/{message_id}", payload)
+            return
+        except HTTPError as exc:
+            if exc.code != 404:
+                raise
 
-if __name__=="__main__":
-    try: main()
-    except (RuntimeError,HTTPError,URLError) as e: fail(str(e))
+    result = discord("POST", WEBHOOK + "?wait=true", payload)
+    new_id = str(result.get("id") or "")
+    if not new_id:
+        raise RuntimeError(f"Discord did not return a message ID for {key}.")
+    state[key] = new_id
+
+
+def main() -> None:
+    if not WEBHOOK:
+        fail("DISCORD_GLOSSARY_WEBHOOK_URL is not set.")
+
+    entries = fetch_terms()
+    old = load_json(STATE, {})
+    old_entries = old.get("entries", []) if isinstance(old, dict) else []
+    state = load_json(MESSAGE_STATE, {})
+    if not isinstance(state, dict):
+        state = {}
+
+    if entries != old_entries:
+        save_json(
+            STATE,
+            {
+                "schema": 2,
+                "source": f"{API_BASE}/projects/{PROJECT_ID}/terms",
+                "project_id": PROJECT_ID,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "entries": entries,
+            },
+        )
+
+    upsert_message(
+        state,
+        "glossary_official",
+        {
+            "username": "MD Farsi Localization • Command Center",
+            "embeds": official_embeds(),
+        },
+    )
+    upsert_message(
+        state,
+        "glossary",
+        {
+            "username": "MD Farsi Localization • Command Center",
+            "embeds": [live_embed(entries)],
+        },
+    )
+
+    save_json(MESSAGE_STATE, state)
+    print(f"ParaTranz Terms synced: {len(entries):,} entries")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (RuntimeError, HTTPError, URLError) as exc:
+        fail(str(exc))

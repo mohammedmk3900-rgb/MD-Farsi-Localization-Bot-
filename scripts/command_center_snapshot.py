@@ -103,8 +103,8 @@ def main():
       "milestones":[{"threshold":1,"icon":"🎉","label":"اولین ۱٪"},{"threshold":10,"icon":"🌱","label":"۱۰٪"},
                     {"threshold":25,"icon":"📈","label":"۲۵٪"},{"threshold":50,"icon":"🔥","label":"۵۰٪"},
                     {"threshold":75,"icon":"🚀","label":"۷۵٪"},{"threshold":100,"icon":"🏁","label":"۱۰۰٪"}],
-      "health":{"paratranz":"online","snapshot":"healthy","history":"healthy","visuals":"pending","discord":"pending"},
-      "automation":{"interval_hours":6,"engine":"GitHub Actions","last_sync":now.isoformat(),"next_sync":None},
+      "health":{"paratranz":"online","snapshot":"healthy","history":"healthy","visuals":"pending","discord":"pending","last_error":None},
+      "automation":{"interval_hours":6,"engine":"GitHub Actions","last_sync":now.isoformat(),"next_sync":None,"mode":"scheduled","timezone":"UTC"},
       "source":"ParaTranz API"}
 
     OUT.parent.mkdir(parents=True,exist_ok=True)

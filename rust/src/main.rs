@@ -22,19 +22,20 @@ fn main() {
 
     let dollar = Regex::new(r"\$[^$\n]+\$").unwrap();
     let icon = Regex::new(r"£[A-Za-z0-9_]+").unwrap();
-    let section = Regex::new(r"§[^§\n]*§").unwrap();
+    // HOI4 color/control codes such as §Y and §!.
+    let control = Regex::new(r"§[A-Za-z0-9!]").unwrap();
 
     let source_dollar = captures(&input.source, &dollar);
     let target_dollar = captures(&input.target, &dollar);
     let source_icon = captures(&input.source, &icon);
     let target_icon = captures(&input.target, &icon);
-    let source_section = captures(&input.source, &section);
-    let target_section = captures(&input.target, &section);
+    let source_control = captures(&input.source, &control);
+    let target_control = captures(&input.target, &control);
 
     let checks = vec![
         Check { name: "dollar_tokens", passed: source_dollar == target_dollar, detail: format!("source={} target={}", source_dollar.len(), target_dollar.len()) },
         Check { name: "icon_tokens", passed: source_icon == target_icon, detail: format!("source={} target={}", source_icon.len(), target_icon.len()) },
-        Check { name: "section_tokens", passed: source_section == target_section, detail: format!("source={} target={}", source_section.len(), target_section.len()) },
+        Check { name: "control_codes", passed: source_control == target_control, detail: format!("source={} target={}", source_control.len(), target_control.len()) },
     ];
 
     let valid = checks.iter().all(|c| c.passed);

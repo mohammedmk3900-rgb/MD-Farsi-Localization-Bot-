@@ -44,6 +44,7 @@ def fetch_files():
 def percent(v,total): return round(v/total*100,2) if total else 0.0
 
 def read_json(path,default):
+    path=Path(path)
     try: return json.loads(path.read_text(encoding="utf-8"))
     except (FileNotFoundError,json.JSONDecodeError,TypeError,ValueError): return default
 

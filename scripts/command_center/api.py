@@ -1,4 +1,4 @@
-"""Read-only JSON API for Command Center state and history."""
+"""Read-only JSON API for Command Center V8 state and history."""
 from __future__ import annotations
 import json
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer

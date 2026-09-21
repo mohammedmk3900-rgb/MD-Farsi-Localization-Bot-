@@ -1,4 +1,4 @@
-"""Build the canonical Command Center V8 snapshot."""
+"""Build the canonical Command Center V9 snapshot."""
 from __future__ import annotations
 from datetime import datetime,timezone
 from ..config import Config
@@ -32,7 +32,7 @@ def build(config:Config,stats:ProjectStats,files:list[dict]):
         for k,src in (("files",None),("strings","total"),("translated","translated"),("reviewed","reviewed"),("words","words")): x[k]+=1 if k=="files" else int(item.get(src) or 0)
     for x in sections.values():
         total=x["strings"]; x["translation_percent"]=round(x["translated"]/total*100,2) if total else 0; x["review_percent"]=round(x["reviewed"]/total*100,2) if total else 0
-    payload={"schema":8,"timestamp":now.isoformat(),"updated_at":now.isoformat(),
+    payload={"schema":9,"timestamp":now.isoformat(),"updated_at":now.isoformat(),
       "project":{"name":"Millennium Dawn Farsi Localization","id":config.project_id,"url":config.project_url,"participants":config.participants},
       "stats":{**stats.to_dict(),"translation_percent":stats.translation_percent,"review_percent":stats.review_percent},
       "progress":{"translation_percent":stats.translation_percent,"review_percent":stats.review_percent,"translated":stats.translated,"reviewed":stats.reviewed,**d.to_dict()},

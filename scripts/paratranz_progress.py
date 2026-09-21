@@ -9,9 +9,9 @@ TOKEN=os.getenv("PARATRANZ_TOKEN"); WEBHOOK=os.getenv("DISCORD_PROGRESS_WEBHOOK_
 STATE="data/discord_messages.json"; VISUAL="https://raw.githubusercontent.com/mohammedmk3900-rgb/MD-Farsi-Localization-Bot-/main/assets/discord/progress.svg"
 
 def fail(m): print(f"ERROR: {m}",file=sys.stderr); sys.exit(1)
-def req(url,method="GET",payload=None):
+def req(url,method="GET",payload=None,auth=False):
     h={"Accept":"application/json","User-Agent":"MD-Farsi-Localization-Progress/4.0"}
-    if TOKEN:h["Authorization"]=TOKEN
+    if auth and TOKEN:h["Authorization"]=TOKEN
     body=json.dumps(payload,ensure_ascii=False).encode() if payload is not None else None
     if body:h["Content-Type"]="application/json"
     try:

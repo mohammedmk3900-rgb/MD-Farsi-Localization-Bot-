@@ -25,7 +25,7 @@ def run():
     payload["health"]={"status":health["status"],"percentage":health["percentage"],"passed_checks":health["passed_checks"],"total_checks":health["required_checks"],"checks":health["checks"],"updated_at":datetime.now(timezone.utc).isoformat()}
     save_json("data/command_center.json",payload); record_snapshot(payload)
     if c.health_webhook: upsert(c.health_webhook,"health",health_embed(c,health))
-    print(f"Command Center V8 OK • {stats.translated:,}/{stats.strings:,} translated ({stats.translation_percent:.2f}%)")
+    print(f"Command Center V9 OK • {stats.translated:,}/{stats.strings:,} translated ({stats.translation_percent:.2f}%)")
     return payload
 
 if __name__=="__main__":

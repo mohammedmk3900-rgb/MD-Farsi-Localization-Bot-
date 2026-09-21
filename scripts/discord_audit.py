@@ -7,18 +7,31 @@ import json, os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
 import httpx
 
 API = "https://discord.com/api/v10"
 TOKEN = os.getenv("DISCORD_BOT_TOKEN", "").strip()
+if TOKEN.startswith("Bot "):
+    TOKEN = TOKEN[4:].strip()
+if len(TOKEN) >= 2 and TOKEN[0] == TOKEN[-1] and TOKEN[0] in {'"', "'"}:
+    TOKEN = TOKEN[1:-1].strip()
 GUILD_ID = os.getenv("DISCORD_GUILD_ID", "").strip()
 RECENT_MESSAGES = max(0, int(os.getenv("DISCORD_AUDIT_RECENT_MESSAGES", "200")))
 OUT = Path(os.getenv("DISCORD_AUDIT_OUTPUT", "data/discord_audit.json"))
+
 if not TOKEN or not GUILD_ID:
     raise RuntimeError("DISCORD_BOT_TOKEN and DISCORD_GUILD_ID are required")
 
 def get(client: httpx.Client, path: str, **kwargs: Any) -> Any:
     response = client.get(path, **kwargs)
+    if response.status_code == 401:
+        raise RuntimeError(
+            "Discord authentication failed (401). "
+            "DISCORD_BOT_TOKEN is invalid, revoked, or formatted incorrectly. "
+            "Reset/copy the current Bot Token from the Discord Developer Portal "
+            "and replace the GitHub Actions DISCORD_BOT_TOKEN secret."
+        )
     response.raise_for_status()
     return response.json()
 
@@ -60,9 +73,13 @@ def recent_activity(client: httpx.Client, channel_id: str, channel_name: str) ->
 def main() -> None:
     headers = {
         "Authorization": f"Bot {TOKEN}",
-        "User-Agent": "MD-Farsi-Localization-Discord-Audit/1.0",
+        "User-Agent": "MD-Farsi-Localization-Discord-Audit/1.1",
     }
     with httpx.Client(headers=headers, timeout=30.0) as client:
+        # Authenticate before making guild requests so a bad secret has a clear diagnosis.
+        get(client, f"{API}/users/@me")
+        print("Discord bot authentication: OK")
+
         guild = get(client, f"{API}/guilds/{GUILD_ID}")
         channels = get(client, f"{API}/guilds/{GUILD_ID}/channels")
         roles = get(client, f"{API}/guilds/{GUILD_ID}/roles")

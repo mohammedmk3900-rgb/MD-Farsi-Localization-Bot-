@@ -39,8 +39,22 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Build live dashboard data
-        run: python scripts/build_dashboard_data.py
+      - name: Collect Command Center snapshot
+        run: python scripts/command_center_snapshot.py
+
+      - name: Validate dashboard data pipeline
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/command_center_snapshot.py scripts/build_dashboard_data.py
+          python scripts/build_dashboard_data.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("dashboard/data/dashboard.json").read_text(encoding="utf-8"))
+          assert d["schema"] == 3
+          assert "stats" in d and "sections" in d
+          print("Dashboard data validated.")
+          PY
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

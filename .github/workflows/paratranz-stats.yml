@@ -63,7 +63,7 @@ jobs:
           for key in ("schema","timestamp","project","progress","health","automation"):
               if key not in d:
                   raise SystemExit(f"Snapshot missing: {key}")
-          if d["schema"] != 3:
+          if d["schema"] != 5:
               raise SystemExit(f"Unsupported snapshot schema: {d['schema']}")
           print("Snapshot verified:", d["stats"]["translated"], "/", d["stats"]["strings"])
           PY
@@ -83,7 +83,7 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          for name in ("data/command_center.json","data/discord_history.json","data/discord_messages.json","data/achievements.json"):
+          for name in ("data/command_center.json","data/command_center_records.json","data/discord_history.json","data/discord_messages.json","data/achievements.json"):
               p=Path(name)
               if not p.exists():
                   raise SystemExit(f"Missing state file: {name}")
@@ -105,6 +105,9 @@ jobs:
 
       - name: Check achievements
         run: python scripts/paratranz_achievements.py
+
+      - name: Compute system health
+        run: python scripts/command_center_health.py
 
       - name: Persist Command Center state
         if: always()

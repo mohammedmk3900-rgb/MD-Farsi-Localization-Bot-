@@ -12,6 +12,19 @@
       "words": 3104060,
       "translation_percent": 0.4603,
       "review_percent": 0.0411
+    },
+    {
+      "timestamp": "2026-09-21T11:38:21.250262+00:00",
+      "epoch": 1789990701,
+      "files": 294,
+      "strings": 231234,
+      "translated": 1064,
+      "reviewed": 95,
+      "words": 3105861,
+      "translation_percent": 0.46,
+      "review_percent": 0.04,
+      "delta_translated": 0,
+      "delta_reviewed": 0
     }
   ]
 }

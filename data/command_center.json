@@ -1,0 +1,92 @@
+{
+  "schema": 3,
+  "timestamp": "2026-09-21T11:38:21.250262+00:00",
+  "updated_at": "2026-09-21T11:38:21.250262+00:00",
+  "project": {
+    "name": "Millennium Dawn Farsi Localization",
+    "id": 19621,
+    "url": "https://paratranz.cn/projects/19621",
+    "participants": 8
+  },
+  "stats": {
+    "files": 294,
+    "strings": 231234,
+    "translated": 1064,
+    "reviewed": 95,
+    "words": 3105861,
+    "translation_percent": 0.46,
+    "review_percent": 0.04
+  },
+  "project_stats": {
+    "files": 294,
+    "strings": 231234,
+    "translated": 1064,
+    "reviewed": 95,
+    "words": 3105861
+  },
+  "progress": {
+    "translation_percent": 0.46,
+    "review_percent": 0.04,
+    "translated": 1064,
+    "reviewed": 95,
+    "delta_translated": 0,
+    "delta_reviewed": 0
+  },
+  "sections": {
+    "localisation": {
+      "files": 294,
+      "strings": 231234,
+      "translated": 1064,
+      "reviewed": 95,
+      "words": 3105861,
+      "translation_percent": 0.46,
+      "review_percent": 0.04
+    }
+  },
+  "milestones": [
+    {
+      "threshold": 1,
+      "icon": "🎉",
+      "label": "اولین ۱٪"
+    },
+    {
+      "threshold": 10,
+      "icon": "🌱",
+      "label": "۱۰٪"
+    },
+    {
+      "threshold": 25,
+      "icon": "📈",
+      "label": "۲۵٪"
+    },
+    {
+      "threshold": 50,
+      "icon": "🔥",
+      "label": "۵۰٪"
+    },
+    {
+      "threshold": 75,
+      "icon": "🚀",
+      "label": "۷۵٪"
+    },
+    {
+      "threshold": 100,
+      "icon": "🏁",
+      "label": "۱۰۰٪"
+    }
+  ],
+  "health": {
+    "paratranz": "online",
+    "snapshot": "healthy",
+    "history": "healthy",
+    "visuals": "pending",
+    "discord": "pending"
+  },
+  "automation": {
+    "interval_hours": 6,
+    "engine": "GitHub Actions",
+    "last_sync": "2026-09-21T11:38:21.250262+00:00",
+    "next_sync": null
+  },
+  "source": "ParaTranz API"
+}

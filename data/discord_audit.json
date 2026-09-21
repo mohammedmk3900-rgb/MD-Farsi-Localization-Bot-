@@ -1,0 +1,607 @@
+{
+  "schema": 1,
+  "generated_at": "2026-09-21T14:08:15.144477+00:00",
+  "source": "Discord API",
+  "privacy": {
+    "message_content_stored": false,
+    "member_names_stored": false,
+    "member_ids_stored": false,
+    "bot_token_stored": false
+  },
+  "server": {
+    "id": "1523693496085778552",
+    "name": "Millennium Dawn | ترجمه فارسی",
+    "categories": 9,
+    "channels": 35,
+    "roles": 12
+  },
+  "channels": [
+    {
+      "id": "1523693498157498492",
+      "name": "🔊・لابی",
+      "type": 2,
+      "parent_id": "1523693498157498490",
+      "position": 0,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550084098540965959",
+      "name": "🚀 شروع",
+      "type": 4,
+      "parent_id": null,
+      "position": 0,
+      "nsfw": false,
+      "permission_overwrites": 1
+    },
+    {
+      "id": "1550084375247589397",
+      "name": "👋・خوش-آمدید",
+      "type": 0,
+      "parent_id": "1550084098540965959",
+      "position": 0,
+      "nsfw": false,
+      "permission_overwrites": 1
+    },
+    {
+      "id": "1523693498157498489",
+      "name": "💬 جامعه",
+      "type": 4,
+      "parent_id": null,
+      "position": 1,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550096818535145563",
+      "name": "🔊・اتاق-ترجمه",
+      "type": 2,
+      "parent_id": "1523693498157498490",
+      "position": 1,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550267463453778021",
+      "name": "📢・اطلاعیه",
+      "type": 5,
+      "parent_id": "1550084098540965959",
+      "position": 1,
+      "nsfw": false,
+      "permission_overwrites": 1
+    },
+    {
+      "id": "1550084792874172437",
+      "name": "📜・قوانین",
+      "type": 0,
+      "parent_id": "1550084098540965959",
+      "position": 2,
+      "nsfw": false,
+      "permission_overwrites": 1
+    },
+    {
+      "id": "1550085319993466890",
+      "name": "📝 ترجمه",
+      "type": 4,
+      "parent_id": null,
+      "position": 2,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550084841150619678",
+      "name": "📖・درباره-پروژه",
+      "type": 0,
+      "parent_id": "1550084098540965959",
+      "position": 3,
+      "nsfw": false,
+      "permission_overwrites": 1
+    },
+    {
+      "id": "1550096277881098250",
+      "name": "🔎 بازبینی",
+      "type": 4,
+      "parent_id": null,
+      "position": 3,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550084896423157881",
+      "name": "📚・راهنمای-مشارکت",
+      "type": 0,
+      "parent_id": "1550084098540965959",
+      "position": 4,
+      "nsfw": false,
+      "permission_overwrites": 1
+    },
+    {
+      "id": "1550097476218916864",
+      "name": "📊 پروژه",
+      "type": 4,
+      "parent_id": null,
+      "position": 4,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1523693498157498491",
+      "name": "💬・گفتگوی-عمومی",
+      "type": 0,
+      "parent_id": "1523693498157498489",
+      "position": 5,
+      "nsfw": false,
+      "permission_overwrites": 1
+    },
+    {
+      "id": "1550096520622116904",
+      "name": "🎫 پشتیبانی",
+      "type": 4,
+      "parent_id": null,
+      "position": 5,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1523693498157498490",
+      "name": "🔊 صوتی",
+      "type": 4,
+      "parent_id": null,
+      "position": 6,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550085106759241799",
+      "name": "🎮・میلینیوم-داون",
+      "type": 0,
+      "parent_id": "1523693498157498489",
+      "position": 6,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550085180750823495",
+      "name": "😂・میم",
+      "type": 0,
+      "parent_id": "1523693498157498489",
+      "position": 7,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550096944800464946",
+      "name": "🔒 مدیریت",
+      "type": 4,
+      "parent_id": null,
+      "position": 7,
+      "nsfw": false,
+      "permission_overwrites": 6
+    },
+    {
+      "id": "1550085238670237726",
+      "name": "🖼️・گالری",
+      "type": 0,
+      "parent_id": "1523693498157498489",
+      "position": 8,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550103438862319616",
+      "name": "🎫 Support",
+      "type": 4,
+      "parent_id": null,
+      "position": 8,
+      "nsfw": false,
+      "permission_overwrites": 3
+    },
+    {
+      "id": "1550085398330478592",
+      "name": "📝・کارگاه-ترجمه",
+      "type": 0,
+      "parent_id": "1550085319993466890",
+      "position": 9,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550085470577365082",
+      "name": "📚・واژه-نامه",
+      "type": 0,
+      "parent_id": "1550085319993466890",
+      "position": 10,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550085644410298379",
+      "name": "💡・پرسش-ترجمه",
+      "type": 0,
+      "parent_id": "1550085319993466890",
+      "position": 11,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550096342309675038",
+      "name": "📥・درخواست-بازبینی",
+      "type": 15,
+      "parent_id": "1550096277881098250",
+      "position": 12,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550096401604808755",
+      "name": "⚠️・گزارش-ترجمه",
+      "type": 15,
+      "parent_id": "1550096277881098250",
+      "position": 13,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550097537481056276",
+      "name": "📈・پیشرفت",
+      "type": 5,
+      "parent_id": "1550097476218916864",
+      "position": 14,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550097590480150631",
+      "name": "📊・آمار",
+      "type": 5,
+      "parent_id": "1550097476218916864",
+      "position": 15,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550097636286271508",
+      "name": "🏆・دستاوردها",
+      "type": 5,
+      "parent_id": "1550097476218916864",
+      "position": 16,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550097692020187316",
+      "name": "🗺️・نقشه-راه",
+      "type": 5,
+      "parent_id": "1550097476218916864",
+      "position": 17,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550096576943357954",
+      "name": "🎫・مرکز-پشتیبانی",
+      "type": 0,
+      "parent_id": "1550096520622116904",
+      "position": 18,
+      "nsfw": false,
+      "permission_overwrites": 0
+    },
+    {
+      "id": "1550097004196139069",
+      "name": "💬・اتاق-مدیریت",
+      "type": 0,
+      "parent_id": "1550096944800464946",
+      "position": 19,
+      "nsfw": false,
+      "permission_overwrites": 6
+    },
+    {
+      "id": "1550097051130269757",
+      "name": "📝・تصمیمات",
+      "type": 0,
+      "parent_id": "1550096944800464946",
+      "position": 20,
+      "nsfw": false,
+      "permission_overwrites": 6
+    },
+    {
+      "id": "1550097106079846430",
+      "name": "📊・داشبورد-داخلی",
+      "type": 0,
+      "parent_id": "1550096944800464946",
+      "position": 21,
+      "nsfw": false,
+      "permission_overwrites": 5
+    },
+    {
+      "id": "1550097153010044980",
+      "name": "⚠️・گزارشهای-داخلی",
+      "type": 0,
+      "parent_id": "1550096944800464946",
+      "position": 22,
+      "nsfw": false,
+      "permission_overwrites": 5
+    },
+    {
+      "id": "1550265658397163641",
+      "name": "📜・گزارش-تیکت",
+      "type": 0,
+      "parent_id": "1550096944800464946",
+      "position": 23,
+      "nsfw": false,
+      "permission_overwrites": 5
+    }
+  ],
+  "roles": [
+    {
+      "id": "1550093136095608882",
+      "name": "👑 مالک پروژه",
+      "position": 1,
+      "managed": false,
+      "mentionable": false,
+      "permissions": "1721826618638327"
+    },
+    {
+      "id": "1550093333328822302",
+      "name": "🛡️ مدیر پروژه",
+      "position": 1,
+      "managed": false,
+      "mentionable": false,
+      "permissions": "1721807559716807"
+    },
+    {
+      "id": "1550093611893530674",
+      "name": "🔎 مدیر بازبینی",
+      "position": 1,
+      "managed": false,
+      "mentionable": false,
+      "permissions": "1721807559716807"
+    },
+    {
+      "id": "1550094387512610959",
+      "name": "📝 بازبین",
+      "position": 1,
+      "managed": false,
+      "mentionable": false,
+      "permissions": "1720707884502593"
+    },
+    {
+      "id": "1550095593051787264",
+      "name": "🌐 مترجم",
+      "position": 1,
+      "managed": false,
+      "mentionable": false,
+      "permissions": "1720707884502593"
+    },
+    {
+      "id": "1550095782441656353",
+      "name": "🤝 مشارکت‌کننده",
+      "position": 1,
+      "managed": false,
+      "mentionable": false,
+      "permissions": "1720707884502593"
+    },
+    {
+      "id": "1550095903493455872",
+      "name": "🌱 عضو",
+      "position": 1,
+      "managed": false,
+      "mentionable": false,
+      "permissions": "1720707884502593"
+    },
+    {
+      "id": "1550096061958455296",
+      "name": "🤖 ربات",
+      "position": 1,
+      "managed": false,
+      "mentionable": false,
+      "permissions": "1721807559716807"
+    },
+    {
+      "id": "1550100394397405186",
+      "name": "Sapphire",
+      "position": 1,
+      "managed": true,
+      "mentionable": false,
+      "permissions": "1101596716286"
+    },
+    {
+      "id": "1550103295794741269",
+      "name": "Ticket Tool",
+      "position": 1,
+      "managed": true,
+      "mentionable": false,
+      "permissions": "2252195756108880"
+    },
+    {
+      "id": "1551595690814083146",
+      "name": "MD news",
+      "position": 1,
+      "managed": true,
+      "mentionable": false,
+      "permissions": "8"
+    },
+    {
+      "id": "1523693496085778552",
+      "name": "@everyone",
+      "position": 0,
+      "managed": false,
+      "mentionable": false,
+      "permissions": "2222085186637377"
+    }
+  ],
+  "activity": [
+    {
+      "channel_name": "👋・خوش-آمدید",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:08:46.035000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:08:46.035000+00:00"
+    },
+    {
+      "channel_name": "📢・اطلاعیه",
+      "sampled_messages": 2,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:09:52.676000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:09:45.182000+00:00"
+    },
+    {
+      "channel_name": "📜・قوانین",
+      "sampled_messages": 2,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-18T12:30:30.498000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:10:20.243000+00:00"
+    },
+    {
+      "channel_name": "📖・درباره-پروژه",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:10:40.233000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:10:40.233000+00:00"
+    },
+    {
+      "channel_name": "📚・راهنمای-مشارکت",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:11:00.711000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:11:00.711000+00:00"
+    },
+    {
+      "channel_name": "💬・گفتگوی-عمومی",
+      "sampled_messages": 64,
+      "unique_authors": 6,
+      "newest_message_at": "2026-09-17T22:11:25.677000+00:00",
+      "oldest_sampled_message_at": "2026-07-06T14:15:32.775000+00:00"
+    },
+    {
+      "channel_name": "🎮・میلینیوم-داون",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:12:02.547000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:12:02.547000+00:00"
+    },
+    {
+      "channel_name": "😂・میم",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:12:21.211000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:12:21.211000+00:00"
+    },
+    {
+      "channel_name": "🖼️・گالری",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:12:34.218000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:12:34.218000+00:00"
+    },
+    {
+      "channel_name": "📝・کارگاه-ترجمه",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:13:16.987000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:13:16.987000+00:00"
+    },
+    {
+      "channel_name": "📚・واژه-نامه",
+      "sampled_messages": 7,
+      "unique_authors": 2,
+      "newest_message_at": "2026-09-21T12:46:07.702000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:13:40.627000+00:00"
+    },
+    {
+      "channel_name": "💡・پرسش-ترجمه",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:13:50.820000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:13:50.820000+00:00"
+    },
+    {
+      "channel_name": "📥・درخواست-بازبینی",
+      "sampled_messages": 0,
+      "unique_authors": 0,
+      "newest_message_at": null,
+      "oldest_sampled_message_at": null
+    },
+    {
+      "channel_name": "⚠️・گزارش-ترجمه",
+      "sampled_messages": 0,
+      "unique_authors": 0,
+      "newest_message_at": null,
+      "oldest_sampled_message_at": null
+    },
+    {
+      "channel_name": "📈・پیشرفت",
+      "sampled_messages": 2,
+      "unique_authors": 2,
+      "newest_message_at": "2026-09-18T14:08:08.019000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:21:47.834000+00:00"
+    },
+    {
+      "channel_name": "📊・آمار",
+      "sampled_messages": 2,
+      "unique_authors": 2,
+      "newest_message_at": "2026-09-18T14:08:06.300000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:22:42.293000+00:00"
+    },
+    {
+      "channel_name": "🏆・دستاوردها",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:23:11.119000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:23:11.119000+00:00"
+    },
+    {
+      "channel_name": "🗺️・نقشه-راه",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:25:29.475000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:25:29.475000+00:00"
+    },
+    {
+      "channel_name": "🎫・مرکز-پشتیبانی",
+      "sampled_messages": 2,
+      "unique_authors": 2,
+      "newest_message_at": "2026-09-17T22:04:41.447000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T11:23:59.604000+00:00"
+    },
+    {
+      "channel_name": "💬・اتاق-مدیریت",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:27:01.592000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:27:01.592000+00:00"
+    },
+    {
+      "channel_name": "📝・تصمیمات",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:27:12.564000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:27:12.564000+00:00"
+    },
+    {
+      "channel_name": "📊・داشبورد-داخلی",
+      "sampled_messages": 1,
+      "unique_authors": 1,
+      "newest_message_at": "2026-09-17T22:27:39.331000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:27:39.331000+00:00"
+    },
+    {
+      "channel_name": "⚠️・گزارشهای-داخلی",
+      "sampled_messages": 3,
+      "unique_authors": 3,
+      "newest_message_at": "2026-09-17T22:27:47.785000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T10:53:29.364000+00:00"
+    },
+    {
+      "channel_name": "📜・گزارش-تیکت",
+      "sampled_messages": 9,
+      "unique_authors": 2,
+      "newest_message_at": "2026-09-18T12:33:29.538000+00:00",
+      "oldest_sampled_message_at": "2026-09-17T22:27:58.008000+00:00"
+    }
+  ],
+  "collection": {
+    "recent_messages_per_channel": 200,
+    "note": "Bounded activity metrics only; message content is deliberately excluded."
+  }
+}

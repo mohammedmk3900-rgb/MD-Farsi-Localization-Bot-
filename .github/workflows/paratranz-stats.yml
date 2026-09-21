@@ -71,6 +71,30 @@ jobs:
       - name: Generate Discord visuals
         run: python scripts/build_discord_visuals.py
 
+
+      - name: Generate Command Center history
+        run: |
+          python scripts/build_discord_history.py
+          python scripts/build_discord_visuals.py
+
+      - name: Validate Discord state
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for name in ("data/command_center.json","data/discord_history.json","data/discord_messages.json","data/achievements.json"):
+              p=Path(name)
+              if not p.exists():
+                  raise SystemExit(f"Missing state file: {name}")
+              json.loads(p.read_text(encoding="utf-8"))
+          for name in ("assets/discord/stats.svg","assets/discord/progress.svg","assets/discord/progress-history.svg"):
+              p=Path(name)
+              if not p.exists() or "<svg" not in p.read_text(encoding="utf-8")[:500]:
+                  raise SystemExit(f"Invalid visual: {name}")
+          print("Command Center state and visuals verified.")
+          PY
+
       - name: Sync statistics
         id: stats
         run: python scripts/paratranz_stats.py

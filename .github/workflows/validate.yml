@@ -1,0 +1,43 @@
+name: Validate Project
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "scripts/**"
+      - "discord-mcp/**"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "discord-mcp/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile Python
+        run: |
+          set -euo pipefail
+          python -m compileall -q scripts discord-mcp
+          echo "Python syntax validation passed."
+      - name: Validate JSON state
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path("data").glob("*.json"):
+              json.loads(p.read_text(encoding="utf-8"))
+              print("OK", p)
+          PY

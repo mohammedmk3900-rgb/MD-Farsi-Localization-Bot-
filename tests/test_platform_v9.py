@@ -16,6 +16,13 @@ class V9ContractTests(unittest.TestCase):
         self.assertEqual(result.translation_percent, 5)
         self.assertEqual(result.review_percent, 2)
 
+    def test_delta_serialization_names(self):
+        current = ProjectStats(2, 100, 25, 10, 500)
+        result = delta(current, {"translated": 20, "reviewed": 8, "translation_percent": 20, "review_percent": 8})
+        payload = {"delta_translated": result.translated, "delta_reviewed": result.reviewed, "delta_translation_percent": result.translation_percent, "delta_review_percent": result.review_percent}
+        self.assertEqual(payload["delta_translated"], 5)
+        self.assertEqual(payload["delta_reviewed"], 2)
+
     def test_crossed_milestones(self):
         self.assertEqual(crossed(9.9, 25), [10, 25])
 

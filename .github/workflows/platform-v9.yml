@@ -62,7 +62,7 @@ jobs:
           from pathlib import Path
           p=Path("dashboard/public/data/dashboard.json")
           d=json.loads(p.read_text(encoding="utf-8"))
-          assert d["schema"] == 8
+          assert d["schema"] == 9
           assert "stats" in d and "health" in d and "automation" in d
           raw=p.read_text(encoding="utf-8")
           assert "PARATRANZ_TOKEN" not in raw

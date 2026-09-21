@@ -35,7 +35,7 @@ def build(config:Config,stats:ProjectStats,files:list[dict]):
     payload={"schema":9,"timestamp":now.isoformat(),"updated_at":now.isoformat(),
       "project":{"name":"Millennium Dawn Farsi Localization","id":config.project_id,"url":config.project_url,"participants":config.participants},
       "stats":{**stats.to_dict(),"translation_percent":stats.translation_percent,"review_percent":stats.review_percent},
-      "progress":{"translation_percent":stats.translation_percent,"review_percent":stats.review_percent,"translated":stats.translated,"reviewed":stats.reviewed,**d.to_dict()},
+      "progress":{"translation_percent":stats.translation_percent,"review_percent":stats.review_percent,"translated":stats.translated,"reviewed":stats.reviewed,"delta_translated":d.translated,"delta_reviewed":d.reviewed,"delta_translation_percent":d.translation_percent,"delta_review_percent":d.review_percent},
       "history":{"count":len(history),"max":config.history_limit,"latest_epoch":int(now.timestamp())},"records":records,"sections":sections,
       "milestones":[{"threshold":n,"icon":i,"label":l} for n,i,l in MILESTONES],"milestones_crossed":milestones,
       "health":old.get("health",{"status":"pending","percentage":0,"passed_checks":0,"total_checks":0,"checks":{},"updated_at":None}),

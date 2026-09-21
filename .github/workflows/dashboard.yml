@@ -8,6 +8,7 @@ on:
     branches: ["main"]
     paths:
       - "dashboard/**"
+      - "scripts/command_center_snapshot.py"
       - "scripts/build_dashboard_data.py"
       - ".github/workflows/dashboard.yml"
 
@@ -27,7 +28,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     env:
       PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
     steps:
@@ -42,7 +43,7 @@ jobs:
       - name: Collect Command Center snapshot
         run: python scripts/command_center_snapshot.py
 
-      - name: Validate dashboard data pipeline
+      - name: Validate and prepare dashboard data
         run: |
           set -euo pipefail
           python -m py_compile scripts/command_center_snapshot.py scripts/build_dashboard_data.py
@@ -50,11 +51,22 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          d=json.loads(Path("dashboard/data/dashboard.json").read_text(encoding="utf-8"))
+          d = json.loads(Path("dashboard/data/dashboard.json").read_text(encoding="utf-8"))
           assert d["schema"] == 3
           assert "stats" in d and "sections" in d
           print("Dashboard data validated.")
           PY
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build React dashboard
+        working-directory: dashboard
+        run: |
+          npm install
+          npm run build
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -62,7 +74,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dashboard
+          path: dashboard/dist
 
   deploy:
     needs: build

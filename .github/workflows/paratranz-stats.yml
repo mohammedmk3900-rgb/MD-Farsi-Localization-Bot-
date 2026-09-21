@@ -1,4 +1,4 @@
-name: Update ParaTranz Discord Stats
+name: MD Farsi Localization Command Center
 
 on:
   workflow_dispatch:
@@ -9,15 +9,14 @@ permissions:
   contents: write
 
 concurrency:
-  group: paratranz-discord-sync
+  group: md-farsi-command-center
   cancel-in-progress: true
 
 jobs:
-  update:
-    name: Sync ParaTranz Discord Command Center
+  command-center:
+    name: Command Center V6
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     env:
       PARATRANZ_PROJECT_ID: "19621"
       PROJECT_PARTICIPANTS: "8"
@@ -36,79 +35,49 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate Python
+      - name: Validate source
         run: |
           set -euo pipefail
           python -m py_compile \
-            scripts/paratranz_stats.py \
-            scripts/paratranz_progress.py \
-            scripts/paratranz_achievements.py \
-            scripts/command_center_snapshot.py \
-            scripts/build_discord_visuals.py \
-            scripts/build_dashboard_data.py
+            scripts/command_center/*.py \
+            scripts/command_center/collectors/*.py \
+            scripts/command_center/services/*.py \
+            scripts/build_discord_visuals.py
 
-      - name: Collect Command Center snapshot
-        id: snapshot
-        run: python scripts/command_center_snapshot.py
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -p "test_*.py" -v
 
-      - name: Verify snapshot
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          p=Path("data/command_center.json")
-          if not p.exists():
-              raise SystemExit("Snapshot was not created.")
-          d=json.loads(p.read_text(encoding="utf-8"))
-          for key in ("schema","timestamp","project","progress","health","automation"):
-              if key not in d:
-                  raise SystemExit(f"Snapshot missing: {key}")
-          if d["schema"] != 5:
-              raise SystemExit(f"Unsupported snapshot schema: {d['schema']}")
-          print("Snapshot verified:", d["stats"]["translated"], "/", d["stats"]["strings"])
-          PY
-
-      - name: Generate Discord visuals
+      - name: Generate visuals
         run: python scripts/build_discord_visuals.py
 
+      - name: Run Command Center V6
+        run: python scripts/command_center/runner.py
 
-      - name: Generate Command Center history
-        run: |
-          python scripts/build_discord_history.py
-          python scripts/build_discord_visuals.py
-
-      - name: Validate Discord state
+      - name: Verify persisted state
         run: |
           set -euo pipefail
           python - <<'PY'
           import json
           from pathlib import Path
-          for name in ("data/command_center.json","data/command_center_records.json","data/discord_history.json","data/discord_messages.json","data/achievements.json"):
-              p=Path(name)
-              if not p.exists():
+
+          required = [
+              "data/command_center.json",
+              "data/command_center_records.json",
+              "data/discord_history.json",
+              "data/discord_messages.json",
+              "data/achievements.json",
+          ]
+          for name in required:
+              path = Path(name)
+              if not path.exists():
                   raise SystemExit(f"Missing state file: {name}")
-              json.loads(p.read_text(encoding="utf-8"))
-          for name in ("assets/discord/stats.svg","assets/discord/progress.svg","assets/discord/progress-history.svg"):
-              p=Path(name)
-              if not p.exists() or "<svg" not in p.read_text(encoding="utf-8")[:500]:
-                  raise SystemExit(f"Invalid visual: {name}")
-          print("Command Center state and visuals verified.")
+              json.loads(path.read_text(encoding="utf-8"))
+
+          snapshot = json.loads(Path("data/command_center.json").read_text(encoding="utf-8"))
+          if snapshot.get("schema") != 6:
+              raise SystemExit(f"Expected Command Center schema 6, got {snapshot.get('schema')}")
+          print("Command Center V6 state verified.")
           PY
-
-      - name: Sync statistics
-        id: stats
-        run: python scripts/paratranz_stats.py
-
-      - name: Sync progress
-        id: progress
-        run: python scripts/paratranz_progress.py
-
-      - name: Check achievements
-        run: python scripts/paratranz_achievements.py
-
-      - name: Compute system health
-        run: python scripts/command_center_health.py
 
       - name: Persist Command Center state
         if: always()
@@ -118,17 +87,16 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           for file in \
+            data/command_center.json \
+            data/command_center_records.json \
+            data/discord_history.json \
             data/discord_messages.json \
             data/achievements.json \
-            data/discord_history.json \
-            data/command_center.json \
             assets/discord/stats.svg \
             assets/discord/progress.svg \
             assets/discord/progress-history.svg
           do
-            if [ -f "$file" ]; then
-              git add "$file"
-            fi
+            [ -f "$file" ] && git add "$file"
           done
 
           if git diff --cached --quiet; then
@@ -136,16 +104,14 @@ jobs:
             exit 0
           fi
 
-          git commit -m "chore: update Discord Command Center state"
+          git commit -m "chore: update Command Center V6 state"
           for attempt in 1 2 3; do
             if git pull --rebase origin main && git push origin HEAD:main; then
               echo "State pushed successfully."
               exit 0
             fi
-            if [ "$attempt" -lt 3 ]; then
-              echo "Push attempt $attempt failed; retrying after backoff..."
-              sleep $((attempt * 5))
-            fi
+            [ "$attempt" -lt 3 ] && sleep $((attempt * 5))
           done
-          echo "Failed to push Command Center state after 3 attempts." >&2
+
+          echo "Failed to persist Command Center state." >&2
           exit 1

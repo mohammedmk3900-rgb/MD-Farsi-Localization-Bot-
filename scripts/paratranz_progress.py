@@ -22,7 +22,7 @@ def req(url,method="GET",payload=None):
 def get():
     try:
         with open("data/command_center.json",encoding="utf-8") as f:s=json.load(f)
-        p=s["project"]; pr=s["progress"]
+        p=s["stats"]; pr=s["progress"]
         return p["files"],p["strings"],p["translated"],p["reviewed"],pr["translation_percent"],pr["review_percent"]
     except (FileNotFoundError,KeyError,TypeError,ValueError) as e:
         fail(f"Command Center snapshot unavailable: {e}")

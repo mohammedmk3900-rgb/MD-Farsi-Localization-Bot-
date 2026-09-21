@@ -28,7 +28,7 @@ def load_snapshot():
     try:
         with open("data/command_center.json",encoding="utf-8") as f:
             s=json.load(f)
-        p=s["project"]; pr=s["progress"]
+        p=s["stats"]; pr=s["progress"]
         return {"files":p["files"],"strings":p["strings"],"translated":p["translated"],
                 "reviewed":p["reviewed"],"words":p["words"],
                 "translation_percent":pr["translation_percent"],

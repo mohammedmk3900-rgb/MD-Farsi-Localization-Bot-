@@ -37,8 +37,6 @@ class MessageIndex:
             [(m["id"],m["channel_id"],m.get("channel_name"),m.get("author_id"),m.get("author_name"),
               m.get("content",""),m.get("timestamp"),m.get("edited_timestamp"),m.get("url")) for m in messages])
         return len(messages)
-    def mark_deleted(self,message_id:str)->None:
-        with self._connect() as db: db.execute("UPDATE messages SET deleted=1,content='' WHERE id=?",(message_id,))
     def mark_deleted(self, message_id: str) -> None:
         with self._connect() as db:
             db.execute("UPDATE messages SET deleted=1, content='' WHERE id=?", (message_id,))

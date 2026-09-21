@@ -13,9 +13,9 @@ VISUAL="https://raw.githubusercontent.com/mohammedmk3900-rgb/MD-Farsi-Localizati
 PARTICIPANTS=int(os.getenv("PROJECT_PARTICIPANTS","8"))
 
 def fail(msg): print(f"ERROR: {msg}",file=sys.stderr); sys.exit(1)
-def req(url,method="GET",payload=None):
+def req(url,method="GET",payload=None,auth=False):
     h={"Accept":"application/json","User-Agent":"MD-Farsi-Localization-Stats/4.0"}
-    if TOKEN:h["Authorization"]=TOKEN
+    if auth and TOKEN:h["Authorization"]=TOKEN
     body=json.dumps(payload,ensure_ascii=False).encode() if payload is not None else None
     if body:h["Content-Type"]="application/json"
     try:

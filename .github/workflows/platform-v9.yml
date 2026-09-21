@@ -43,6 +43,10 @@ jobs:
     timeout-minutes: 10
     env:
       PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      DISCORD_PROGRESS_WEBHOOK_URL: ${{ secrets.DISCORD_PROGRESS_WEBHOOK_URL }}
+      DISCORD_ACHIEVEMENTS_WEBHOOK_URL: ${{ secrets.DISCORD_ACHIEVEMENTS_WEBHOOK_URL }}
+      DISCORD_HEALTH_WEBHOOK_URL: ${{ secrets.DISCORD_HEALTH_WEBHOOK_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -125,6 +129,10 @@ jobs:
       - name: Generate public dashboard data
         env:
           PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_PROGRESS_WEBHOOK_URL: ${{ secrets.DISCORD_PROGRESS_WEBHOOK_URL }}
+          DISCORD_ACHIEVEMENTS_WEBHOOK_URL: ${{ secrets.DISCORD_ACHIEVEMENTS_WEBHOOK_URL }}
+          DISCORD_HEALTH_WEBHOOK_URL: ${{ secrets.DISCORD_HEALTH_WEBHOOK_URL }}
         run: |
           python scripts/command_center/runner.py
           python scripts/build_dashboard_data.py

@@ -1,0 +1,20 @@
+[project]
+name = "md-farsi-localization-platform"
+version = "1.0.0"
+description = "Production platform for Millennium Dawn Farsi Localization"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.30,<1",
+  "httpx>=0.27,<1",
+  "discord.py>=2.5,<3",
+  "pydantic>=2.8,<3",
+  "pydantic-settings>=2.5,<3",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<9"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

@@ -92,7 +92,14 @@ class IndexerBot(discord.Client):
     async def on_message(self,message:discord.Message)->None:
         if message.guild is None or message.guild.id!=GUILD_ID : return
         index.upsert_messages([serialize(message)])
-        index.set_cursor(str(message.channel.id),newest_message_id=str(message.id),complete=False)
+        channel_id=str(message.channel.id)
+        cursor=index.get_cursor(channel_id) or {}
+        index.set_cursor(
+            channel_id,
+            newest_message_id=str(message.id),
+            oldest_message_id=cursor.get("oldest_message_id"),
+            complete=bool(cursor.get("complete")),
+        )
 
     async def on_message_edit(self,before:discord.Message,after:discord.Message)->None:
         if after.guild is None or after.guild.id!=GUILD_ID : return

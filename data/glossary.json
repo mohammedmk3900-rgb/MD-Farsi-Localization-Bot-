@@ -1,6 +1,1944 @@
 {
-  "schema": 1,
-  "source_url": "",
-  "updated_at": null,
-  "entries": []
+  "schema": 2,
+  "source": "https://paratranz.cn/api/projects/19621/terms",
+  "project_id": 19621,
+  "updated_at": "2026-09-21T11:57:24.143802+00:00",
+  "entries": [
+    {
+      "id": 1849748,
+      "source": "Administrative Spending",
+      "target": "هزینه‌های اداری",
+      "note": "حکومتی و اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849596,
+      "source": "Advisor",
+      "target": "مشاور",
+      "note": "حکومتی و مدیریتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849712,
+      "source": "Ahead of Time Penalty",
+      "target": "جریمه پژوهش زودهنگام",
+      "note": "فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849630,
+      "source": "Air Doctrine",
+      "target": "دکترین هوایی",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849645,
+      "source": "Air Force",
+      "target": "نیروی هوایی",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849737,
+      "source": "Alliance",
+      "target": "ائتلاف",
+      "note": "دیپلماتیک و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849634,
+      "source": "Annexation",
+      "target": "الحاق",
+      "note": "سیاسی و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849656,
+      "source": "Anti-Aircraft",
+      "target": "ضدهوایی",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849655,
+      "source": "Anti-Tank",
+      "target": "ضدزره",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849793,
+      "source": "Appease Protesters",
+      "target": "آرام‌کردن معترضان",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849755,
+      "source": "Approval Rating",
+      "target": "میزان رضایت",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849652,
+      "source": "Armor",
+      "target": "زرهی",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849643,
+      "source": "Army",
+      "target": "ارتش",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849653,
+      "source": "Artillery",
+      "target": "توپخانه",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849626,
+      "source": "Attrition",
+      "target": "فرسایش",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849735,
+      "source": "Autonomy",
+      "target": "خودمختاری",
+      "note": "دیپلماتیک و حکومتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849696,
+      "source": "Base Cost",
+      "target": "هزینه پایه",
+      "note": "اقتصادی و فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849768,
+      "source": "Battery Park",
+      "target": "مجموعه ذخیره‌سازهای باتری",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849729,
+      "source": "Bonus",
+      "target": "پاداش",
+      "note": "مکانیک بازی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849649,
+      "source": "Brigade",
+      "target": "تیپ",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849678,
+      "source": "Budget",
+      "target": "بودجه",
+      "note": "اقتصادی و حکومتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849804,
+      "source": "Build Cost",
+      "target": "هزینه ساخت",
+      "note": "تولید و تجهیزات",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849659,
+      "source": "Capital Ship",
+      "target": "ناو اصلی",
+      "note": "دریایی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849635,
+      "source": "Capitulation",
+      "target": "تسلیم",
+      "note": "نظامی و سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849663,
+      "source": "CAS",
+      "target": "پشتیبانی هوایی نزدیک",
+      "note": "اختصار Close Air Support",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849640,
+      "source": "Ceasefire",
+      "target": "آتش‌بس",
+      "note": "نظامی و دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849674,
+      "source": "Central Bank",
+      "target": "بانک مرکزی",
+      "note": "اقتصادی و مالی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849638,
+      "source": "Civil War",
+      "target": "جنگ داخلی",
+      "note": "سیاسی و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849694,
+      "source": "Civilian Industry",
+      "target": "صنعت غیرنظامی",
+      "note": "اقتصادی و صنعتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849662,
+      "source": "Close Air Support",
+      "target": "پشتیبانی هوایی نزدیک",
+      "note": "هوایی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849604,
+      "source": "Coalition",
+      "target": "ائتلاف",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849784,
+      "source": "Collaboration",
+      "target": "همکاری با اشغالگر",
+      "note": "اشغال و سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849783,
+      "source": "Compliance",
+      "target": "تمکین",
+      "note": "اشغال و مدیریت سرزمین",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849786,
+      "source": "Compliance Level",
+      "target": "سطح تمکین",
+      "note": "اشغال و مدیریت سرزمین",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849618,
+      "source": "Conscription",
+      "target": "سربازگیری",
+      "note": "نظامی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849691,
+      "source": "Construction",
+      "target": "ساخت‌وساز",
+      "note": "اقتصادی و صنعتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849689,
+      "source": "Consumer Goods",
+      "target": "کالاهای مصرفی",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849799,
+      "source": "Contract Token",
+      "target": "نشان قرارداد",
+      "note": "مکانیک MIO",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849730,
+      "source": "Cooldown",
+      "target": "دوره انتظار",
+      "note": "مکانیک بازی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849713,
+      "source": "Cost Reduction",
+      "target": "کاهش هزینه",
+      "note": "فناوری و اقتصاد",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849809,
+      "source": "Counter Terror",
+      "target": "مقابله با تروریسم",
+      "note": "امنیتی و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849602,
+      "source": "Coup",
+      "target": "کودتا",
+      "note": "سیاسی و حکومتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849732,
+      "source": "Current Effect",
+      "target": "اثر فعلی",
+      "note": "رابط کاربری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849808,
+      "source": "Cyber Attack",
+      "target": "حمله سایبری",
+      "note": "فناوری و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849807,
+      "source": "Cyber Warfare",
+      "target": "جنگ سایبری",
+      "note": "نظامی و فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849657,
+      "source": "Damage Control",
+      "target": "کنترل خسارت",
+      "note": "دریایی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849669,
+      "source": "Debt",
+      "target": "بدهی",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849721,
+      "source": "Decision",
+      "target": "تصمیم",
+      "note": "مدیریت کشور",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849623,
+      "source": "Defence",
+      "target": "دفاع",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849622,
+      "source": "Defensive",
+      "target": "دفاعی",
+      "note": "نظامی؛ بسته به کاربرد",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849619,
+      "source": "Deployment",
+      "target": "استقرار نیروها",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849672,
+      "source": "Depression",
+      "target": "رکود شدید اقتصادی",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849801,
+      "source": "Design Team",
+      "target": "تیم طراحی",
+      "note": "نظامی و فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849692,
+      "source": "Development",
+      "target": "توسعه",
+      "note": "اقتصادی و فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849693,
+      "source": "Development Level",
+      "target": "سطح توسعه",
+      "note": "اقتصادی و توسعه",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849734,
+      "source": "Difficulty",
+      "target": "سختی",
+      "note": "رابط کاربری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849597,
+      "source": "Diplomatic",
+      "target": "دیپلماتیک",
+      "note": "دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849739,
+      "source": "Diplomatic Action",
+      "target": "اقدام دیپلماتیک",
+      "note": "دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849647,
+      "source": "Division",
+      "target": "لشکر",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849648,
+      "source": "Division Template",
+      "target": "الگوی لشکر",
+      "note": "نظامی و سازمان رزمی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849627,
+      "source": "Doctrine",
+      "target": "دکترین",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849699,
+      "source": "Economic Collapse",
+      "target": "فروپاشی اقتصادی",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849698,
+      "source": "Economic Growth",
+      "target": "رشد اقتصادی",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849666,
+      "source": "Economy",
+      "target": "اقتصاد",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849747,
+      "source": "Education Spending",
+      "target": "هزینه‌های آموزشی",
+      "note": "اجتماعی و اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849725,
+      "source": "Effect",
+      "target": "اثر",
+      "note": "مکانیک بازی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849603,
+      "source": "Election",
+      "target": "انتخابات",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849822,
+      "source": "Election Result",
+      "target": "نتیجه انتخابات",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849607,
+      "source": "Election Threshold",
+      "target": "حد نصاب انتخابات",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849773,
+      "source": "Electricity",
+      "target": "برق",
+      "note": "انرژی و زیرساخت",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849756,
+      "source": "Energy",
+      "target": "انرژی",
+      "note": "انرژی و راهبردی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849761,
+      "source": "Energy Deficit",
+      "target": "کسری انرژی",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849767,
+      "source": "Energy Load Sharing",
+      "target": "اشتراک‌گذاری بار انرژی",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849760,
+      "source": "Energy Storage",
+      "target": "ذخیره انرژی",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849631,
+      "source": "Equipment",
+      "target": "تجهیزات",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849802,
+      "source": "Equipment Bonus",
+      "target": "پاداش تجهیزات",
+      "note": "نظامی و MIO",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849632,
+      "source": "Equipment Stockpile",
+      "target": "ذخیره تجهیزات",
+      "note": "نظامی و لجستیکی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849719,
+      "source": "Equipment Type",
+      "target": "نوع تجهیزات",
+      "note": "فناوری و MIO",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849710,
+      "source": "Experimental Facilities",
+      "target": "تأسیسات آزمایشی",
+      "note": "فناوری و پروژه‌های ویژه",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849682,
+      "source": "Exports",
+      "target": "صادرات",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849592,
+      "source": "Faction",
+      "target": "اتحاد",
+      "note": "سیاسی و دیپلماتیک؛ قرارداد پروژه",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849738,
+      "source": "Faction Member",
+      "target": "عضو اتحاد",
+      "note": "دیپلماتیک و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849658,
+      "source": "Fire Control",
+      "target": "کنترل آتش",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849813,
+      "source": "Focus",
+      "target": "تمرکز",
+      "note": "تمرکز ملی و رابط کاربری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849741,
+      "source": "Foreign Interaction",
+      "target": "تعامل خارجی",
+      "note": "دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849762,
+      "source": "Fossil Fuel",
+      "target": "سوخت فسیلی",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849620,
+      "source": "Frontline",
+      "target": "خط مقدم",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849774,
+      "source": "Fuel",
+      "target": "سوخت",
+      "note": "انرژی و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849770,
+      "source": "Fuel Consumption",
+      "target": "مصرف سوخت",
+      "note": "انرژی و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849667,
+      "source": "GDP",
+      "target": "تولید ناخالص داخلی",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849668,
+      "source": "GDP per Capita",
+      "target": "تولید ناخالص داخلی سرانه",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849764,
+      "source": "Geothermal",
+      "target": "زمین‌گرمایی",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849821,
+      "source": "Governing Coalition",
+      "target": "ائتلاف حاکم",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849590,
+      "source": "Government",
+      "target": "حکومت",
+      "note": "حکومتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849609,
+      "source": "Government Coalition",
+      "target": "ائتلاف حکومتی",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849746,
+      "source": "Healthcare Spending",
+      "target": "هزینه‌های درمانی",
+      "note": "اجتماعی و اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849584,
+      "source": "Hegemony",
+      "target": "سلطه",
+      "note": "سیاسی و ژئوپلیتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849763,
+      "source": "Hydroelectric",
+      "target": "برق‌آبی",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849589,
+      "source": "Ideology",
+      "target": "ایدئولوژی",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849824,
+      "source": "Ideology Drift",
+      "target": "تغییر ایدئولوژی",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849825,
+      "source": "Ideology Drift Defense",
+      "target": "مقاومت در برابر تغییر ایدئولوژی",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849731,
+      "source": "Immediate Effect",
+      "target": "اثر فوری",
+      "note": "رابط کاربری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849683,
+      "source": "Imports",
+      "target": "واردات",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849789,
+      "source": "Incoming Protests",
+      "target": "اعتراضات در شُرف وقوع",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849790,
+      "source": "Incoming Revolt",
+      "target": "شورش در شُرف وقوع",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849690,
+      "source": "Industrial Capacity",
+      "target": "ظرفیت صنعتی",
+      "note": "اقتصادی و صنعتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849685,
+      "source": "Industry",
+      "target": "صنعت",
+      "note": "اقتصادی و صنعتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849686,
+      "source": "Industry Size",
+      "target": "اندازه صنعت",
+      "note": "اقتصادی و صنعتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849651,
+      "source": "Infantry",
+      "target": "پیاده‌نظام",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849670,
+      "source": "Inflation",
+      "target": "تورم",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849598,
+      "source": "Influence",
+      "target": "نفوذ",
+      "note": "سیاسی و دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849687,
+      "source": "Infrastructure",
+      "target": "زیرساخت",
+      "note": "اقتصادی و توسعه",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849637,
+      "source": "Insurgency",
+      "target": "شورش مسلحانه",
+      "note": "سیاسی و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849673,
+      "source": "Interest Rate",
+      "target": "نرخ بهره",
+      "note": "اقتصادی و مالی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849819,
+      "source": "Internal Faction",
+      "target": "جناح داخلی",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849680,
+      "source": "International Investment",
+      "target": "سرمایه‌گذاری بین‌المللی",
+      "note": "اقتصادی و دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849742,
+      "source": "International Organization",
+      "target": "سازمان بین‌المللی",
+      "note": "ژئوپلیتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849679,
+      "source": "Investment",
+      "target": "سرمایه‌گذاری",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849628,
+      "source": "Land Doctrine",
+      "target": "دکترین زمینی",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849722,
+      "source": "Law",
+      "target": "قانون",
+      "note": "حکومتی و مدیریتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849780,
+      "source": "Light Metals",
+      "target": "فلزات سبک",
+      "note": "منابع",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849625,
+      "source": "Logistics",
+      "target": "لجستیک",
+      "note": "نظامی و پشتیبانی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849616,
+      "source": "Manpower",
+      "target": "نیروی انسانی",
+      "note": "منبع نیروی نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849665,
+      "source": "Mechanized",
+      "target": "مکانیزه",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849754,
+      "source": "Migration",
+      "target": "مهاجرت",
+      "note": "اجتماعی و جمعیتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849815,
+      "source": "Military",
+      "target": "نظامی",
+      "note": "دسته‌بندی تمرکز ملی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849797,
+      "source": "Military Industrial Organization",
+      "target": "سازمان صنایع نظامی",
+      "note": "نظامی و صنعتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849798,
+      "source": "Military Industrial Organization Contract",
+      "target": "قرارداد سازمان صنایع نظامی",
+      "note": "نظامی و صنعتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849695,
+      "source": "Military Industry",
+      "target": "صنایع نظامی",
+      "note": "اقتصادی و صنعتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849750,
+      "source": "Military Spending",
+      "target": "هزینه‌های نظامی",
+      "note": "نظامی و اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849810,
+      "source": "Missile",
+      "target": "موشک",
+      "note": "نظامی و فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849811,
+      "source": "Missile System",
+      "target": "سامانه موشکی",
+      "note": "نظامی و فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849617,
+      "source": "Mobilization",
+      "target": "بسیج نیروها",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849724,
+      "source": "Modifier",
+      "target": "تعدیل‌گر",
+      "note": "رابط کاربری و مکانیک بازی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849795,
+      "source": "Monthly Drift",
+      "target": "تغییرات ماهانه",
+      "note": "مکانیک اعتراضات",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849664,
+      "source": "Motorized",
+      "target": "موتوری",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849817,
+      "source": "Mutual Exclusion",
+      "target": "انحصار متقابل",
+      "note": "شاخه‌های تمرکز و فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849717,
+      "source": "Mutually Exclusive",
+      "target": "انحصاری متقابل",
+      "note": "فناوری و شاخه‌های پژوهش",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849720,
+      "source": "National Focus",
+      "target": "تمرکز ملی",
+      "note": "مدیریت کشور",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849723,
+      "source": "National Spirit",
+      "target": "روحیه ملی",
+      "note": "مدیریت کشور",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849772,
+      "source": "Natural Gas",
+      "target": "گاز طبیعی",
+      "note": "انرژی و اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849661,
+      "source": "Naval Bomber",
+      "target": "بمب‌افکن دریایی",
+      "note": "هوایی و دریایی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849629,
+      "source": "Naval Doctrine",
+      "target": "دکترین دریایی",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849644,
+      "source": "Navy",
+      "target": "نیروی دریایی",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849765,
+      "source": "Nuclear Power",
+      "target": "انرژی هسته‌ای",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849633,
+      "source": "Occupation",
+      "target": "اشغال",
+      "note": "نظامی و سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849621,
+      "source": "Offensive",
+      "target": "تهاجمی",
+      "note": "نظامی؛ بسته به کاربرد",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849771,
+      "source": "Oil",
+      "target": "نفت",
+      "note": "انرژی و اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849601,
+      "source": "Opposition",
+      "target": "مخالفان",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849820,
+      "source": "Party Popularity",
+      "target": "محبوبیت حزب",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849818,
+      "source": "Party System",
+      "target": "نظام حزبی",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849641,
+      "source": "Peace",
+      "target": "صلح",
+      "note": "دیپلماتیک و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849744,
+      "source": "Peace Conference",
+      "target": "کنفرانس صلح",
+      "note": "دیپلماتیک و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849728,
+      "source": "Penalty",
+      "target": "جریمه",
+      "note": "مکانیک بازی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849749,
+      "source": "Police Spending",
+      "target": "هزینه‌های پلیس",
+      "note": "حکومتی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849814,
+      "source": "Political",
+      "target": "سیاسی",
+      "note": "دسته‌بندی تمرکز ملی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849608,
+      "source": "Political Party",
+      "target": "حزب سیاسی",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849588,
+      "source": "Political Power",
+      "target": "قدرت سیاسی",
+      "note": "سیاسی و حکومتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849606,
+      "source": "Popularity",
+      "target": "محبوبیت",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849753,
+      "source": "Population",
+      "target": "جمعیت",
+      "note": "اجتماعی و جمعیتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849769,
+      "source": "Power Restrictions",
+      "target": "محدودیت مصرف برق",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849759,
+      "source": "Power Sources",
+      "target": "منابع تولید برق",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849782,
+      "source": "Precious Metals",
+      "target": "فلزات گران‌بها",
+      "note": "منابع",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849794,
+      "source": "Preemptive Reform",
+      "target": "اصلاحات پیشگیرانه",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849816,
+      "source": "Prerequisite",
+      "target": "پیش‌نیاز",
+      "note": "مکانیک تمرکز و فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849688,
+      "source": "Production",
+      "target": "تولید",
+      "note": "اقتصادی و صنعتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849697,
+      "source": "Productivity",
+      "target": "بهره‌وری",
+      "note": "اقتصادی و صنعتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849796,
+      "source": "Promise",
+      "target": "تعهد",
+      "note": "مکانیک اعتراضات",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849610,
+      "source": "Protest",
+      "target": "اعتراض",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849792,
+      "source": "Protest Exhaustion",
+      "target": "فرسودگی اعتراضات",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849788,
+      "source": "Protest Movement",
+      "target": "جنبش اعتراضی",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849614,
+      "source": "Protest Radicalisation",
+      "target": "رادیکال‌شدن اعتراضات",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849612,
+      "source": "Protest Strength",
+      "target": "شدت اعتراضات",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849787,
+      "source": "Protest System",
+      "target": "سامانه اعتراضات",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849593,
+      "source": "Puppet",
+      "target": "دولت دست‌نشانده",
+      "note": "دیپلماتیک و سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849594,
+      "source": "Puppet State",
+      "target": "دولت دست‌نشانده",
+      "note": "دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849613,
+      "source": "Radicalisation",
+      "target": "رادیکال‌شدن",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849671,
+      "source": "Recession",
+      "target": "رکود اقتصادی",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849740,
+      "source": "Recognition",
+      "target": "به‌رسمیت‌شناسی",
+      "note": "دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849600,
+      "source": "Reform",
+      "target": "اصلاحات",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849591,
+      "source": "Regime",
+      "target": "رژیم",
+      "note": "حکومتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849599,
+      "source": "Relations",
+      "target": "روابط",
+      "note": "دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849803,
+      "source": "Reliability",
+      "target": "قابلیت اطمینان",
+      "note": "تجهیزات نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849733,
+      "source": "Removal Effect",
+      "target": "اثر پس از حذف",
+      "note": "مکانیک بازی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849766,
+      "source": "Renewable Energy",
+      "target": "انرژی تجدیدپذیر",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849727,
+      "source": "Requirement",
+      "target": "پیش‌نیاز",
+      "note": "مکانیک بازی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849701,
+      "source": "Research",
+      "target": "پژوهش",
+      "note": "فناوری و علمی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849703,
+      "source": "Research Bonus",
+      "target": "پاداش پژوهش",
+      "note": "فناوری و علمی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849718,
+      "source": "Research Category",
+      "target": "دسته پژوهش",
+      "note": "فناوری و MIO",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849711,
+      "source": "Research Requirements",
+      "target": "پیش‌نیازهای پژوهش",
+      "note": "فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849706,
+      "source": "Research Slot",
+      "target": "جایگاه پژوهش",
+      "note": "فناوری و مدیریت کشور",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849707,
+      "source": "Research Slots",
+      "target": "جایگاه‌های پژوهش",
+      "note": "فناوری و مدیریت کشور",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849702,
+      "source": "Research Speed",
+      "target": "سرعت پژوهش",
+      "note": "فناوری و علمی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849636,
+      "source": "Resistance",
+      "target": "مقاومت",
+      "note": "اشغال و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849785,
+      "source": "Resistance Level",
+      "target": "سطح مقاومت",
+      "note": "اشغال و مدیریت سرزمین",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849775,
+      "source": "Resource",
+      "target": "منبع",
+      "note": "اقتصادی و راهبردی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849776,
+      "source": "Resource Production",
+      "target": "تولید منابع",
+      "note": "اقتصادی و صنعتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849777,
+      "source": "Resource Storage",
+      "target": "ذخیره منابع",
+      "note": "اقتصادی و راهبردی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849791,
+      "source": "Revolt",
+      "target": "شورش",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849654,
+      "source": "Rocket Artillery",
+      "target": "توپخانه راکتی",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849605,
+      "source": "Ruling Party",
+      "target": "حزب حاکم",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849684,
+      "source": "Sanctions",
+      "target": "تحریم‌ها",
+      "note": "اقتصادی و دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849805,
+      "source": "Satellite",
+      "target": "ماهواره",
+      "note": "فضایی و فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849806,
+      "source": "Satellite Systems",
+      "target": "سامانه‌های ماهواره‌ای",
+      "note": "فضایی و فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849660,
+      "source": "Screen Ship",
+      "target": "ناو محافظ",
+      "note": "دریایی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849700,
+      "source": "Service Economy",
+      "target": "اقتصاد خدماتی",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849745,
+      "source": "Social Spending",
+      "target": "هزینه‌های اجتماعی",
+      "note": "اقتصادی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849812,
+      "source": "Space System",
+      "target": "سامانه فضایی",
+      "note": "فناوری و راهبردی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849646,
+      "source": "Special Forces",
+      "target": "نیروهای ویژه",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849708,
+      "source": "Special Project",
+      "target": "پروژه ویژه",
+      "note": "فناوری و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849709,
+      "source": "Special Projects",
+      "target": "پروژه‌های ویژه",
+      "note": "فناوری و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849736,
+      "source": "Sphere of Influence",
+      "target": "حوزه نفوذ",
+      "note": "ژئوپلیتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849585,
+      "source": "Stability",
+      "target": "ثبات",
+      "note": "سیاسی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849778,
+      "source": "Strategic Resource Reserve",
+      "target": "ذخیره راهبردی منابع",
+      "note": "اقتصادی و راهبردی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849595,
+      "source": "Subject",
+      "target": "کشور تابع",
+      "note": "دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849624,
+      "source": "Supply",
+      "target": "تدارکات",
+      "note": "نظامی و پشتیبانی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849650,
+      "source": "Support Company",
+      "target": "یگان پشتیبانی",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849800,
+      "source": "Task Capacity",
+      "target": "ظرفیت مأموریت",
+      "note": "مکانیک MIO",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849675,
+      "source": "Tax",
+      "target": "مالیات",
+      "note": "اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849676,
+      "source": "Taxation",
+      "target": "مالیات‌گیری",
+      "note": "اقتصادی و حکومتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849704,
+      "source": "Technology",
+      "target": "فناوری",
+      "note": "فناوری و علمی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849705,
+      "source": "Technology Level",
+      "target": "سطح فناوری",
+      "note": "فناوری",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849781,
+      "source": "Technology Metals",
+      "target": "فلزات فناوری",
+      "note": "منابع",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849758,
+      "source": "Total Consumption",
+      "target": "مجموع مصرف",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849757,
+      "source": "Total Generation",
+      "target": "مجموع تولید",
+      "note": "انرژی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849681,
+      "source": "Trade",
+      "target": "تجارت",
+      "note": "اقتصادی و دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849677,
+      "source": "Treasury",
+      "target": "خزانه",
+      "note": "اقتصادی و حکومتی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849726,
+      "source": "Trigger",
+      "target": "شرط فعال‌سازی",
+      "note": "مکانیک بازی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849752,
+      "source": "Unemployment",
+      "target": "بیکاری",
+      "note": "اقتصادی و اجتماعی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849743,
+      "source": "United Nations",
+      "target": "سازمان ملل متحد",
+      "note": "ژئوپلیتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849715,
+      "source": "Unlock",
+      "target": "بازکردن",
+      "note": "مکانیک بازی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849716,
+      "source": "Unlocks",
+      "target": "باز می‌کند",
+      "note": "رابط کاربری بازی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849611,
+      "source": "Unrest",
+      "target": "ناآرامی",
+      "note": "اجتماعی و سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849714,
+      "source": "Upgrade",
+      "target": "ارتقا",
+      "note": "فناوری و تجهیزات",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849823,
+      "source": "Voter Support",
+      "target": "حمایت رأی‌دهندگان",
+      "note": "سیاسی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849639,
+      "source": "War",
+      "target": "جنگ",
+      "note": "نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849615,
+      "source": "War Fatigue",
+      "target": "فرسودگی جنگی",
+      "note": "اجتماعی و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849642,
+      "source": "War Goal",
+      "target": "هدف جنگی",
+      "note": "نظامی و دیپلماتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849586,
+      "source": "War Support",
+      "target": "حمایت جنگی",
+      "note": "سیاسی و نظامی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849751,
+      "source": "Welfare",
+      "target": "رفاه اجتماعی",
+      "note": "اجتماعی و اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849779,
+      "source": "Withdrawal Status",
+      "target": "وضعیت برداشت",
+      "note": "منابع و اقتصادی",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    },
+    {
+      "id": 1849587,
+      "source": "World Tension",
+      "target": "تنش جهانی",
+      "note": "ژئوپلیتیک",
+      "updated_at": "2026-09-20T11:23:41.614Z",
+      "variants": []
+    }
+  ]
 }

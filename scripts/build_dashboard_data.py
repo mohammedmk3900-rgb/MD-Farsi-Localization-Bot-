@@ -8,7 +8,7 @@ def main():
     missing=[k for k in required if k not in source]
     if missing: raise SystemExit("Snapshot missing: "+", ".join(missing))
     public={k:source.get(k) for k in ("project","stats","progress","sections","milestones","milestones_crossed","records","history","automation","health","updated_at","source")}
-    public["schema"]=8
+    public["schema"]=9
     OUTPUT.parent.mkdir(parents=True,exist_ok=True)
     OUTPUT.write_text(json.dumps(public,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     if HISTORY.exists():

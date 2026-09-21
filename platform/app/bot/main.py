@@ -1,30 +1,55 @@
 from __future__ import annotations
 
 import discord
-from discord.ext import commands
+from discord import app_commands
 
-from app.config import settings
+from app.application import application
+from app.services.commands import CommandService
 
 
-intents = discord.Intents.default()
+commands = CommandService()
+intents = discord.Intents.none()
 intents.guilds = True
-intents.messages = True
-intents.message_content = False
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = discord.Client(intents=intents)
+tree = app_commands.CommandTree(bot)
 
 
 @bot.event
 async def on_ready():
-    print(f"MD news connected as {bot.user} • guilds={len(bot.guilds)}")
+    application.record(
+        "discord.ready",
+        {
+            "guild_id": application.context.settings.discord_guild_id,
+            "connected": True,
+        },
+    )
+    await tree.sync()
 
 
-@bot.command(name="health")
-async def health(ctx: commands.Context):
-    await ctx.send("MD Farsi Localization Platform: operational")
+project = app_commands.Group(name="project", description="MD Farsi Localization project")
+
+
+@project.command(name="status", description="نمایش وضعیت سامانه")
+async def status(interaction: discord.Interaction):
+    await interaction.response.send_message(str(commands.status()), ephemeral=True)
+
+
+@project.command(name="health", description="بررسی سلامت سامانه")
+async def health(interaction: discord.Interaction):
+    await interaction.response.send_message(str(commands.health()), ephemeral=True)
+
+
+@project.command(name="help", description="فهرست فرمان‌های پروژه")
+async def help_command(interaction: discord.Interaction):
+    await interaction.response.send_message("\n".join(commands.help()), ephemeral=True)
+
+
+tree.add_command(project)
 
 
 def run() -> None:
-    if not settings.discord_bot_token:
+    token = application.context.settings.discord_bot_token
+    if not token:
         raise RuntimeError("DISCORD_BOT_TOKEN is required")
-    bot.run(settings.discord_bot_token)
+    bot.run(token)

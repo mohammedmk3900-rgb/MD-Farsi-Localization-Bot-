@@ -1,59 +1,39 @@
-# 🇮🇷 MD Farsi Localization Bot
+# 🇮🇷 MD Farsi Localization
 
-## 🏛️ Localization Platform V7
+## Command Center V8 — Localization Operations Platform
 
-Millennium Dawn Farsi Localization is built as a **localization operations platform**, not merely a Discord bot.
+سامانه یکپارچه فارسی‌سازی **Millennium Dawn**؛ متصل به ParaTranz، Discord و یک داشبورد عمومی سریع و بدون Secret.
 
-### Architecture
+### معماری
 
 ```
-                  ParaTranz
-                      │
-                Python Core
-                      │
-          ┌───────────┼───────────┐
-          │           │           │
-      Glossary     Analytics    Health
-          │           │           │
-          └───────────┼───────────┘
-                      ↓
-               Persistent State
-                      ↓
-              Read-only JSON API
-                      ↓
-             TypeScript + React
-                Command Center
-                      │
-                   Discord
-                      │
-          👥 Management / 💬 Community
-          🔎 Human Review Decisions
+ParaTranz → Python Core V8 → State / History
+                 ├→ Discord Automation
+                 └→ Public Data Contract → React + TypeScript Dashboard
 ```
 
-### Language strategy
+### مرز اتوماسیون
 
-- **Python 3.12+** — orchestration, ParaTranz integration, persistence, analytics and Discord automation.
-- **TypeScript + React** — operator dashboard and interactive visualization.
-- **Rust** — reserved for profiled hot paths where native performance or memory safety provides a measurable benefit.
+- 🟢 خودکار: آمار، پیشرفت، تغییرات، تاریخچه، رکوردها، دستاوردها، سلامت، Discord، Terms و انتشار داشبورد.
+- 👥 انسانی: مدیریت.
+- 💬 انسانی: جامعه و moderation.
+- 🔎 انسانی: تصمیم نهایی بازبینی و تأیید/رد ترجمه.
 
-No language is introduced just for novelty. The architecture chooses the simplest tool that satisfies each responsibility.
+### منبع حقیقت
 
-### Automation boundary
+**ParaTranz** منبع حقیقت داده‌های ترجمه است و **ParaTranz Terms** منبع حقیقت واژه‌نامه رسمی. Discord و Dashboard لایه‌های نمایش و عملیات هستند.
 
-**Automated:** project statistics, progress, deltas, milestones, history, records, health, Discord synchronization, visuals, and ParaTranz Terms synchronization.
+### پشته فنی
 
-**Human-controlled:** management, community moderation, and final translation review/approval decisions.
+- Python 3.12+ — Core / collector / analytics / state / Discord
+- React 19 + TypeScript + Vite — Command Center
+- SQLite + JSON — history و snapshots
+- GitHub Actions — automation و deployment
+- Rust — فقط در صورت نیاز اثبات‌شده با profiling
 
-### Source of truth
+### امنیت
 
-**ParaTranz Terms** is the live glossary source of truth. Discord is a presentation/synchronization layer.
+داشبورد عمومی فقط داده‌های پاک‌شده و بدون Secret دریافت می‌کند. Token و Webhook وارد payload عمومی نمی‌شوند.
 
-### V7 components
-
-- `scripts/command_center/` — Python core
-- `dashboard/` — React/TypeScript operator UI
-- `rust/` — optional acceleration boundary
-- `data/` — versioned persisted state
-
-**ParaTranz project:** `19621`  
-**Command Center:** V7
+**ParaTranz Project: 19621**  
+**Command Center: V8**

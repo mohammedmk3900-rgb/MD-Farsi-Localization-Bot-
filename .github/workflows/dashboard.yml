@@ -1,5 +1,4 @@
-name: Build and Deploy Project Dashboard
-
+name: MD Farsi Command Center V8
 on:
   workflow_dispatch:
   schedule:
@@ -7,75 +6,55 @@ on:
   push:
     branches: ["main"]
     paths:
+      - "scripts/**"
       - "dashboard/**"
-      - "scripts/command_center_snapshot.py"
-      - "scripts/build_dashboard_data.py"
-      - ".github/workflows/dashboard.yml"
-
+      - "data/glossary_official.md"
+      - ".github/workflows/**"
+      - "pyproject.toml"
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
-  group: pages
+  group: md-farsi-pages
   cancel-in-progress: true
-
-env:
-  PARATRANZ_PROJECT_ID: "19621"
-  PROJECT_PARTICIPANTS: "8"
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
+      PARATRANZ_PROJECT_ID: "19621"
+      PROJECT_PARTICIPANTS: "8"
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Collect Command Center snapshot
-        run: python scripts/command_center_snapshot.py
-
-      - name: Validate and prepare dashboard data
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Run V8 data engine
         run: |
-          set -euo pipefail
-          python -m py_compile scripts/command_center_snapshot.py scripts/build_dashboard_data.py
+          python -m py_compile scripts/command_center/*.py scripts/command_center/collectors/*.py scripts/command_center/services/*.py
+          python scripts/command_center/runner.py
           python scripts/build_dashboard_data.py
+      - name: Validate public payload
+        run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          d = json.loads(Path("dashboard/data/dashboard.json").read_text(encoding="utf-8"))
-          assert d["schema"] == 3
-          assert "stats" in d and "sections" in d
-          print("Dashboard data validated.")
+          p=Path("dashboard/public/data/dashboard.json")
+          d=json.loads(p.read_text(encoding="utf-8"))
+          assert d["schema"] == 8
+          assert "stats" in d and "automation" in d and "health" in d
+          assert "PARATRANZ_TOKEN" not in p.read_text(encoding="utf-8")
+          print("V8 public contract OK")
           PY
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
       - name: Build React dashboard
         working-directory: dashboard
-        run: |
-          npm install
-          npm run build
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dashboard/dist
-
+        run: npm install && npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: {path: dashboard/dist}
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -83,6 +62,5 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - id: deployment
         uses: actions/deploy-pages@v4

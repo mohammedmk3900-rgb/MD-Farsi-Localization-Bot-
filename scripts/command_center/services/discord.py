@@ -2,7 +2,7 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 from ..config import Config
-from ..http import request_json
+from ..http_client import request_json
 from ..state import load_json, save_json
 
 MESSAGE_STATE = "data/discord_messages.json"

@@ -41,10 +41,10 @@ def stats_embed(config: Config, payload: dict) -> dict:
     progress = payload["progress"]
     now = datetime.now(timezone.utc)
     return {
-        "author": {"name": "MD FARSI LOCALIZATION • COMMAND CENTER V8"},
-        "title": "📊 آمار پروژه • PROJECT INTELLIGENCE",
+        "author": {"name": "مرکز فرماندهی فارسی‌سازی Millennium Dawn • نسخه ۹"},
+        "title": "📊 آمار و وضعیت پروژه",
         "url": config.project_url,
-        "description": f"### 🇮🇷 فارسی‌سازی Millennium Dawn\n**🟢 LIVE DATA • AUTOMATED • SINGLE SOURCE OF TRUTH**\n\n🌐 پیشرفت ترجمه: **{progress['translation_percent']:.2f}%**\n🔎 پیشرفت بازبینی: **{progress['review_percent']:.2f}%**",
+        "description": f"### 🇮🇷 فارسی‌سازی Millennium Dawn\n**🟢 داده زنده • خودکار • مرجع واحد اطلاعات**\n\n🌐 پیشرفت ترجمه: **{progress['translation_percent']:.2f}%**\n🔎 پیشرفت بازبینی: **{progress['review_percent']:.2f}%**",
         "color": 0x31D7FF,
         "fields": [
             {"name": "📦 پروژه", "value": f"**{stats['files']:,}** فایل\n**{stats['words']:,}** کلمه", "inline": True},
@@ -52,7 +52,7 @@ def stats_embed(config: Config, payload: dict) -> dict:
             {"name": "🔎 بازبینی", "value": f"**{stats['reviewed']:,}**\n{progress['review_percent']:.2f}%", "inline": True},
             {"name": "📈 تغییر", "value": f"ترجمه **{progress['delta_translated']:+,}**\nبازبینی **{progress['delta_reviewed']:+,}**", "inline": True},
             {"name": "🎯 باقی‌مانده", "value": f"**{max(0, 100-progress['translation_percent']):.2f}%**", "inline": True},
-            {"name": "⚙️ موتور", "value": "**V8 ONLINE**\nSync خودکار", "inline": True},
+            {"name": "⚙️ سامانه", "value": "**نسخه ۹ • آنلاین**\nهمگام‌سازی خودکار", "inline": True},
         ],
         "footer": {"text": f"MD Farsi Localization • Sync {now.strftime('%Y-%m-%d %H:%M UTC')}"},
         "timestamp": now.isoformat(),
@@ -62,10 +62,10 @@ def progress_embed(config: Config, payload: dict) -> dict:
     progress = payload["progress"]
     now = datetime.now(timezone.utc)
     return {
-        "author": {"name": "MD FARSI LOCALIZATION • COMMAND CENTER V8"},
-        "title": "📈 پیشرفت زنده • PROGRESS ENGINE",
+        "author": {"name": "مرکز فرماندهی فارسی‌سازی Millennium Dawn • نسخه ۹"},
+        "title": "📈 پیشرفت زنده پروژه",
         "url": config.project_url,
-        "description": f"### 🇮🇷 وضعیت ترجمه\n\n# **{progress['translation_percent']:.2f}%**\n**{progress['translated']:,}** از **{payload['stats']['strings']:,}** رشته ترجمه شده\n\n🔎 بازبینی: **{progress['review_percent']:.2f}%**",
+        "description": f"### 🇮🇷 وضعیت فعلی ترجمه\n\n# **{progress['translation_percent']:.2f}%**\n**{progress['translated']:,}** از **{payload['stats']['strings']:,}** رشته ترجمه شده\n\n🔎 بازبینی: **{progress['review_percent']:.2f}%**",
         "color": 0x35E58A,
         "fields": [
             {"name": "📝 ترجمه‌شده", "value": f"**{progress['translated']:,}**", "inline": True},
@@ -73,9 +73,9 @@ def progress_embed(config: Config, payload: dict) -> dict:
             {"name": "📄 فایل‌ها", "value": f"**{payload['stats']['files']:,}**", "inline": True},
             {"name": "📈 تغییر اخیر", "value": f"**{progress['delta_translated']:+,}** رشته", "inline": True},
             {"name": "🎯 نقطه عطف", "value": f"{progress['translation_percent']:.2f}%", "inline": True},
-            {"name": "⚡ وضعیت", "value": "**ONLINE**", "inline": True},
+            {"name": "⚡ وضعیت", "value": "**آنلاین**", "inline": True},
         ],
-        "footer": {"text": f"ParaTranz Project {config.project_id} • Automation V8"},
+        "footer": {"text": f"پروژه ParaTranz ‏{config.project_id} • اتوماسیون نسخه ۹"},
         "timestamp": now.isoformat(),
     }
 
@@ -83,20 +83,20 @@ def health_embed(config: Config, health: dict) -> dict:
     status = health["status"]
     fields = [{"name": key.replace("_", " ").title(), "value": "✅ OK" if value else "❌ FAIL", "inline": True} for key, value in health["checks"].items()]
     return {
-        "author": {"name": "MD FARSI LOCALIZATION • COMMAND CENTER V8"},
-        "title": "🛰️ سلامت سیستم • SYSTEM HEALTH",
-        "description": f"### 🇮🇷 وضعیت عملیاتی\n\n{ICONS[status]} **{status.upper()}** — **{health['percentage']:.1f}%**\n**{health['passed_checks']}/{health['total_checks']}** بررسی موفق",
+        "author": {"name": "مرکز فرماندهی فارسی‌سازی Millennium Dawn • نسخه ۹"},
+        "title": "🛰️ سلامت سامانه",
+        "description": f"### 🇮🇷 وضعیت عملیاتی سامانه\n\n{ICONS[status]} **{status.upper()}** — **{health['percentage']:.1f}%**\n**{health['passed_checks']}/{health['total_checks']}** بررسی موفق",
         "color": {"healthy": 0x35E58A, "degraded": 0xF1C40F, "critical": 0xE74C3C}[status],
         "fields": fields,
-        "footer": {"text": "MD Farsi Localization • V8 Health Engine • بدون نمایش Secret"},
+        "footer": {"text": "MD Farsi Localization • موتور سلامت نسخه ۹ • بدون نمایش Secret"},
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 def achievement_embed(config: Config, threshold: int, payload: dict) -> dict:
-    labels = {1: ("🎉", "اولین ۱٪"), 10: ("🌱", "۱۰٪ — آغاز جدی"), 25: ("📈", "۲۵٪ — یک‌چهارم مسیر"), 50: ("🔥", "۵۰٪ — نیمه راه"), 75: ("🚀", "۷۵٪ — نزدیک به پایان"), 100: ("🏁", "۱۰۰٪ — تکمیل ترجمه")}
+    labels = {1: ("🎉", "اولین ۱٪"), 10: ("🌱", "۱۰٪ — آغاز مسیر"), 25: ("📈", "۲۵٪ — یک‌چهارم مسیر"), 50: ("🔥", "۵۰٪ — نیمه مسیر"), 75: ("🚀", "۷۵٪ — نزدیک به تکمیل"), 100: ("🏁", "۱۰۰٪ — تکمیل ترجمه پروژه")}
     icon, label = labels[threshold]
     return {
-        "author": {"name": "MD FARSI LOCALIZATION • COMMAND CENTER V8"},
+        "author": {"name": "مرکز فرماندهی فارسی‌سازی Millennium Dawn • نسخه ۹"},
         "title": f"{icon} دستاورد باز شد",
         "url": config.project_url,
         "description": f"### 🇮🇷 فارسی‌سازی Millennium Dawn\n\n## {label}\n🏆 نقطه عطف **{threshold}%** ثبت شد\n📝 **{payload['stats']['translated']:,} / {payload['stats']['strings']:,}** رشته ترجمه شده",

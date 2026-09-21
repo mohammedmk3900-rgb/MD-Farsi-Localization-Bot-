@@ -36,7 +36,7 @@ def fail(message: str) -> None:
     raise SystemExit(1)
 
 def request_json(method: str, url: str, payload: dict | None = None):
-    headers = {"Accept": "application/json", "User-Agent": "MD-Farsi-Localization-Glossary/3.0"}
+    headers = {"Accept": "application/json", "User-Agent": "MD-Farsi-Localization-Glossary/6.0"}
     if method != "GET":
         headers["Content-Type"] = "application/json"
     if TOKEN:
@@ -79,7 +79,7 @@ def fetch_terms() -> list[dict]:
                 "id": item.get("id"),
                 "source": term,
                 "target": translation,
-                "status": STATUS_LABELS.get(status_key, "🟢 ثابت"),
+                "status": STATUS_LABELS.get(status_key, "🟡 در حال بررسی"),
                 "note": str(item.get("note") or "").strip(),
                 "updated_at": item.get("updatedAt"),
                 "variants": item.get("variants") or [],

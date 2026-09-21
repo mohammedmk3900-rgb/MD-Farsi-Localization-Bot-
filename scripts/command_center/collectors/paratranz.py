@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import Any
 from ..config import Config
-from ..http import request_json
+from ..http_client import request_json
 from ..models import ProjectStats
 
 def _number(value: Any) -> int:
@@ -18,7 +18,7 @@ def collect_files(config: Config) -> list[dict[str, Any]]:
         config.api_url,
         headers={
             "Authorization": config.paratranz_token,
-            "User-Agent": "MD-Farsi-Localization-Command-Center/6.0",
+            "User-Agent": "MD-Farsi-Localization-Command-Center/7.0",
         },
         retries=4,
     )

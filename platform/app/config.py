@@ -8,6 +8,14 @@ class Settings(BaseSettings):
     paratranz_token: str = ""
     discord_bot_token: str = ""
     discord_guild_id: str = ""
+
+    channel_stats: str = ""
+    channel_progress: str = ""
+    channel_achievements: str = ""
+    channel_health: str = ""
+    channel_reports: str = ""
+    channel_glossary: str = ""
+
     database_path: str = "data/platform.db"
     recent_messages_per_channel: int = 50
     api_host: str = "127.0.0.1"

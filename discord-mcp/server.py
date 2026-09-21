@@ -1,4 +1,4 @@
-"""Read-only Discord MCP bridge with full authorized history indexing."""
+"""Read-only Discord MCP bridge for authorized server structure and message history."""
 from __future__ import annotations
 
 import os
@@ -7,14 +7,16 @@ from typing import Any
 import httpx
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
+
 from indexer import MessageIndex
 
 load_dotenv()
+
 TOKEN = os.getenv("DISCORD_BOT_TOKEN", "").strip()
 GUILD_ID = os.getenv("DISCORD_GUILD_ID", "").strip()
 HOST = os.getenv("MCP_HOST", "0.0.0.0")
 PORT = int(os.getenv("MCP_PORT", "8000"))
-DB_PATH = os.getenv("DISCORD_DB_PATH", "discord.db")
+DB_PATH = os.getenv("DISCORD_DB_PATH", "/app/data/discord.db")
 API = "https://discord.com/api/v10"
 
 if not TOKEN or not GUILD_ID:
@@ -28,16 +30,24 @@ def normalize_message(message: dict[str, Any], channel: dict[str, Any] | None = 
     author = message.get("author") or {}
     channel_data = channel or message.get("channel") or {}
     channel_id = str(channel_data.get("id") or message.get("channel_id") or "")
-    return {"id": str(message.get("id")), "channel_id": channel_id,
-            "channel_name": channel_data.get("name"), "author_id": author.get("id"),
-            "author_name": author.get("global_name") or author.get("username"),
-            "content": message.get("content") or "", "timestamp": message.get("timestamp"),
-            "edited_timestamp": message.get("edited_timestamp"),
-            "url": f"https://discord.com/channels/{GUILD_ID}/{channel_id}/{message.get('id')}"}
+    return {
+        "id": str(message.get("id")),
+        "channel_id": channel_id,
+        "channel_name": channel_data.get("name"),
+        "author_id": author.get("id"),
+        "author_name": author.get("global_name") or author.get("username"),
+        "content": message.get("content") or "",
+        "timestamp": message.get("timestamp"),
+        "edited_timestamp": message.get("edited_timestamp"),
+        "url": f"https://discord.com/channels/{GUILD_ID}/{channel_id}/{message.get('id')}",
+    }
 
 
 async def discord_get(path: str, params: dict[str, Any] | None = None) -> Any:
-    headers = {"Authorization": f"Bot {TOKEN}", "User-Agent": "MD-Farsi-Localization-Discord-MCP/2.0"}
+    headers = {
+        "Authorization": f"Bot {TOKEN}",
+        "User-Agent": "MD-Farsi-Localization-Discord-MCP/3.0",
+    }
     async with httpx.AsyncClient(base_url=API, headers=headers, timeout=30.0) as client:
         response = await client.get(path, params=params)
         response.raise_for_status()
@@ -45,42 +55,94 @@ async def discord_get(path: str, params: dict[str, Any] | None = None) -> Any:
 
 
 async def get_channels() -> list[dict[str, Any]]:
-    channels = await discord_get(f"/guilds/{GUILD_ID}/channels")
+    return await discord_get(f"/guilds/{GUILD_ID}/channels")
+
+
+async def get_message_channels() -> list[dict[str, Any]]:
+    channels = await get_channels()
     return [c for c in channels if c.get("type") in {0, 5, 10, 11, 12, 15}]
+
+
+@mcp.tool()
+async def get_server_overview() -> dict[str, Any]:
+    """Return the complete visible server structure without message content."""
+    guild = await discord_get(f"/guilds/{GUILD_ID}")
+    channels = await get_channels()
+    roles = await discord_get(f"/guilds/{GUILD_ID}/roles")
+    return {
+        "server": {
+            "id": guild.get("id"),
+            "name": guild.get("name"),
+            "owner_id": guild.get("owner_id"),
+        },
+        "categories": sum(1 for c in channels if c.get("type") == 4),
+        "channels": len(channels),
+        "roles": len(roles),
+        "indexed_messages": index.count(),
+        "indexed_channels": index.channel_count(),
+        "database": DB_PATH,
+    }
+
+
+@mcp.tool()
+async def list_channels() -> list[dict[str, Any]]:
+    """List all visible channels, including categories, with permission overwrites."""
+    channels = await get_channels()
+    return [
+        {
+            "id": c.get("id"),
+            "name": c.get("name"),
+            "type": c.get("type"),
+            "parent_id": c.get("parent_id"),
+            "position": c.get("position"),
+            "nsfw": c.get("nsfw", False),
+            "permission_overwrites": c.get("permission_overwrites", []),
+        }
+        for c in sorted(channels, key=lambda item: (item.get("position", 0), str(item.get("id", ""))))
+    ]
+
+
+@mcp.tool()
+async def list_roles() -> list[dict[str, Any]]:
+    """List visible server roles and their effective Discord permission bitsets."""
+    roles = await discord_get(f"/guilds/{GUILD_ID}/roles")
+    return [
+        {
+            "id": r.get("id"),
+            "name": r.get("name"),
+            "position": r.get("position"),
+            "managed": r.get("managed", False),
+            "mentionable": r.get("mentionable", False),
+            "permissions": r.get("permissions"),
+        }
+        for r in sorted(roles, key=lambda item: item.get("position", 0), reverse=True)
+    ]
 
 
 async def fetch_page(channel_id: str, before: str | None = None) -> list[dict[str, Any]]:
     params: dict[str, Any] = {"limit": 100}
     if before:
         params["before"] = before
-    return [normalize_message(m) for m in await discord_get(f"/channels/{channel_id}/messages", params=params)]
-
-
-@mcp.tool()
-async def get_server_overview() -> dict[str, Any]:
-    guild = await discord_get(f"/guilds/{GUILD_ID}")
-    channels = await get_channels()
-    return {"server": {"id": guild.get("id"), "name": guild.get("name")},
-            "channels": len(channels), "indexed_messages": index.count(), "indexed_channels": index.channel_count(),
-            "database": DB_PATH}
-
-
-@mcp.tool()
-async def list_channels() -> list[dict[str, Any]]:
-    return [{"id": c.get("id"), "name": c.get("name"), "type": c.get("type"), "parent_id": c.get("parent_id")} for c in await get_channels()]
+    channel = {"id": channel_id}
+    return [
+        normalize_message(message, channel)
+        for message in await discord_get(f"/channels/{channel_id}/messages", params=params)
+    ]
 
 
 @mcp.tool()
 async def sync_channel_history(channel_id: str, max_pages: int = 0) -> dict[str, Any]:
     """Index all accessible history in a channel; zero means unlimited pages."""
-    channels = {str(c["id"]): c for c in await get_channels()}
+    channels = {str(c["id"]): c for c in await get_message_channels()}
     if channel_id not in channels:
         raise ValueError("Channel is not visible to the bot or is not a supported text channel")
+
     channel = channels[channel_id]
     before: str | None = None
     pages = 0
     processed = 0
     complete = False
+
     while True:
         page = await fetch_page(channel_id, before)
         if not page:
@@ -94,30 +156,50 @@ async def sync_channel_history(channel_id: str, max_pages: int = 0) -> dict[str,
         if len(page) < 100 or (max_pages > 0 and pages >= max_pages):
             complete = len(page) < 100
             break
+
     index.set_cursor(channel_id, oldest_message_id=before, complete=complete)
-    return {"channel_id": channel_id, "channel_name": channel.get("name"), "pages": pages,
-            "messages_processed": processed, "complete": complete}
+    return {
+        "channel_id": channel_id,
+        "channel_name": channel.get("name"),
+        "pages": pages,
+        "messages_processed": processed,
+        "complete": complete,
+    }
 
 
 @mcp.tool()
 async def sync_server_history(max_pages_per_channel: int = 0) -> dict[str, Any]:
     """Index all accessible text channels without bypassing Discord permissions."""
-    results = [await sync_channel_history(str(c["id"]), max_pages_per_channel) for c in await get_channels()]
-    return {"channels_processed": len(results), "results": results, "indexed_messages": index.count()}
+    results = [
+        await sync_channel_history(str(channel["id"]), max_pages_per_channel)
+        for channel in await get_message_channels()
+    ]
+    return {
+        "channels_processed": len(results),
+        "results": results,
+        "indexed_messages": index.count(),
+    }
 
 
 @mcp.tool()
 async def get_sync_status() -> dict[str, Any]:
-    return {"database": DB_PATH, "indexed_messages": index.count(), "indexed_channels": index.channel_count()}
+    """Return current local history-index status."""
+    return {
+        "database": DB_PATH,
+        "indexed_messages": index.count(),
+        "indexed_channels": index.channel_count(),
+    }
 
 
 @mcp.tool()
 async def search_index(query: str, limit: int = 50) -> list[dict[str, Any]]:
+    """Search indexed message content."""
     return index.search(query.strip(), limit) if query.strip() else []
 
 
 @mcp.tool()
 async def read_channel(channel_id: str, limit: int = 50) -> list[dict[str, Any]]:
+    """Read the newest indexed messages from one visible channel."""
     return index.read_channel(channel_id, limit)
 
 

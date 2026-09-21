@@ -1,13 +1,19 @@
 {
-  "schema": 2,
+  "schema": 3,
   "source": "https://paratranz.cn/api/projects/19621/terms",
   "project_id": 19621,
-  "updated_at": "2026-09-21T11:57:24.143802+00:00",
+  "version": "1.0.1",
+  "version_changed": true,
+  "version_change_reason": "تغییر اصطلاحات",
+  "updated_at": "2026-09-21T12:06:37.303486+00:00",
+  "version_updated_at": "2026-09-21T12:06:37.303486+00:00",
+  "terms_changed": true,
   "entries": [
     {
       "id": 1849748,
       "source": "Administrative Spending",
       "target": "هزینه‌های اداری",
+      "status": "🟢 ثابت",
       "note": "حکومتی و اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -16,6 +22,7 @@
       "id": 1849596,
       "source": "Advisor",
       "target": "مشاور",
+      "status": "🟢 ثابت",
       "note": "حکومتی و مدیریتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -24,6 +31,7 @@
       "id": 1849712,
       "source": "Ahead of Time Penalty",
       "target": "جریمه پژوهش زودهنگام",
+      "status": "🟢 ثابت",
       "note": "فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -32,6 +40,7 @@
       "id": 1849630,
       "source": "Air Doctrine",
       "target": "دکترین هوایی",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -40,6 +49,7 @@
       "id": 1849645,
       "source": "Air Force",
       "target": "نیروی هوایی",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -48,6 +58,7 @@
       "id": 1849737,
       "source": "Alliance",
       "target": "ائتلاف",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -56,6 +67,7 @@
       "id": 1849634,
       "source": "Annexation",
       "target": "الحاق",
+      "status": "🟢 ثابت",
       "note": "سیاسی و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -64,6 +76,7 @@
       "id": 1849656,
       "source": "Anti-Aircraft",
       "target": "ضدهوایی",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -72,6 +85,7 @@
       "id": 1849655,
       "source": "Anti-Tank",
       "target": "ضدزره",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -80,6 +94,7 @@
       "id": 1849793,
       "source": "Appease Protesters",
       "target": "آرام‌کردن معترضان",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -88,6 +103,7 @@
       "id": 1849755,
       "source": "Approval Rating",
       "target": "میزان رضایت",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -96,6 +112,7 @@
       "id": 1849652,
       "source": "Armor",
       "target": "زرهی",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -104,6 +121,7 @@
       "id": 1849643,
       "source": "Army",
       "target": "ارتش",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -112,6 +130,7 @@
       "id": 1849653,
       "source": "Artillery",
       "target": "توپخانه",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -120,6 +139,7 @@
       "id": 1849626,
       "source": "Attrition",
       "target": "فرسایش",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -128,6 +148,7 @@
       "id": 1849735,
       "source": "Autonomy",
       "target": "خودمختاری",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک و حکومتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -136,6 +157,7 @@
       "id": 1849696,
       "source": "Base Cost",
       "target": "هزینه پایه",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -144,6 +166,7 @@
       "id": 1849768,
       "source": "Battery Park",
       "target": "مجموعه ذخیره‌سازهای باتری",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -152,6 +175,7 @@
       "id": 1849729,
       "source": "Bonus",
       "target": "پاداش",
+      "status": "🟢 ثابت",
       "note": "مکانیک بازی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -160,6 +184,7 @@
       "id": 1849649,
       "source": "Brigade",
       "target": "تیپ",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -168,6 +193,7 @@
       "id": 1849678,
       "source": "Budget",
       "target": "بودجه",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و حکومتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -176,6 +202,7 @@
       "id": 1849804,
       "source": "Build Cost",
       "target": "هزینه ساخت",
+      "status": "🟢 ثابت",
       "note": "تولید و تجهیزات",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -184,6 +211,7 @@
       "id": 1849659,
       "source": "Capital Ship",
       "target": "ناو اصلی",
+      "status": "🟢 ثابت",
       "note": "دریایی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -192,6 +220,7 @@
       "id": 1849635,
       "source": "Capitulation",
       "target": "تسلیم",
+      "status": "🟢 ثابت",
       "note": "نظامی و سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -200,6 +229,7 @@
       "id": 1849663,
       "source": "CAS",
       "target": "پشتیبانی هوایی نزدیک",
+      "status": "🟢 ثابت",
       "note": "اختصار Close Air Support",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -208,6 +238,7 @@
       "id": 1849640,
       "source": "Ceasefire",
       "target": "آتش‌بس",
+      "status": "🟢 ثابت",
       "note": "نظامی و دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -216,6 +247,7 @@
       "id": 1849674,
       "source": "Central Bank",
       "target": "بانک مرکزی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و مالی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -224,6 +256,7 @@
       "id": 1849638,
       "source": "Civil War",
       "target": "جنگ داخلی",
+      "status": "🟢 ثابت",
       "note": "سیاسی و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -232,6 +265,7 @@
       "id": 1849694,
       "source": "Civilian Industry",
       "target": "صنعت غیرنظامی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و صنعتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -240,6 +274,7 @@
       "id": 1849662,
       "source": "Close Air Support",
       "target": "پشتیبانی هوایی نزدیک",
+      "status": "🟢 ثابت",
       "note": "هوایی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -248,6 +283,7 @@
       "id": 1849604,
       "source": "Coalition",
       "target": "ائتلاف",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -256,6 +292,7 @@
       "id": 1849784,
       "source": "Collaboration",
       "target": "همکاری با اشغالگر",
+      "status": "🟢 ثابت",
       "note": "اشغال و سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -264,6 +301,7 @@
       "id": 1849783,
       "source": "Compliance",
       "target": "تمکین",
+      "status": "🟢 ثابت",
       "note": "اشغال و مدیریت سرزمین",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -272,6 +310,7 @@
       "id": 1849786,
       "source": "Compliance Level",
       "target": "سطح تمکین",
+      "status": "🟢 ثابت",
       "note": "اشغال و مدیریت سرزمین",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -280,6 +319,7 @@
       "id": 1849618,
       "source": "Conscription",
       "target": "سربازگیری",
+      "status": "🟢 ثابت",
       "note": "نظامی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -288,6 +328,7 @@
       "id": 1849691,
       "source": "Construction",
       "target": "ساخت‌وساز",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و صنعتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -296,6 +337,7 @@
       "id": 1849689,
       "source": "Consumer Goods",
       "target": "کالاهای مصرفی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -304,6 +346,7 @@
       "id": 1849799,
       "source": "Contract Token",
       "target": "نشان قرارداد",
+      "status": "🟢 ثابت",
       "note": "مکانیک MIO",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -312,6 +355,7 @@
       "id": 1849730,
       "source": "Cooldown",
       "target": "دوره انتظار",
+      "status": "🟢 ثابت",
       "note": "مکانیک بازی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -320,6 +364,7 @@
       "id": 1849713,
       "source": "Cost Reduction",
       "target": "کاهش هزینه",
+      "status": "🟢 ثابت",
       "note": "فناوری و اقتصاد",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -328,6 +373,7 @@
       "id": 1849809,
       "source": "Counter Terror",
       "target": "مقابله با تروریسم",
+      "status": "🟢 ثابت",
       "note": "امنیتی و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -336,6 +382,7 @@
       "id": 1849602,
       "source": "Coup",
       "target": "کودتا",
+      "status": "🟢 ثابت",
       "note": "سیاسی و حکومتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -344,6 +391,7 @@
       "id": 1849732,
       "source": "Current Effect",
       "target": "اثر فعلی",
+      "status": "🟢 ثابت",
       "note": "رابط کاربری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -352,6 +400,7 @@
       "id": 1849808,
       "source": "Cyber Attack",
       "target": "حمله سایبری",
+      "status": "🟢 ثابت",
       "note": "فناوری و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -360,6 +409,7 @@
       "id": 1849807,
       "source": "Cyber Warfare",
       "target": "جنگ سایبری",
+      "status": "🟢 ثابت",
       "note": "نظامی و فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -368,6 +418,7 @@
       "id": 1849657,
       "source": "Damage Control",
       "target": "کنترل خسارت",
+      "status": "🟢 ثابت",
       "note": "دریایی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -376,6 +427,7 @@
       "id": 1849669,
       "source": "Debt",
       "target": "بدهی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -384,6 +436,7 @@
       "id": 1849721,
       "source": "Decision",
       "target": "تصمیم",
+      "status": "🟢 ثابت",
       "note": "مدیریت کشور",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -392,6 +445,7 @@
       "id": 1849623,
       "source": "Defence",
       "target": "دفاع",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -400,6 +454,7 @@
       "id": 1849622,
       "source": "Defensive",
       "target": "دفاعی",
+      "status": "🟢 ثابت",
       "note": "نظامی؛ بسته به کاربرد",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -408,6 +463,7 @@
       "id": 1849619,
       "source": "Deployment",
       "target": "استقرار نیروها",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -416,6 +472,7 @@
       "id": 1849672,
       "source": "Depression",
       "target": "رکود شدید اقتصادی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -424,6 +481,7 @@
       "id": 1849801,
       "source": "Design Team",
       "target": "تیم طراحی",
+      "status": "🟢 ثابت",
       "note": "نظامی و فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -432,6 +490,7 @@
       "id": 1849692,
       "source": "Development",
       "target": "توسعه",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -440,6 +499,7 @@
       "id": 1849693,
       "source": "Development Level",
       "target": "سطح توسعه",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و توسعه",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -448,6 +508,7 @@
       "id": 1849734,
       "source": "Difficulty",
       "target": "سختی",
+      "status": "🟢 ثابت",
       "note": "رابط کاربری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -456,6 +517,7 @@
       "id": 1849597,
       "source": "Diplomatic",
       "target": "دیپلماتیک",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -464,6 +526,7 @@
       "id": 1849739,
       "source": "Diplomatic Action",
       "target": "اقدام دیپلماتیک",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -472,6 +535,7 @@
       "id": 1849647,
       "source": "Division",
       "target": "لشکر",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -480,6 +544,7 @@
       "id": 1849648,
       "source": "Division Template",
       "target": "الگوی لشکر",
+      "status": "🟢 ثابت",
       "note": "نظامی و سازمان رزمی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -488,6 +553,7 @@
       "id": 1849627,
       "source": "Doctrine",
       "target": "دکترین",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -496,6 +562,7 @@
       "id": 1849699,
       "source": "Economic Collapse",
       "target": "فروپاشی اقتصادی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -504,6 +571,7 @@
       "id": 1849698,
       "source": "Economic Growth",
       "target": "رشد اقتصادی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -512,6 +580,7 @@
       "id": 1849666,
       "source": "Economy",
       "target": "اقتصاد",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -520,6 +589,7 @@
       "id": 1849747,
       "source": "Education Spending",
       "target": "هزینه‌های آموزشی",
+      "status": "🟢 ثابت",
       "note": "اجتماعی و اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -528,6 +598,7 @@
       "id": 1849725,
       "source": "Effect",
       "target": "اثر",
+      "status": "🟢 ثابت",
       "note": "مکانیک بازی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -536,6 +607,7 @@
       "id": 1849603,
       "source": "Election",
       "target": "انتخابات",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -544,6 +616,7 @@
       "id": 1849822,
       "source": "Election Result",
       "target": "نتیجه انتخابات",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -552,6 +625,7 @@
       "id": 1849607,
       "source": "Election Threshold",
       "target": "حد نصاب انتخابات",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -560,6 +634,7 @@
       "id": 1849773,
       "source": "Electricity",
       "target": "برق",
+      "status": "🟢 ثابت",
       "note": "انرژی و زیرساخت",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -568,6 +643,7 @@
       "id": 1849756,
       "source": "Energy",
       "target": "انرژی",
+      "status": "🟢 ثابت",
       "note": "انرژی و راهبردی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -576,6 +652,7 @@
       "id": 1849761,
       "source": "Energy Deficit",
       "target": "کسری انرژی",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -584,6 +661,7 @@
       "id": 1849767,
       "source": "Energy Load Sharing",
       "target": "اشتراک‌گذاری بار انرژی",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -592,6 +670,7 @@
       "id": 1849760,
       "source": "Energy Storage",
       "target": "ذخیره انرژی",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -600,6 +679,7 @@
       "id": 1849631,
       "source": "Equipment",
       "target": "تجهیزات",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -608,6 +688,7 @@
       "id": 1849802,
       "source": "Equipment Bonus",
       "target": "پاداش تجهیزات",
+      "status": "🟢 ثابت",
       "note": "نظامی و MIO",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -616,6 +697,7 @@
       "id": 1849632,
       "source": "Equipment Stockpile",
       "target": "ذخیره تجهیزات",
+      "status": "🟢 ثابت",
       "note": "نظامی و لجستیکی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -624,6 +706,7 @@
       "id": 1849719,
       "source": "Equipment Type",
       "target": "نوع تجهیزات",
+      "status": "🟢 ثابت",
       "note": "فناوری و MIO",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -632,6 +715,7 @@
       "id": 1849710,
       "source": "Experimental Facilities",
       "target": "تأسیسات آزمایشی",
+      "status": "🟢 ثابت",
       "note": "فناوری و پروژه‌های ویژه",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -640,6 +724,7 @@
       "id": 1849682,
       "source": "Exports",
       "target": "صادرات",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -648,6 +733,7 @@
       "id": 1849592,
       "source": "Faction",
       "target": "اتحاد",
+      "status": "🟢 ثابت",
       "note": "سیاسی و دیپلماتیک؛ قرارداد پروژه",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -656,6 +742,7 @@
       "id": 1849738,
       "source": "Faction Member",
       "target": "عضو اتحاد",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -664,6 +751,7 @@
       "id": 1849658,
       "source": "Fire Control",
       "target": "کنترل آتش",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -672,6 +760,7 @@
       "id": 1849813,
       "source": "Focus",
       "target": "تمرکز",
+      "status": "🟢 ثابت",
       "note": "تمرکز ملی و رابط کاربری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -680,6 +769,7 @@
       "id": 1849741,
       "source": "Foreign Interaction",
       "target": "تعامل خارجی",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -688,6 +778,7 @@
       "id": 1849762,
       "source": "Fossil Fuel",
       "target": "سوخت فسیلی",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -696,6 +787,7 @@
       "id": 1849620,
       "source": "Frontline",
       "target": "خط مقدم",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -704,6 +796,7 @@
       "id": 1849774,
       "source": "Fuel",
       "target": "سوخت",
+      "status": "🟢 ثابت",
       "note": "انرژی و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -712,6 +805,7 @@
       "id": 1849770,
       "source": "Fuel Consumption",
       "target": "مصرف سوخت",
+      "status": "🟢 ثابت",
       "note": "انرژی و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -720,6 +814,7 @@
       "id": 1849667,
       "source": "GDP",
       "target": "تولید ناخالص داخلی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -728,6 +823,7 @@
       "id": 1849668,
       "source": "GDP per Capita",
       "target": "تولید ناخالص داخلی سرانه",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -736,6 +832,7 @@
       "id": 1849764,
       "source": "Geothermal",
       "target": "زمین‌گرمایی",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -744,6 +841,7 @@
       "id": 1849821,
       "source": "Governing Coalition",
       "target": "ائتلاف حاکم",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -752,6 +850,7 @@
       "id": 1849590,
       "source": "Government",
       "target": "حکومت",
+      "status": "🟢 ثابت",
       "note": "حکومتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -760,6 +859,7 @@
       "id": 1849609,
       "source": "Government Coalition",
       "target": "ائتلاف حکومتی",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -768,6 +868,7 @@
       "id": 1849746,
       "source": "Healthcare Spending",
       "target": "هزینه‌های درمانی",
+      "status": "🟢 ثابت",
       "note": "اجتماعی و اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -776,6 +877,7 @@
       "id": 1849584,
       "source": "Hegemony",
       "target": "سلطه",
+      "status": "🟢 ثابت",
       "note": "سیاسی و ژئوپلیتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -784,6 +886,7 @@
       "id": 1849763,
       "source": "Hydroelectric",
       "target": "برق‌آبی",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -792,6 +895,7 @@
       "id": 1849589,
       "source": "Ideology",
       "target": "ایدئولوژی",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -800,6 +904,7 @@
       "id": 1849824,
       "source": "Ideology Drift",
       "target": "تغییر ایدئولوژی",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -808,6 +913,7 @@
       "id": 1849825,
       "source": "Ideology Drift Defense",
       "target": "مقاومت در برابر تغییر ایدئولوژی",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -816,6 +922,7 @@
       "id": 1849731,
       "source": "Immediate Effect",
       "target": "اثر فوری",
+      "status": "🟢 ثابت",
       "note": "رابط کاربری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -824,6 +931,7 @@
       "id": 1849683,
       "source": "Imports",
       "target": "واردات",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -832,6 +940,7 @@
       "id": 1849789,
       "source": "Incoming Protests",
       "target": "اعتراضات در شُرف وقوع",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -840,6 +949,7 @@
       "id": 1849790,
       "source": "Incoming Revolt",
       "target": "شورش در شُرف وقوع",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -848,6 +958,7 @@
       "id": 1849690,
       "source": "Industrial Capacity",
       "target": "ظرفیت صنعتی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و صنعتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -856,6 +967,7 @@
       "id": 1849685,
       "source": "Industry",
       "target": "صنعت",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و صنعتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -864,6 +976,7 @@
       "id": 1849686,
       "source": "Industry Size",
       "target": "اندازه صنعت",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و صنعتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -872,6 +985,7 @@
       "id": 1849651,
       "source": "Infantry",
       "target": "پیاده‌نظام",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -880,6 +994,7 @@
       "id": 1849670,
       "source": "Inflation",
       "target": "تورم",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -888,6 +1003,7 @@
       "id": 1849598,
       "source": "Influence",
       "target": "نفوذ",
+      "status": "🟢 ثابت",
       "note": "سیاسی و دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -896,6 +1012,7 @@
       "id": 1849687,
       "source": "Infrastructure",
       "target": "زیرساخت",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و توسعه",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -904,6 +1021,7 @@
       "id": 1849637,
       "source": "Insurgency",
       "target": "شورش مسلحانه",
+      "status": "🟢 ثابت",
       "note": "سیاسی و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -912,6 +1030,7 @@
       "id": 1849673,
       "source": "Interest Rate",
       "target": "نرخ بهره",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و مالی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -920,6 +1039,7 @@
       "id": 1849819,
       "source": "Internal Faction",
       "target": "جناح داخلی",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -928,6 +1048,7 @@
       "id": 1849680,
       "source": "International Investment",
       "target": "سرمایه‌گذاری بین‌المللی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -936,6 +1057,7 @@
       "id": 1849742,
       "source": "International Organization",
       "target": "سازمان بین‌المللی",
+      "status": "🟢 ثابت",
       "note": "ژئوپلیتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -944,6 +1066,7 @@
       "id": 1849679,
       "source": "Investment",
       "target": "سرمایه‌گذاری",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -952,6 +1075,7 @@
       "id": 1849628,
       "source": "Land Doctrine",
       "target": "دکترین زمینی",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -960,6 +1084,7 @@
       "id": 1849722,
       "source": "Law",
       "target": "قانون",
+      "status": "🟢 ثابت",
       "note": "حکومتی و مدیریتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -968,6 +1093,7 @@
       "id": 1849780,
       "source": "Light Metals",
       "target": "فلزات سبک",
+      "status": "🟢 ثابت",
       "note": "منابع",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -976,6 +1102,7 @@
       "id": 1849625,
       "source": "Logistics",
       "target": "لجستیک",
+      "status": "🟢 ثابت",
       "note": "نظامی و پشتیبانی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -984,6 +1111,7 @@
       "id": 1849616,
       "source": "Manpower",
       "target": "نیروی انسانی",
+      "status": "🟢 ثابت",
       "note": "منبع نیروی نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -992,6 +1120,7 @@
       "id": 1849665,
       "source": "Mechanized",
       "target": "مکانیزه",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1000,6 +1129,7 @@
       "id": 1849754,
       "source": "Migration",
       "target": "مهاجرت",
+      "status": "🟢 ثابت",
       "note": "اجتماعی و جمعیتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1008,6 +1138,7 @@
       "id": 1849815,
       "source": "Military",
       "target": "نظامی",
+      "status": "🟢 ثابت",
       "note": "دسته‌بندی تمرکز ملی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1016,6 +1147,7 @@
       "id": 1849797,
       "source": "Military Industrial Organization",
       "target": "سازمان صنایع نظامی",
+      "status": "🟢 ثابت",
       "note": "نظامی و صنعتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1024,6 +1156,7 @@
       "id": 1849798,
       "source": "Military Industrial Organization Contract",
       "target": "قرارداد سازمان صنایع نظامی",
+      "status": "🟢 ثابت",
       "note": "نظامی و صنعتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1032,6 +1165,7 @@
       "id": 1849695,
       "source": "Military Industry",
       "target": "صنایع نظامی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و صنعتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1040,6 +1174,7 @@
       "id": 1849750,
       "source": "Military Spending",
       "target": "هزینه‌های نظامی",
+      "status": "🟢 ثابت",
       "note": "نظامی و اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1048,6 +1183,7 @@
       "id": 1849810,
       "source": "Missile",
       "target": "موشک",
+      "status": "🟢 ثابت",
       "note": "نظامی و فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1056,6 +1192,7 @@
       "id": 1849811,
       "source": "Missile System",
       "target": "سامانه موشکی",
+      "status": "🟢 ثابت",
       "note": "نظامی و فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1064,6 +1201,7 @@
       "id": 1849617,
       "source": "Mobilization",
       "target": "بسیج نیروها",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1072,6 +1210,7 @@
       "id": 1849724,
       "source": "Modifier",
       "target": "تعدیل‌گر",
+      "status": "🟢 ثابت",
       "note": "رابط کاربری و مکانیک بازی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1080,6 +1219,7 @@
       "id": 1849795,
       "source": "Monthly Drift",
       "target": "تغییرات ماهانه",
+      "status": "🟢 ثابت",
       "note": "مکانیک اعتراضات",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1088,6 +1228,7 @@
       "id": 1849664,
       "source": "Motorized",
       "target": "موتوری",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1096,6 +1237,7 @@
       "id": 1849817,
       "source": "Mutual Exclusion",
       "target": "انحصار متقابل",
+      "status": "🟢 ثابت",
       "note": "شاخه‌های تمرکز و فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1104,6 +1246,7 @@
       "id": 1849717,
       "source": "Mutually Exclusive",
       "target": "انحصاری متقابل",
+      "status": "🟢 ثابت",
       "note": "فناوری و شاخه‌های پژوهش",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1112,6 +1255,7 @@
       "id": 1849720,
       "source": "National Focus",
       "target": "تمرکز ملی",
+      "status": "🟢 ثابت",
       "note": "مدیریت کشور",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1120,6 +1264,7 @@
       "id": 1849723,
       "source": "National Spirit",
       "target": "روحیه ملی",
+      "status": "🟢 ثابت",
       "note": "مدیریت کشور",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1128,6 +1273,7 @@
       "id": 1849772,
       "source": "Natural Gas",
       "target": "گاز طبیعی",
+      "status": "🟢 ثابت",
       "note": "انرژی و اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1136,6 +1282,7 @@
       "id": 1849661,
       "source": "Naval Bomber",
       "target": "بمب‌افکن دریایی",
+      "status": "🟢 ثابت",
       "note": "هوایی و دریایی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1144,6 +1291,7 @@
       "id": 1849629,
       "source": "Naval Doctrine",
       "target": "دکترین دریایی",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1152,6 +1300,7 @@
       "id": 1849644,
       "source": "Navy",
       "target": "نیروی دریایی",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1160,6 +1309,7 @@
       "id": 1849765,
       "source": "Nuclear Power",
       "target": "انرژی هسته‌ای",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1168,6 +1318,7 @@
       "id": 1849633,
       "source": "Occupation",
       "target": "اشغال",
+      "status": "🟢 ثابت",
       "note": "نظامی و سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1176,6 +1327,7 @@
       "id": 1849621,
       "source": "Offensive",
       "target": "تهاجمی",
+      "status": "🟢 ثابت",
       "note": "نظامی؛ بسته به کاربرد",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1184,6 +1336,7 @@
       "id": 1849771,
       "source": "Oil",
       "target": "نفت",
+      "status": "🟢 ثابت",
       "note": "انرژی و اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1192,6 +1345,7 @@
       "id": 1849601,
       "source": "Opposition",
       "target": "مخالفان",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1200,6 +1354,7 @@
       "id": 1849820,
       "source": "Party Popularity",
       "target": "محبوبیت حزب",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1208,6 +1363,7 @@
       "id": 1849818,
       "source": "Party System",
       "target": "نظام حزبی",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1216,6 +1372,7 @@
       "id": 1849641,
       "source": "Peace",
       "target": "صلح",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1224,6 +1381,7 @@
       "id": 1849744,
       "source": "Peace Conference",
       "target": "کنفرانس صلح",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1232,6 +1390,7 @@
       "id": 1849728,
       "source": "Penalty",
       "target": "جریمه",
+      "status": "🟢 ثابت",
       "note": "مکانیک بازی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1240,6 +1399,7 @@
       "id": 1849749,
       "source": "Police Spending",
       "target": "هزینه‌های پلیس",
+      "status": "🟢 ثابت",
       "note": "حکومتی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1248,6 +1408,7 @@
       "id": 1849814,
       "source": "Political",
       "target": "سیاسی",
+      "status": "🟢 ثابت",
       "note": "دسته‌بندی تمرکز ملی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1256,6 +1417,7 @@
       "id": 1849608,
       "source": "Political Party",
       "target": "حزب سیاسی",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1264,6 +1426,7 @@
       "id": 1849588,
       "source": "Political Power",
       "target": "قدرت سیاسی",
+      "status": "🟢 ثابت",
       "note": "سیاسی و حکومتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1272,6 +1435,7 @@
       "id": 1849606,
       "source": "Popularity",
       "target": "محبوبیت",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1280,6 +1444,7 @@
       "id": 1849753,
       "source": "Population",
       "target": "جمعیت",
+      "status": "🟢 ثابت",
       "note": "اجتماعی و جمعیتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1288,6 +1453,7 @@
       "id": 1849769,
       "source": "Power Restrictions",
       "target": "محدودیت مصرف برق",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1296,6 +1462,7 @@
       "id": 1849759,
       "source": "Power Sources",
       "target": "منابع تولید برق",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1304,6 +1471,7 @@
       "id": 1849782,
       "source": "Precious Metals",
       "target": "فلزات گران‌بها",
+      "status": "🟢 ثابت",
       "note": "منابع",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1312,6 +1480,7 @@
       "id": 1849794,
       "source": "Preemptive Reform",
       "target": "اصلاحات پیشگیرانه",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1320,6 +1489,7 @@
       "id": 1849816,
       "source": "Prerequisite",
       "target": "پیش‌نیاز",
+      "status": "🟢 ثابت",
       "note": "مکانیک تمرکز و فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1328,6 +1498,7 @@
       "id": 1849688,
       "source": "Production",
       "target": "تولید",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و صنعتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1336,6 +1507,7 @@
       "id": 1849697,
       "source": "Productivity",
       "target": "بهره‌وری",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و صنعتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1344,6 +1516,7 @@
       "id": 1849796,
       "source": "Promise",
       "target": "تعهد",
+      "status": "🟢 ثابت",
       "note": "مکانیک اعتراضات",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1352,6 +1525,7 @@
       "id": 1849610,
       "source": "Protest",
       "target": "اعتراض",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1360,6 +1534,7 @@
       "id": 1849792,
       "source": "Protest Exhaustion",
       "target": "فرسودگی اعتراضات",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1368,6 +1543,7 @@
       "id": 1849788,
       "source": "Protest Movement",
       "target": "جنبش اعتراضی",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1376,6 +1552,7 @@
       "id": 1849614,
       "source": "Protest Radicalisation",
       "target": "رادیکال‌شدن اعتراضات",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1384,6 +1561,7 @@
       "id": 1849612,
       "source": "Protest Strength",
       "target": "شدت اعتراضات",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1392,6 +1570,7 @@
       "id": 1849787,
       "source": "Protest System",
       "target": "سامانه اعتراضات",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1400,6 +1579,7 @@
       "id": 1849593,
       "source": "Puppet",
       "target": "دولت دست‌نشانده",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک و سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1408,6 +1588,7 @@
       "id": 1849594,
       "source": "Puppet State",
       "target": "دولت دست‌نشانده",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1416,6 +1597,7 @@
       "id": 1849613,
       "source": "Radicalisation",
       "target": "رادیکال‌شدن",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1424,6 +1606,7 @@
       "id": 1849671,
       "source": "Recession",
       "target": "رکود اقتصادی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1432,6 +1615,7 @@
       "id": 1849740,
       "source": "Recognition",
       "target": "به‌رسمیت‌شناسی",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1440,6 +1624,7 @@
       "id": 1849600,
       "source": "Reform",
       "target": "اصلاحات",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1448,6 +1633,7 @@
       "id": 1849591,
       "source": "Regime",
       "target": "رژیم",
+      "status": "🟢 ثابت",
       "note": "حکومتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1456,6 +1642,7 @@
       "id": 1849599,
       "source": "Relations",
       "target": "روابط",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1464,6 +1651,7 @@
       "id": 1849803,
       "source": "Reliability",
       "target": "قابلیت اطمینان",
+      "status": "🟢 ثابت",
       "note": "تجهیزات نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1472,6 +1660,7 @@
       "id": 1849733,
       "source": "Removal Effect",
       "target": "اثر پس از حذف",
+      "status": "🟢 ثابت",
       "note": "مکانیک بازی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1480,6 +1669,7 @@
       "id": 1849766,
       "source": "Renewable Energy",
       "target": "انرژی تجدیدپذیر",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1488,6 +1678,7 @@
       "id": 1849727,
       "source": "Requirement",
       "target": "پیش‌نیاز",
+      "status": "🟢 ثابت",
       "note": "مکانیک بازی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1496,6 +1687,7 @@
       "id": 1849701,
       "source": "Research",
       "target": "پژوهش",
+      "status": "🟢 ثابت",
       "note": "فناوری و علمی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1504,6 +1696,7 @@
       "id": 1849703,
       "source": "Research Bonus",
       "target": "پاداش پژوهش",
+      "status": "🟢 ثابت",
       "note": "فناوری و علمی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1512,6 +1705,7 @@
       "id": 1849718,
       "source": "Research Category",
       "target": "دسته پژوهش",
+      "status": "🟢 ثابت",
       "note": "فناوری و MIO",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1520,6 +1714,7 @@
       "id": 1849711,
       "source": "Research Requirements",
       "target": "پیش‌نیازهای پژوهش",
+      "status": "🟢 ثابت",
       "note": "فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1528,6 +1723,7 @@
       "id": 1849706,
       "source": "Research Slot",
       "target": "جایگاه پژوهش",
+      "status": "🟢 ثابت",
       "note": "فناوری و مدیریت کشور",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1536,6 +1732,7 @@
       "id": 1849707,
       "source": "Research Slots",
       "target": "جایگاه‌های پژوهش",
+      "status": "🟢 ثابت",
       "note": "فناوری و مدیریت کشور",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1544,6 +1741,7 @@
       "id": 1849702,
       "source": "Research Speed",
       "target": "سرعت پژوهش",
+      "status": "🟢 ثابت",
       "note": "فناوری و علمی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1552,6 +1750,7 @@
       "id": 1849636,
       "source": "Resistance",
       "target": "مقاومت",
+      "status": "🟢 ثابت",
       "note": "اشغال و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1560,6 +1759,7 @@
       "id": 1849785,
       "source": "Resistance Level",
       "target": "سطح مقاومت",
+      "status": "🟢 ثابت",
       "note": "اشغال و مدیریت سرزمین",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1568,6 +1768,7 @@
       "id": 1849775,
       "source": "Resource",
       "target": "منبع",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و راهبردی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1576,6 +1777,7 @@
       "id": 1849776,
       "source": "Resource Production",
       "target": "تولید منابع",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و صنعتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1584,6 +1786,7 @@
       "id": 1849777,
       "source": "Resource Storage",
       "target": "ذخیره منابع",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و راهبردی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1592,6 +1795,7 @@
       "id": 1849791,
       "source": "Revolt",
       "target": "شورش",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1600,6 +1804,7 @@
       "id": 1849654,
       "source": "Rocket Artillery",
       "target": "توپخانه راکتی",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1608,6 +1813,7 @@
       "id": 1849605,
       "source": "Ruling Party",
       "target": "حزب حاکم",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1616,6 +1822,7 @@
       "id": 1849684,
       "source": "Sanctions",
       "target": "تحریم‌ها",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1624,6 +1831,7 @@
       "id": 1849805,
       "source": "Satellite",
       "target": "ماهواره",
+      "status": "🟢 ثابت",
       "note": "فضایی و فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1632,6 +1840,7 @@
       "id": 1849806,
       "source": "Satellite Systems",
       "target": "سامانه‌های ماهواره‌ای",
+      "status": "🟢 ثابت",
       "note": "فضایی و فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1640,6 +1849,7 @@
       "id": 1849660,
       "source": "Screen Ship",
       "target": "ناو محافظ",
+      "status": "🟢 ثابت",
       "note": "دریایی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1648,6 +1858,7 @@
       "id": 1849700,
       "source": "Service Economy",
       "target": "اقتصاد خدماتی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1656,6 +1867,7 @@
       "id": 1849745,
       "source": "Social Spending",
       "target": "هزینه‌های اجتماعی",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1664,6 +1876,7 @@
       "id": 1849812,
       "source": "Space System",
       "target": "سامانه فضایی",
+      "status": "🟢 ثابت",
       "note": "فناوری و راهبردی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1672,6 +1885,7 @@
       "id": 1849646,
       "source": "Special Forces",
       "target": "نیروهای ویژه",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1680,6 +1894,7 @@
       "id": 1849708,
       "source": "Special Project",
       "target": "پروژه ویژه",
+      "status": "🟢 ثابت",
       "note": "فناوری و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1688,6 +1903,7 @@
       "id": 1849709,
       "source": "Special Projects",
       "target": "پروژه‌های ویژه",
+      "status": "🟢 ثابت",
       "note": "فناوری و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1696,6 +1912,7 @@
       "id": 1849736,
       "source": "Sphere of Influence",
       "target": "حوزه نفوذ",
+      "status": "🟢 ثابت",
       "note": "ژئوپلیتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1704,6 +1921,7 @@
       "id": 1849585,
       "source": "Stability",
       "target": "ثبات",
+      "status": "🟢 ثابت",
       "note": "سیاسی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1712,6 +1930,7 @@
       "id": 1849778,
       "source": "Strategic Resource Reserve",
       "target": "ذخیره راهبردی منابع",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و راهبردی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1720,6 +1939,7 @@
       "id": 1849595,
       "source": "Subject",
       "target": "کشور تابع",
+      "status": "🟢 ثابت",
       "note": "دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1728,6 +1948,7 @@
       "id": 1849624,
       "source": "Supply",
       "target": "تدارکات",
+      "status": "🟢 ثابت",
       "note": "نظامی و پشتیبانی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1736,6 +1957,7 @@
       "id": 1849650,
       "source": "Support Company",
       "target": "یگان پشتیبانی",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1744,6 +1966,7 @@
       "id": 1849800,
       "source": "Task Capacity",
       "target": "ظرفیت مأموریت",
+      "status": "🟢 ثابت",
       "note": "مکانیک MIO",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1752,6 +1975,7 @@
       "id": 1849675,
       "source": "Tax",
       "target": "مالیات",
+      "status": "🟢 ثابت",
       "note": "اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1760,6 +1984,7 @@
       "id": 1849676,
       "source": "Taxation",
       "target": "مالیات‌گیری",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و حکومتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1768,6 +1993,7 @@
       "id": 1849704,
       "source": "Technology",
       "target": "فناوری",
+      "status": "🟢 ثابت",
       "note": "فناوری و علمی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1776,6 +2002,7 @@
       "id": 1849705,
       "source": "Technology Level",
       "target": "سطح فناوری",
+      "status": "🟢 ثابت",
       "note": "فناوری",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1784,6 +2011,7 @@
       "id": 1849781,
       "source": "Technology Metals",
       "target": "فلزات فناوری",
+      "status": "🟢 ثابت",
       "note": "منابع",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1792,6 +2020,7 @@
       "id": 1849758,
       "source": "Total Consumption",
       "target": "مجموع مصرف",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1800,6 +2029,7 @@
       "id": 1849757,
       "source": "Total Generation",
       "target": "مجموع تولید",
+      "status": "🟢 ثابت",
       "note": "انرژی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1808,6 +2038,7 @@
       "id": 1849681,
       "source": "Trade",
       "target": "تجارت",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1816,6 +2047,7 @@
       "id": 1849677,
       "source": "Treasury",
       "target": "خزانه",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و حکومتی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1824,6 +2056,7 @@
       "id": 1849726,
       "source": "Trigger",
       "target": "شرط فعال‌سازی",
+      "status": "🟢 ثابت",
       "note": "مکانیک بازی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1832,6 +2065,7 @@
       "id": 1849752,
       "source": "Unemployment",
       "target": "بیکاری",
+      "status": "🟢 ثابت",
       "note": "اقتصادی و اجتماعی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1840,6 +2074,7 @@
       "id": 1849743,
       "source": "United Nations",
       "target": "سازمان ملل متحد",
+      "status": "🟢 ثابت",
       "note": "ژئوپلیتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1848,6 +2083,7 @@
       "id": 1849715,
       "source": "Unlock",
       "target": "بازکردن",
+      "status": "🟢 ثابت",
       "note": "مکانیک بازی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1856,6 +2092,7 @@
       "id": 1849716,
       "source": "Unlocks",
       "target": "باز می‌کند",
+      "status": "🟢 ثابت",
       "note": "رابط کاربری بازی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1864,6 +2101,7 @@
       "id": 1849611,
       "source": "Unrest",
       "target": "ناآرامی",
+      "status": "🟢 ثابت",
       "note": "اجتماعی و سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1872,6 +2110,7 @@
       "id": 1849714,
       "source": "Upgrade",
       "target": "ارتقا",
+      "status": "🟢 ثابت",
       "note": "فناوری و تجهیزات",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1880,6 +2119,7 @@
       "id": 1849823,
       "source": "Voter Support",
       "target": "حمایت رأی‌دهندگان",
+      "status": "🟢 ثابت",
       "note": "سیاسی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1888,6 +2128,7 @@
       "id": 1849639,
       "source": "War",
       "target": "جنگ",
+      "status": "🟢 ثابت",
       "note": "نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1896,6 +2137,7 @@
       "id": 1849615,
       "source": "War Fatigue",
       "target": "فرسودگی جنگی",
+      "status": "🟢 ثابت",
       "note": "اجتماعی و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1904,6 +2146,7 @@
       "id": 1849642,
       "source": "War Goal",
       "target": "هدف جنگی",
+      "status": "🟢 ثابت",
       "note": "نظامی و دیپلماتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1912,6 +2155,7 @@
       "id": 1849586,
       "source": "War Support",
       "target": "حمایت جنگی",
+      "status": "🟢 ثابت",
       "note": "سیاسی و نظامی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1920,6 +2164,7 @@
       "id": 1849751,
       "source": "Welfare",
       "target": "رفاه اجتماعی",
+      "status": "🟢 ثابت",
       "note": "اجتماعی و اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1928,6 +2173,7 @@
       "id": 1849779,
       "source": "Withdrawal Status",
       "target": "وضعیت برداشت",
+      "status": "🟢 ثابت",
       "note": "منابع و اقتصادی",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []
@@ -1936,6 +2182,7 @@
       "id": 1849587,
       "source": "World Tension",
       "target": "تنش جهانی",
+      "status": "🟢 ثابت",
       "note": "ژئوپلیتیک",
       "updated_at": "2026-09-20T11:23:41.614Z",
       "variants": []

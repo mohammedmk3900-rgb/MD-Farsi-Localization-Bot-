@@ -10,6 +10,10 @@ on:
       - "scripts/discord_audit.py"
       - ".github/workflows/discord-audit.yml"
 
+concurrency:
+  group: discord-audit
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -44,10 +48,18 @@ jobs:
           assert "DISCORD_BOT_TOKEN" not in p.read_text(encoding="utf-8")
           print("Discord audit public-safety contract: OK")
           PY
+      - name: Check required secrets
+        env:
+          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          GUILD: ${{ secrets.DISCORD_GUILD_ID }}
+        run: |
+          test -n "$TOKEN" || { echo "::error::DISCORD_BOT_TOKEN secret is missing"; exit 1; }
+          test -n "$GUILD" || { echo "::error::DISCORD_GUILD_ID secret is missing"; exit 1; }
+
       - name: Commit latest audit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/discord_audit.json
           git diff --cached --quiet || git commit -m "chore: refresh Discord audit snapshot"
-          git push
+          git push origin HEAD:main

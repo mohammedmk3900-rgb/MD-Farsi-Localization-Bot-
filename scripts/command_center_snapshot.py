@@ -120,6 +120,7 @@ def main():
       "milestones_crossed":crossed,
       "health":{"status":"pending","percentage":0,"passed_checks":0,"total_checks":0,"checks":{},"updated_at":None},
       "automation":{"interval_hours":6,"engine":"GitHub Actions","last_sync":now.isoformat(),"next_sync":next_sync(now),"mode":"scheduled","timezone":"UTC"},
+      "previous_progress_percent":old_tp,"previous_review_percent":old_rp,
       "source":"ParaTranz API"}
 
     OUT.parent.mkdir(parents=True,exist_ok=True)

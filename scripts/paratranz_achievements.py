@@ -18,6 +18,17 @@ def stats():
     except (FileNotFoundError,KeyError,TypeError,ValueError) as e:
         fail(f"Command Center snapshot unavailable: {e}")
 
+def post(url,payload):
+    headers={"Accept":"application/json","Content-Type":"application/json","User-Agent":"MD-Farsi-Localization-Achievements/4.0"}
+    try:
+        with urlopen(Request(url,data=json.dumps(payload,ensure_ascii=False).encode(),headers=headers,method="POST"),timeout=30) as r:
+            raw=r.read().decode()
+            return json.loads(raw) if raw else None
+    except HTTPError as e:
+        raise RuntimeError(f"Discord HTTP {e.code}: {e.read().decode(errors='replace')[:800]}")
+    except (URLError,json.JSONDecodeError) as e:
+        raise RuntimeError(f"Discord request failed: {e}")
+
 def load():
     try:
         with open(STATE,encoding="utf-8") as f:return {int(x) for x in json.load(f)}

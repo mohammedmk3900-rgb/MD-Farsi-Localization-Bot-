@@ -1,28 +1,137 @@
 import React from "react";
-import {createRoot} from "react-dom/client";
+import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-type D={project:any;stats:any;progress:any;sections:Record<string,any>;milestones:any[];milestones_crossed:number[];records:any;history:any;automation:any;health:any;updated_at:string;source:string};
-const empty:D={project:{id:19621},stats:{files:0,strings:0,translated:0,reviewed:0,words:0,translation_percent:0,review_percent:0},progress:{delta_translated:0,delta_reviewed:0,translation_percent:0,review_percent:0},sections:{},milestones:[],milestones_crossed:[],records:{},history:{count:0},automation:{interval_hours:6,engine:"GitHub Actions"},health:{status:"pending",percentage:0,passed_checks:0,total_checks:0},updated_at:"",source:"ParaTranz API"};
-const nf=new Intl.NumberFormat("fa-IR");
-const P=({n}:{n:number})=>Number(n||0).toFixed(2)+"%";
-function App(){
- const [d,setD]=React.useState<D>(empty),[history,setHistory]=React.useState<any[]>([]);
- React.useEffect(()=>{const b=import.meta.env.BASE_URL;Promise.all([fetch(b+"data/dashboard.json").then(r=>r.json()),fetch(b+"data/history.json").then(r=>r.ok?r.json():{items:[]}).catch(()=>({items:[]}))]).then(([x,h])=>{setD(x);setHistory(h.items||[])}).catch(()=>{})},[]);
- const s=d.stats,p=d.progress,rows=Object.entries(d.sections||{}).sort((a:any,b:any)=>b[1].translation_percent-a[1].translation_percent);
- const status=d.health?.status||"pending";
- return <div className="shell">
-  <header><div className="brand"><div className="logo">🇮🇷</div><div><small>MD FARSI LOCALIZATION</small><h1>COMMAND CENTER <b>V9</b></h1><p>مرکز عملیات حرفه‌ای فارسی‌سازی Millennium Dawn</p></div></div><div className={"status "+status}>● {status==="healthy"?"SYSTEM ONLINE":status==="degraded"?"SYSTEM DEGRADED":"SYSTEM CHECKING"}</div></header>
-  <section className="hero panel"><div className="heroTop"><div><small>PROJECT OVERVIEW</small><h2>پیشرفت کل پروژه</h2></div><strong>{P(s.translation_percent)}</strong></div><div className="track"><i style={{width:Math.min(100,Math.max(0,s.translation_percent))+"%"}}/></div><div className="meta"><span>{nf.format(s.translated)} / {nf.format(s.strings)} رشته</span><span>{p.delta_translated>=0?"▲":"▼"} {nf.format(Math.abs(p.delta_translated))} از آخرین snapshot</span></div></section>
-  <section className="metrics"><Metric icon="📝" t="ترجمه‌شده" v={nf.format(s.translated)} sub={P(s.translation_percent)}/><Metric icon="🔎" t="بازبینی‌شده" v={nf.format(s.reviewed)} sub={P(s.review_percent)}/><Metric icon="📦" t="فایل‌ها" v={nf.format(s.files)} sub={nf.format(s.words)+" کلمه"}/><Metric icon="⚡" t="تغییر اخیر" v={(p.delta_translated>=0?"+":"")+nf.format(p.delta_translated)} sub="رشته"/></section>
-  <section className="cols"><section className="panel box"><Title a="PROGRESS HISTORY" t="روند پیشرفت"/><div className="chart">{history.length<2?<div className="empty">تاریخچه پس از چند همگام‌سازی شکل می‌گیرد.</div>:history.slice(-36).map((x:any)=><div className="col" key={x.timestamp}><i style={{height:Math.max(4,x.translation_percent)+"%"}}/></div>)}</div></section><section className="panel box"><Title a="SYSTEM STATUS" t="وضعیت موتور"/><div className="rows"><Row a="منبع" b="ParaTranz"/><Row a="موتور" b={d.automation.engine}/><Row a="فاصله sync" b={d.automation.interval_hours+" ساعت"}/><Row a="سلامت" b={d.health.passed_checks+"/"+d.health.total_checks}/><Row a="آخرین اجرا" b={fmt(d.updated_at)}/></div></section></section>
-  <section className="panel box"><Title a="LOCALIZATION MAP" t="وضعیت بخش‌ها"/><div className="sections">{rows.map(([name,v]:any)=><div className="srow" key={name}><div><b>{name}</b><small>{nf.format(v.translated)} / {nf.format(v.strings)}</small></div><strong>{P(v.translation_percent)}</strong><div className="mini"><i style={{width:Math.min(100,v.translation_percent)+"%"}}/></div></div>)}</div></section>
-  <section className="milestones">{d.milestones.map((m:any)=><div className={"mile "+(d.milestones_crossed.includes(m.threshold)?"done":"")} key={m.threshold}><span>{m.icon}</span><b>{m.threshold}%</b><small>{m.label}</small></div>)}</section>
-  <footer><span>MD Farsi Localization • Command Center V9</span><span>Source: {d.source} • Project {d.project.id}</span></footer>
- </div>
+type Dashboard = {
+  schema?: number;
+  project: any;
+  health: any;
+  discord: any;
+};
+
+const empty: Dashboard = {
+  project: null,
+  health: { status: "pending" },
+  discord: null,
+};
+
+const nf = new Intl.NumberFormat("fa-IR");
+const API = String(import.meta.env.VITE_PLATFORM_API_URL || "").replace(/\/$/, "");
+
+async function getJson(path: string) {
+  const url = API ? API + path : path;
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!response.ok) throw new Error(String(response.status));
+  return response.json();
 }
-function Metric({icon,t,v,sub}:{icon:string;t:string;v:string;sub:string}){return <article className="metric panel"><span>{icon}</span><small>{t}</small><b>{v}</b><em>{sub}</em></article>}
-function Title({a,t}:{a:string;t:string}){return <div className="title"><div><small>{a}</small><h3>{t}</h3></div></div>}
-function Row({a,b}:{a:string;b:string}){return <div className="row"><span>{a}</span><b>{b}</b></div>}
-function fmt(v:string){if(!v)return "—";try{return new Date(v).toLocaleString("fa-IR",{dateStyle:"medium",timeStyle:"short"})}catch{return v}}
-createRoot(document.getElementById("root")!).render(<App/>);
+
+function App() {
+  const [dashboard, setDashboard] = React.useState<Dashboard>(empty);
+  const [history, setHistory] = React.useState<any[]>([]);
+  const [error, setError] = React.useState("");
+
+  const load = React.useCallback(async () => {
+    try {
+      const [d, h] = await Promise.all([
+        getJson("/api/v1/dashboard"),
+        getJson("/api/v1/history?limit=36"),
+      ]);
+      setDashboard(d);
+      setHistory(h.items || []);
+      setError("");
+    } catch {
+      setError("اتصال به Platform Core برقرار نشد.");
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+    const timer = window.setInterval(load, 60_000);
+    return () => window.clearInterval(timer);
+  }, [load]);
+
+  const p = dashboard.project || {};
+  const translation = Number(p.translation_percent || 0);
+  const review = Number(p.review_percent || 0);
+  const status = dashboard.health?.status || "pending";
+
+  return (
+    <div className="shell" dir="rtl">
+      <header>
+        <div className="brand">
+          <div className="logo">🇮🇷</div>
+          <div>
+            <small>MD FARSI LOCALIZATION</small>
+            <h1>COMMAND CENTER <b>PLATFORM</b></h1>
+            <p>مرکز عملیات حرفه‌ای فارسی‌سازی Millennium Dawn</p>
+          </div>
+        </div>
+        <div className={"status " + status}>
+          ● {status === "healthy" ? "SYSTEM ONLINE" : status === "degraded" ? "SYSTEM DEGRADED" : "SYSTEM CHECKING"}
+        </div>
+      </header>
+
+      {error && <div className="panel error">{error}</div>}
+
+      <section className="hero panel">
+        <div className="heroTop">
+          <div><small>LIVE PLATFORM CORE</small><h2>پیشرفت کل پروژه</h2></div>
+          <strong>{translation.toFixed(2)}%</strong>
+        </div>
+        <div className="track"><i style={{ width: Math.min(100, Math.max(0, translation)) + "%" }} /></div>
+        <div className="meta">
+          <span>{nf.format(p.translated || 0)} / {nf.format(p.strings_total || 0)} رشته</span>
+          <span>{nf.format(p.reviewed || 0)} بازبینی</span>
+        </div>
+      </section>
+
+      <section className="metrics">
+        <Metric icon="📝" title="ترجمه‌شده" value={nf.format(p.translated || 0)} sub={translation.toFixed(2) + "%"} />
+        <Metric icon="🔎" title="بازبینی‌شده" value={nf.format(p.reviewed || 0)} sub={review.toFixed(2) + "%"} />
+        <Metric icon="📦" title="فایل‌ها" value={nf.format(p.files || 0)} sub={nf.format(p.words_total || 0) + " کلمه"} />
+        <Metric icon="🧩" title="Discord" value={nf.format(dashboard.discord?.channels || 0)} sub="کانال" />
+      </section>
+
+      <section className="cols">
+        <section className="panel box">
+          <Title label="PROGRESS HISTORY" title="روند پیشرفت" />
+          <div className="chart">
+            {history.length < 2
+              ? <div className="empty">تاریخچه پس از چند همگام‌سازی شکل می‌گیرد.</div>
+              : history.slice().reverse().map((x: any, i: number) => {
+                  const value = Number(x.payload?.project?.translation_percent || 0);
+                  return <div className="col" key={i}><i style={{ height: Math.max(4, value) + "%" }} /></div>;
+                })}
+          </div>
+        </section>
+        <section className="panel box">
+          <Title label="PLATFORM STATUS" title="وضعیت موتور" />
+          <div className="rows">
+            <Row a="منبع ترجمه" b="ParaTranz" />
+            <Row a="واژه‌نامه" b="ParaTranz Terms" />
+            <Row a="تاریخچه" b="SQLite Event Store" />
+            <Row a="Discord" b={dashboard.discord ? "Connected" : "Not connected"} />
+            <Row a="Health" b={status} />
+          </div>
+        </section>
+      </section>
+
+      <footer>
+        <span>MD Farsi Localization • Platform Command Center</span>
+        <span>Source: Platform Core • Project {p.project_id || 19621}</span>
+      </footer>
+    </div>
+  );
+}
+
+function Metric({ icon, title, value, sub }: { icon: string; title: string; value: string; sub: string }) {
+  return <article className="metric panel"><span>{icon}</span><small>{title}</small><b>{value}</b><em>{sub}</em></article>;
+}
+function Title({ label, title }: { label: string; title: string }) {
+  return <div className="title"><div><small>{label}</small><h3>{title}</h3></div></div>;
+}
+function Row({ a, b }: { a: string; b: string }) {
+  return <div className="row"><span>{a}</span><b>{b}</b></div>;
+}
+
+createRoot(document.getElementById("root")!).render(<App />);

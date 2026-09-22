@@ -6,4 +6,8 @@ from app.services.project import ProjectService
 bus = EventBus()
 automation = Automation(application)
 automation.attach(bus)
-project_service = ProjectService(application.context.settings, bus)
+project_service = ProjectService(
+    application.context.settings,
+    bus,
+    application.context.database,
+)

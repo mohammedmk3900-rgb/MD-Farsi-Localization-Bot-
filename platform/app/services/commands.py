@@ -7,7 +7,15 @@ from app.services.sync import sync_project
 
 
 class CommandService:
-    """Discord command facade over the canonical platform core."""
+    """Read-only command facade; only sync() performs a live project fetch."""
+
+    def _latest_project(self) -> dict:
+        rows = application.context.database.recent_snapshots(50)
+        for row in rows:
+            project = row["payload"].get("project")
+            if project:
+                return project
+        return {}
 
     def status(self) -> dict:
         return {"ok": True, "service": "md-news", "project_id": application.context.settings.paratranz_project_id}
@@ -23,8 +31,7 @@ class CommandService:
         }
 
     def stats(self) -> dict:
-        snapshot = sync_project()
-        project = snapshot.get("project", snapshot)
+        project = self._latest_project()
         return {
             "words_total": project.get("words_total", 0),
             "strings_total": project.get("strings_total", 0),
@@ -33,11 +40,12 @@ class CommandService:
             "files": project.get("files", 0),
             "translation_percent": project.get("translation_percent", 0),
             "review_percent": project.get("review_percent", 0),
+            "synced": bool(project),
         }
 
     def progress(self) -> dict:
         stats = self.stats()
-        return {k: stats[k] for k in ("translation_percent", "review_percent", "translated", "reviewed")}
+        return {k: stats[k] for k in ("translation_percent", "review_percent", "translated", "reviewed", "synced")}
 
     def glossary(self, page: int = 1, page_size: int = 20) -> dict:
         return {"page": page, "page_size": page_size,
@@ -47,19 +55,18 @@ class CommandService:
         return application.context.database.recent_snapshots(limit)
 
     def achievements(self) -> dict:
-        rows = self.history(1)
-        if not rows:
-            return {"milestones": []}
-        percent = rows[0]["payload"]["project"].get("translation_percent", 0)
+        project = self._latest_project()
+        percent = project.get("translation_percent", 0)
         return {"milestones": [x for x in (1, 10, 25, 50, 75, 100) if percent >= x]}
 
     def sync(self) -> dict:
         return sync_project()
 
     def report(self, period: str = "daily") -> dict:
-        rows = self.history(1)
-        snapshot = rows[0]["payload"] if rows else self.sync()
-        return ReportService().build(snapshot, period=period)
+        project = self._latest_project()
+        if not project:
+            return {"period": period, "status": "no_snapshot", "project": None}
+        return ReportService().build({"project": project}, period=period)
 
     def help(self) -> list[str]:
         return [

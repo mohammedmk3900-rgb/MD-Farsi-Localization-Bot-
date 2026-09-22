@@ -7,12 +7,14 @@ from app.domain.models import CommandCenterSnapshot, HealthStatus
 from app.integrations.discord import DiscordClient
 from app.integrations.paratranz import ParaTranzClient
 from app.persistence.database import Database
+from app.services.analytics import AnalyticsService
 
 
 class CommandCenter:
     def __init__(self, settings: Settings, database: Database):
         self.settings = settings
         self.database = database
+        self.analytics = AnalyticsService()
 
     def collect(self) -> CommandCenterSnapshot:
         captured = datetime.now(timezone.utc)
@@ -38,9 +40,26 @@ class CommandCenter:
             discord=discord,
             health=health,
         )
+        payload = snapshot.model_dump(mode="json")
+        previous = self.database.recent_snapshots(1)
+        previous_project = previous[0]["payload"].get("project") if previous else None
+
+        self.database.save_snapshot(
+            captured.isoformat(),
+            snapshot.schema_version,
+            payload,
+        )
         self.database.append_event(
             "command_center.snapshot",
             captured.isoformat(),
-            snapshot.model_dump(mode="json"),
+            payload,
+        )
+        self.database.append_event(
+            "project.delta",
+            captured.isoformat(),
+            self.analytics.delta(
+                project.model_dump(mode="json"),
+                previous_project,
+            ),
         )
         return snapshot

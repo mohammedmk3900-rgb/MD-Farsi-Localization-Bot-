@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
+
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 class ProjectSnapshot(BaseModel):
@@ -17,10 +18,12 @@ class ProjectSnapshot(BaseModel):
     files: int = Field(ge=0)
     members: int = Field(ge=0)
 
+    @computed_field
     @property
     def translation_percent(self) -> float:
         return (self.translated / self.strings_total * 100) if self.strings_total else 0.0
 
+    @computed_field
     @property
     def review_percent(self) -> float:
         return (self.reviewed / self.strings_total * 100) if self.strings_total else 0.0

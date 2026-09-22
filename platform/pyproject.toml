@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "md-farsi-localization-platform"
 version = "1.0.0"
@@ -14,6 +18,10 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8,<9"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

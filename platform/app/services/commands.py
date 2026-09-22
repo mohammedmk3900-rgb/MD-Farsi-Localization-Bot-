@@ -10,16 +10,15 @@ class CommandService:
     """Discord command facade over the canonical platform core."""
 
     def status(self) -> dict:
-        return {
-            "ok": True,
-            "service": "md-news",
-            "project_id": application.context.settings.paratranz_project_id,
-        }
+        return {"ok": True, "service": "md-news", "project_id": application.context.settings.paratranz_project_id}
 
     def health(self) -> dict:
+        settings = application.context.settings
         return {
             "status": "ok",
-            "database": application.context.settings.database_path,
+            "database": settings.database_path,
+            "paratranz_configured": bool(settings.paratranz_token),
+            "discord_configured": bool(settings.discord_bot_token and settings.discord_guild_id),
             "history_entries": len(application.context.database.recent_snapshots(1)),
         }
 
@@ -38,16 +37,11 @@ class CommandService:
 
     def progress(self) -> dict:
         stats = self.stats()
-        return {
-            "translation_percent": stats["translation_percent"],
-            "review_percent": stats["review_percent"],
-            "translated": stats["translated"],
-            "reviewed": stats["reviewed"],
-        }
+        return {k: stats[k] for k in ("translation_percent", "review_percent", "translated", "reviewed")}
 
     def glossary(self, page: int = 1, page_size: int = 20) -> dict:
-        items = GlossaryService(application.context.settings).page(page, page_size)
-        return {"page": page, "page_size": page_size, "items": items}
+        return {"page": page, "page_size": page_size,
+                "items": GlossaryService(application.context.settings).page(page, page_size)}
 
     def history(self, limit: int = 10) -> list[dict]:
         return application.context.database.recent_snapshots(limit)
@@ -57,27 +51,19 @@ class CommandService:
         if not rows:
             return {"milestones": []}
         percent = rows[0]["payload"]["project"].get("translation_percent", 0)
-        levels = (1, 10, 25, 50, 75, 100)
-        return {"milestones": [level for level in levels if percent >= level]}
-
-    def report(self, period: str = "daily") -> dict:
-        rows = self.history(1)
-        if not rows:
-            return {"period": period, "available": False}
-        return ReportService().build(rows[0]["payload"], period=period)
+        return {"milestones": [x for x in (1, 10, 25, 50, 75, 100) if percent >= x]}
 
     def sync(self) -> dict:
         return sync_project()
 
+    def report(self, period: str = "daily") -> dict:
+        rows = self.history(1)
+        snapshot = rows[0]["payload"] if rows else self.sync()
+        return ReportService().build(snapshot, period=period)
+
     def help(self) -> list[str]:
         return [
-            "/project status",
-            "/project stats",
-            "/project progress",
-            "/project glossary",
-            "/project history",
-            "/project health",
-            "/project achievements",
-            "/project sync",
-            "/project report",
+            "/project status", "/project stats", "/project progress",
+            "/project glossary", "/project history", "/project health",
+            "/project achievements", "/project sync", "/project report",
         ]

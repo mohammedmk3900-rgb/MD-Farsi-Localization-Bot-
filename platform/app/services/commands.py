@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from app.application import application
+from app.services.glossary import GlossaryService
 from app.services.reports import ReportService
 from app.services.sync import sync_project
 
 
 class CommandService:
-    """Command layer for MD news. Commands contain no business rules."""
+    """Discord command facade over the canonical platform core."""
 
     def status(self) -> dict:
         return {
@@ -19,6 +20,7 @@ class CommandService:
         return {
             "status": "ok",
             "database": application.context.settings.database_path,
+            "history_entries": len(application.context.database.recent_snapshots(1)),
         }
 
     def stats(self) -> dict:
@@ -43,6 +45,10 @@ class CommandService:
             "reviewed": stats["reviewed"],
         }
 
+    def glossary(self, page: int = 1, page_size: int = 20) -> dict:
+        items = GlossaryService(application.context.settings).page(page, page_size)
+        return {"page": page, "page_size": page_size, "items": items}
+
     def history(self, limit: int = 10) -> list[dict]:
         return application.context.database.recent_snapshots(limit)
 
@@ -60,8 +66,12 @@ class CommandService:
             return {"period": period, "available": False}
         return ReportService().build(rows[0]["payload"], period=period)
 
+    def sync(self) -> dict:
+        return sync_project()
+
     def help(self) -> list[str]:
         return [
+            "/project status",
             "/project stats",
             "/project progress",
             "/project glossary",

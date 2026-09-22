@@ -23,6 +23,7 @@ OUT = Path(os.getenv("DISCORD_AUDIT_OUTPUT", "data/discord_audit.json"))
 if not TOKEN or not GUILD_ID:
     raise RuntimeError("DISCORD_BOT_TOKEN and DISCORD_GUILD_ID are required")
 
+
 def get(client: httpx.Client, path: str, **kwargs: Any) -> Any:
     response = client.get(path, **kwargs)
     if response.status_code == 401:
@@ -32,8 +33,17 @@ def get(client: httpx.Client, path: str, **kwargs: Any) -> Any:
             "Reset/copy the current Bot Token from the Discord Developer Portal "
             "and replace the GitHub Actions DISCORD_BOT_TOKEN secret."
         )
+    if response.status_code == 404 and path == f"{API}/guilds/{GUILD_ID}":
+        raise RuntimeError(
+            "Discord guild lookup failed (404). The DISCORD_GUILD_ID may be correct, "
+            "but the bot authenticated by DISCORD_BOT_TOKEN is not a member of that "
+            "server, the ID belongs to a different server, or the bot cannot access it. "
+            "Verify that the MD news bot is installed in the target server and that "
+            "DISCORD_GUILD_ID is the target server's ID."
+        )
     response.raise_for_status()
     return response.json()
+
 
 def recent_activity(client: httpx.Client, channel_id: str, channel_name: str) -> dict[str, Any]:
     if RECENT_MESSAGES <= 0:
@@ -70,13 +80,13 @@ def recent_activity(client: httpx.Client, channel_id: str, channel_name: str) ->
         "oldest_sampled_message_at": oldest,
     }
 
+
 def main() -> None:
     headers = {
         "Authorization": f"Bot {TOKEN}",
-        "User-Agent": "MD-Farsi-Localization-Discord-Audit/1.1",
+        "User-Agent": "MD-Farsi-Localization-Discord-Audit/1.2",
     }
     with httpx.Client(headers=headers, timeout=30.0) as client:
-        # Authenticate before making guild requests so a bad secret has a clear diagnosis.
         get(client, f"{API}/users/@me")
         print("Discord bot authentication: OK")
 
@@ -139,6 +149,7 @@ def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Discord audit written to {OUT} • {len(channel_rows)} channels • {len(role_rows)} roles")
+
 
 if __name__ == "__main__":
     main()

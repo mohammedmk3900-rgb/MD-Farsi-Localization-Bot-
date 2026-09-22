@@ -17,13 +17,18 @@ class CommandCenter:
     def collect(self) -> CommandCenterSnapshot:
         captured = datetime.now(timezone.utc)
         project = ParaTranzClient(self.settings).project_snapshot()
-        discord = DiscordClient(self.settings).snapshot()
+
+        discord = None
+        discord_ok = False
+        if self.settings.discord_bot_token and self.settings.discord_guild_id:
+            discord = DiscordClient(self.settings).snapshot()
+            discord_ok = True
 
         health = HealthStatus(
-            status="healthy",
+            status="healthy" if discord_ok else "degraded",
             checked_at=captured,
             paratranz=True,
-            discord=True,
+            discord=discord_ok,
             database=True,
         )
 

@@ -36,16 +36,14 @@ async def status(interaction: discord.Interaction):
     await interaction.response.send_message(render(commands.status()), ephemeral=True)
 
 
-@project.command(name="stats", description="آمار زنده ParaTranz")
+@project.command(name="stats", description="نمایش آخرین آمار ذخیره‌شده")
 async def stats(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    await interaction.followup.send(render(commands.stats()), ephemeral=True)
+    await interaction.response.send_message(render(commands.stats()), ephemeral=True)
 
 
-@project.command(name="progress", description="پیشرفت ترجمه و بازبینی")
+@project.command(name="progress", description="نمایش آخرین پیشرفت ذخیره‌شده")
 async def progress(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    await interaction.followup.send(render(commands.progress()), ephemeral=True)
+    await interaction.response.send_message(render(commands.progress()), ephemeral=True)
 
 
 @project.command(name="glossary", description="واژه‌نامه زنده ParaTranz")

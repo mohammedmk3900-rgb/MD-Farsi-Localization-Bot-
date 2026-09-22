@@ -7,7 +7,8 @@ from app.domain.models import HealthStatus
 
 class HealthService:
     def check(self, *, paratranz: bool, discord: bool, database: bool) -> HealthStatus:
-        status = "healthy" if all((paratranz, discord, database)) else "degraded"
+        checks = (paratranz, discord, database)
+        status = "healthy" if all(checks) else "degraded"
         return HealthStatus(
             status=status,
             checked_at=datetime.now(timezone.utc),
@@ -15,3 +16,6 @@ class HealthService:
             discord=discord,
             database=database,
         )
+
+    def check_local(self) -> HealthStatus:
+        return self.check(paratranz=True, discord=False, database=True)

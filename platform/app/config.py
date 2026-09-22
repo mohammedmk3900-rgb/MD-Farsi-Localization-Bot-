@@ -20,6 +20,4 @@ class Settings(BaseSettings):
     recent_messages_per_channel: int = 50
     api_host: str = "127.0.0.1"
     api_port: int = 8000
-
-
-settings = Settings()
+    cors_origins: str = ""

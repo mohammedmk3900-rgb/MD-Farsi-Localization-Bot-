@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 sys.path.insert(0,"scripts")
 from command_center.diagnostics import collect
-from command_center.http import request_json
+from command_center.http_client import request_json
 from command_center.state import load_json, save_json
 
 WEBHOOK=os.getenv("DISCORD_HEALTH_WEBHOOK_URL")

@@ -1,18 +1,15 @@
 from __future__ import annotations
 
-from app.services.analytics import AnalyticsService
-
 
 class DashboardService:
-    """Builds a secret-free public view from canonical platform snapshots."""
-
-    def __init__(self):
-        self.analytics = AnalyticsService()
+    """Build a stable, secret-free public view from a canonical snapshot."""
 
     def public_contract(self, snapshot: dict) -> dict:
         project = snapshot.get("project", {})
+        discord = snapshot.get("discord") or {}
         return {
             "schema": 1,
+            "captured_at": snapshot.get("captured_at"),
             "project": {
                 "project_id": project.get("project_id"),
                 "words_total": project.get("words_total", 0),
@@ -25,8 +22,8 @@ class DashboardService:
             },
             "health": snapshot.get("health", {}),
             "discord": {
-                "guild_name": (snapshot.get("discord") or {}).get("guild_name"),
-                "channels": len((snapshot.get("discord") or {}).get("channels", [])),
-                "roles": len((snapshot.get("discord") or {}).get("roles", [])),
+                "guild_name": discord.get("guild_name"),
+                "channels": discord.get("channels", 0) if isinstance(discord.get("channels"), int) else len(discord.get("channels", [])),
+                "roles": discord.get("roles", 0) if isinstance(discord.get("roles"), int) else len(discord.get("roles", [])),
             },
         }

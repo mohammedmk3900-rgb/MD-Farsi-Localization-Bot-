@@ -81,7 +81,16 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/glossary.json data/discord_audit.json
-          git diff --cached --quiet || git commit -m "chore: refresh platform operational snapshots"
+
+          if [ -d data ]; then
+            git add -A data
+          fi
+
+          if git diff --cached --quiet; then
+            echo "No public operational snapshot changes to persist."
+            exit 0
+          fi
+
+          git commit -m "chore: refresh platform operational snapshots"
           git pull --rebase origin main
           git push origin HEAD:main

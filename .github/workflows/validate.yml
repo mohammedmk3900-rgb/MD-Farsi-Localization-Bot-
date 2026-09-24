@@ -6,11 +6,17 @@ on:
     paths:
       - "platform/**"
       - "discord-mcp/**"
+      - "api/**"
+      - "dashboard/**"
+      - "rust/**"
       - ".github/workflows/**"
   pull_request:
     paths:
       - "platform/**"
       - "discord-mcp/**"
+      - "api/**"
+      - "dashboard/**"
+      - "rust/**"
       - ".github/workflows/**"
   workflow_dispatch:
 
@@ -19,31 +25,67 @@ permissions:
 
 jobs:
   platform:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     defaults:
       run:
         working-directory: platform
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: "3.14.7"
+      - run: python -m pip install --upgrade pip
       - run: pip install -e ".[test]"
       - run: python -m unittest discover -s tests -v
       - run: python -m compileall -q app
 
   discord-mcp:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     defaults:
       run:
         working-directory: discord-mcp
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: "3.14.7"
+      - run: python -m pip install --upgrade pip
       - run: pip install -r requirements.txt
       - run: python -m unittest discover -s . -p "test_*.py" -v
       - run: python -m py_compile server.py indexer.py bot.py run.py
+
+  typescript:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        project:
+          - api
+          - dashboard
+          - platform/dashboard
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24.21.0"
+          cache: npm
+      - name: Install dependencies
+        working-directory: ${{ matrix.project }}
+        run: npm install
+      - name: Build
+        working-directory: ${{ matrix.project }}
+        run: npm run build
+
+  rust:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test
+      - run: cargo build

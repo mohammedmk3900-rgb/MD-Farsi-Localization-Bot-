@@ -21,16 +21,24 @@ class CommandCenter:
         project = ParaTranzClient(self.settings).project_snapshot()
 
         discord = None
+        discord_configured = bool(
+            self.settings.discord_bot_token and self.settings.discord_guild_id
+        )
         discord_ok = False
-        if self.settings.discord_bot_token and self.settings.discord_guild_id:
-            discord = DiscordClient(self.settings).snapshot()
-            discord_ok = True
+        if discord_configured:
+            try:
+                discord = DiscordClient(self.settings).snapshot()
+                discord_ok = True
+            except Exception:
+                # ParaTranz is the project source of truth. A Discord outage must
+                # degrade the snapshot rather than block project synchronization.
+                discord = None
 
         health = HealthStatus(
-            status="healthy" if discord_ok else "degraded",
+            status="healthy" if (not discord_configured or discord_ok) else "degraded",
             checked_at=captured,
             paratranz=True,
-            discord=discord_ok,
+            discord=discord_ok if discord_configured else False,
             database=True,
         )
 

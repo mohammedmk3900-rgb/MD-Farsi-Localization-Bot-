@@ -2,7 +2,7 @@
 """Send optional daily/weekly Persian reports without affecting the 6-hour sync."""
 import os,sys
 sys.path.insert(0,"scripts")
-from command_center.http import request_json
+from command_center.http_client import request_json
 from command_center.reports import build
 
 def main():

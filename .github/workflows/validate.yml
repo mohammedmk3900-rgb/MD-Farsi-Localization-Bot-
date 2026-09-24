@@ -6,11 +6,17 @@ on:
     paths:
       - "platform/**"
       - "discord-mcp/**"
+      - "api/**"
+      - "dashboard/**"
+      - "rust/**"
       - ".github/workflows/**"
   pull_request:
     paths:
       - "platform/**"
       - "discord-mcp/**"
+      - "api/**"
+      - "dashboard/**"
+      - "rust/**"
       - ".github/workflows/**"
   workflow_dispatch:
 
@@ -47,3 +53,41 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python -m unittest discover -s . -p "test_*.py" -v
       - run: python -m py_compile server.py indexer.py bot.py run.py
+
+  typescript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        project:
+          - api
+          - dashboard
+          - platform/dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            api/package.json
+            dashboard/package.json
+            platform/dashboard/package.json
+      - name: Install dependencies
+        working-directory: ${{ matrix.project }}
+        run: npm install
+      - name: Build
+        working-directory: ${{ matrix.project }}
+        run: npm run build
+
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --locked=false
+      - run: cargo build --locked=false

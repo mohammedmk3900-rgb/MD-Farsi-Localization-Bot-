@@ -32,7 +32,7 @@ class ReviewQueue:
                     check=TranslationCheck(row["source"], row["translation"], row["findings"]),
                     created_at=row["created_at"],
                 )
-                for row in store.reviews()
+                for row in store.reviews() if row["status"] == "pending"
             ]
         self._next_id = max((item.id for item in self._items), default=0) + 1
 
@@ -59,5 +59,6 @@ class ReviewQueue:
         self._items.remove(item)
         result = {"item_id": item_id, "decision": decision, "reviewer": reviewer}
         if self.store is not None:
+            self.store.decide_review(item_id, decision, reviewer)
             self.store.record_event("review.decided", reviewer, datetime.now(timezone.utc).isoformat(), result)
         return result

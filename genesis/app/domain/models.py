@@ -51,3 +51,5 @@ class Task:
     priority: Priority = Priority.NORMAL
     status: TaskStatus = TaskStatus.AVAILABLE
     due_at: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None

@@ -53,7 +53,10 @@ class Store:
                     source TEXT NOT NULL,
                     translation TEXT NOT NULL,
                     findings TEXT NOT NULL,
-                    created_at TEXT NOT NULL
+                    created_at TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    decision TEXT,
+                    reviewer TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS schedules (
@@ -161,6 +164,10 @@ class Store:
             )
             return int(cur.lastrowid)
 
+    def decide_review(self, review_id: int, decision: str, reviewer: str) -> None:
+        with self._connect() as db:
+            db.execute("UPDATE reviews SET status='decided', decision=?, reviewer=? WHERE id=?", (decision, reviewer, review_id))
+
     def reviews(self) -> list[dict[str, Any]]:
         with self._connect() as db:
             rows = db.execute("SELECT * FROM reviews ORDER BY id").fetchall()
@@ -170,6 +177,9 @@ class Store:
                 "translation": row["translation"],
                 "findings": json.loads(row["findings"]),
                 "created_at": row["created_at"],
+                "status": row["status"],
+                "decision": row["decision"],
+                "reviewer": row["reviewer"],
             }
             for row in rows
         ]

@@ -90,7 +90,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
-          mkdir -p data discord-mcp/data
+          mkdir -p "$GITHUB_WORKSPACE/platform/data" "$GITHUB_WORKSPACE/discord-mcp/data"
           # Find the newest completed unified run with an available artifact.
           # Missing or expired artifacts are safe: use the checked-out seed.
           for run_id in $(gh run list --workflow unified-platform.yml --branch main --status completed --limit 12 --json databaseId --jq '.[].databaseId'); do
@@ -99,9 +99,9 @@ jobs:
               previous_platform="$RUNNER_TEMP/previous-state/platform/data/platform.db"
               previous_discord="$RUNNER_TEMP/previous-state/discord-mcp/data/discord.db"
               if [[ -s "$previous_platform" ]] && python -c 'import sqlite3,sys; db=sqlite3.connect(sys.argv[1]); assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"; db.close()' "$previous_platform"; then
-                cp "$previous_platform" data/platform.db
+                cp "$previous_platform" "$GITHUB_WORKSPACE/platform/data/platform.db"
                 if [[ -s "$previous_discord" ]] && python -c 'import sqlite3,sys; db=sqlite3.connect(sys.argv[1]); assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"; db.close()' "$previous_discord"; then
-                  cp "$previous_discord" discord-mcp/data/discord.db
+                  cp "$previous_discord" "$GITHUB_WORKSPACE/discord-mcp/data/discord.db"
                 fi
                 echo "Restored verified runtime databases from run $run_id"
                 break

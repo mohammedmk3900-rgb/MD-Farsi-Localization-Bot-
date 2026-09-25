@@ -12,6 +12,9 @@ from app.services.missions import MissionService
 from app.services.review import ReviewQueue
 from app.services.tasks import TaskService
 from app.services.translation import TranslationService
+from app.services.progress import ProgressService
+from app.services.scheduling import ReminderService
+from app.services.sync import SyncService
 
 
 class GenesisApplication:
@@ -27,9 +30,17 @@ class GenesisApplication:
         self.achievements = AchievementService()
         self.alerts = AlertService()
         self.health = HealthService()
+        self.progress = ProgressService()
+        self.reminders = ReminderService()
+        self.sync = SyncService()
 
     def initialize(self) -> None:
         self.store.initialize()
 
     def audit(self, event_type: str, actor: str | None, payload: dict[str, Any]) -> None:
-        self.store.record_event(event_type, actor, datetime.now(timezone.utc).isoformat(), payload)
+        self.store.record_event(
+            event_type,
+            actor,
+            datetime.now(timezone.utc).isoformat(),
+            payload,
+        )

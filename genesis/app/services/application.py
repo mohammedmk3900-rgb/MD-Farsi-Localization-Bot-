@@ -25,15 +25,17 @@ class GenesisApplication:
         self.store = store
         self.translation = TranslationService()
         self.glossary = GlossaryService()
-        self.tasks = TaskService()
+        self.tasks = TaskService(store)
         self.missions = MissionService()
-        self.reviews = ReviewQueue()
+        self.reviews = ReviewQueue(store)
         self.achievements = AchievementService()
         self.alerts = AlertService()
         self.health = HealthService()
         self.progress = ProgressService()
-        self.reminders = ReminderService()
+        self.reminders = ReminderService(store)
         self.sync = SyncService()
+        from app.services.scheduling import MissionScheduler
+        self.mission_scheduler = MissionScheduler(store)
         self.command_center = CommandCenterService(self)
 
     def initialize(self) -> None:

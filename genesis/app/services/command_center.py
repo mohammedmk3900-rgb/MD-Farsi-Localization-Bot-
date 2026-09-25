@@ -47,6 +47,12 @@ class CommandCenterService:
     def activate_mission(self, mission_id: int):
         return self.application.mission_engine.activate(mission_id)
 
+    def complete_mission(self, mission_id: int, actor: str):
+        return self.application.mission_engine.complete(mission_id, actor)
+
+    def cancel_mission(self, mission_id: int, actor: str):
+        return self.application.mission_engine.cancel(mission_id, actor)
+
     def events(self, limit: int = 50) -> list[dict[str, Any]]:
         return self.application.events.recent(limit)
 

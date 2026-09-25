@@ -6,10 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "md-farsi-localization-platform"
 version = "1.0.0"
 description = "Production platform for Millennium Dawn Farsi Localization"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
   "fastapi==0.141.1",
-  "uvicorn[standard]==0.53.0",
+  "uvicorn[standard]==0.54.0",
   "httpx==0.28.1",
   "discord.py==2.7.1",
   "pydantic==2.13.5",

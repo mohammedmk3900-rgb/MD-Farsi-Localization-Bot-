@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from app.application import application
-from app.services.achievements import AchievementService
 from app.services.audit import DiscordAuditService
 from app.services.command_center import CommandCenter
 from app.services.discord_notifications import DiscordNotificationService
-from app.services.reports import ReportService
 from app.services.glossary import GlossaryService
 from app.services.health import HealthService
 from app.services.polyglot import PolyglotEngine
+from app.services.reports import ReportService
 from app.services.automation import Automation
 
 
@@ -19,7 +16,9 @@ def sync() -> dict:
         application.context.settings,
         application.context.database,
     ).collect()
-    Automation(application).publish_project()
+    automation = Automation(application)
+    automation.publish_project()
+    automation.publish_intelligence()
     return snapshot.model_dump(mode="json")
 
 
@@ -71,7 +70,8 @@ def health() -> dict:
     application.record("health.checked", status)
     channel = settings.channel_health
     if channel:
-        DiscordNotificationService(settings).embed(
+        Automation(application)._embed_if_changed(
+            "publish.health",
             channel,
             "🛰️ سلامت سیستم • SYSTEM HEALTH",
             f"وضعیت: **{status['status']}**\nParaTranz: {'✅' if paratranz_ok else '❌'}\nDiscord: {'✅' if discord_ok else '❌'}\nDatabase: ✅",
@@ -90,7 +90,6 @@ def audit() -> dict:
 
 
 def polyglot_health() -> dict:
-    """Exercise the polyglot boundary without publishing translations."""
     engine = PolyglotEngine()
     qa = engine.run_rust_qa(
         "$COUNTRY has £fuel_texticon",

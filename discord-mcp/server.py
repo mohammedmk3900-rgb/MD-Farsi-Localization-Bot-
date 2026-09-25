@@ -33,16 +33,25 @@ def normalize_message(message: dict[str, Any], channel: dict[str, Any] | None = 
     author = message.get("author") or {}
     channel_data = channel or message.get("channel") or {}
     channel_id = str(channel_data.get("id") or message.get("channel_id") or "")
+    reference = message.get("message_reference") or {}
+    attachments = message.get("attachments") or []
+    content = message.get("content") or ""
     return {
         "id": str(message.get("id")),
         "channel_id": channel_id,
         "channel_name": channel_data.get("name"),
         "author_id": author.get("id"),
         "author_name": author.get("global_name") or author.get("username"),
-        "content": message.get("content") or "",
+        "content": content,
         "timestamp": message.get("timestamp"),
         "edited_timestamp": message.get("edited_timestamp"),
         "url": f"https://discord.com/channels/{GUILD_ID}/{channel_id}/{message.get('id')}",
+        "reference_message_id": str(reference["message_id"]) if reference.get("message_id") else None,
+        "reference_channel_id": str(reference["channel_id"]) if reference.get("channel_id") else None,
+        "thread_id": channel_id if channel_data.get("type") in {10, 11, 12} else None,
+        "message_type": message.get("type"),
+        "attachment_count": len(attachments),
+        "link_count": content.lower().count("http://") + content.lower().count("https://"),
     }
 
 

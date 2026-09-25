@@ -182,6 +182,36 @@ async def sync_server_history(max_pages_per_channel: int = 0) -> dict[str, Any]:
 
 
 @mcp.tool()
+async def get_server_snapshot(include_messages: bool = False, message_limit_per_channel: int = 50) -> dict[str, Any]:
+    """Return a detailed server snapshot, optionally including indexed messages."""
+    guild = await discord_get(f"/guilds/{GUILD_ID}")
+    channels = await get_channels()
+    roles = await discord_get(f"/guilds/{GUILD_ID}/roles")
+    payload = {
+        "server": {
+            "id": guild.get("id"),
+            "name": guild.get("name"),
+            "owner_id": guild.get("owner_id"),
+            "description": guild.get("description"),
+            "verification_level": guild.get("verification_level"),
+            "features": guild.get("features", []),
+        },
+        "categories": [c for c in channels if c.get("type") == 4],
+        "channels": channels,
+        "roles": roles,
+        "indexed_messages": index.count(),
+        "indexed_channels": index.channel_count(),
+    }
+    if include_messages:
+        payload["messages"] = {
+            str(channel["id"]): index.read_channel(str(channel["id"]), message_limit_per_channel)
+            for channel in channels
+            if channel.get("type") in {0, 5, 10, 11, 12, 15}
+        }
+    return payload
+
+
+@mcp.tool()
 async def get_sync_status() -> dict[str, Any]:
     """Return current local history-index status."""
     return {

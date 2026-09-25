@@ -25,7 +25,7 @@ permissions:
 
 concurrency:
   group: md-farsi-platform-jobs
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   run:
@@ -78,13 +78,15 @@ jobs:
         run: python -m app.cli audit
 
       - name: Persist public operational snapshots
-        if: always() && (github.event_name == 'schedule' && github.event.schedule == '0 */6 * * *' || github.event_name == 'workflow_dispatch' && (inputs.job == 'glossary-sync' || inputs.job == 'audit' || inputs.job == 'sync'))
+        if: success() && (github.event_name == 'schedule' && github.event.schedule == '0 */6 * * *' || github.event_name == 'workflow_dispatch' && (inputs.job == 'glossary-sync' || inputs.job == 'audit' || inputs.job == 'sync'))
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Never commit the live SQLite database or its journal files.
+          # Only stable, reviewable public JSON snapshots belong in Git.
           if [ -d data ]; then
-            git add -A data
+            find data -type f -name '*.json' -print0 | xargs -0 -r git add --
           fi
 
           if git diff --cached --quiet; then
@@ -92,6 +94,17 @@ jobs:
             exit 0
           fi
 
-          git commit -m "chore: refresh platform operational snapshots"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          git commit -m "chore: refresh public platform JSON snapshots"
+
+          # The concurrency group serializes this workflow, but other workflows
+          # may still update main. Retry only text-based JSON snapshot rebases.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            if git rebase origin/main && git push origin HEAD:main; then
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((attempt * 3))
+          done
+          echo "::error::Unable to publish snapshots after three attempts."
+          exit 1

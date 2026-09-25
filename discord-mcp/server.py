@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from mcp.server import MCPServer
 
 from indexer import MessageIndex
+from news import DiscordNewsEngine
 
 load_dotenv()
 
@@ -25,6 +26,7 @@ if not TOKEN or not GUILD_ID:
 
 mcp = MCPServer("Millennium Dawn Farsi Localization Discord")
 index = MessageIndex(DB_PATH)
+news_engine = DiscordNewsEngine(DB_PATH)
 
 
 def normalize_message(message: dict[str, Any], channel: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -268,6 +270,12 @@ async def get_channel_statistics() -> list[dict[str, Any]]:
 async def get_author_statistics(limit: int = 100) -> list[dict[str, Any]]:
     """Return aggregate message counts by author; no message content is returned."""
     return index.author_stats(limit)
+
+
+@mcp.tool()
+async def get_news_digest(hours: int = 24, limit: int = 12, mark_read: bool = False) -> dict[str, Any]:
+    """Return deterministic project news from indexed Discord messages."""
+    return news_engine.digest(hours=hours, limit=limit, mark_read=mark_read)
 
 
 @mcp.tool()

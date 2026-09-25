@@ -19,6 +19,9 @@ def tokens(text: str) -> set[str]:
 class TranslationService:
     """Deterministic translation safety checks. Never publishes translations."""
 
+    def __init__(self, engine=None):
+        self.engine = engine
+
     def check(
         self,
         source: str,
@@ -29,8 +32,20 @@ class TranslationService:
         source_tokens = tokens(source)
         target_tokens = tokens(translation)
 
-        missing = sorted(source_tokens - target_tokens)
-        unexpected = sorted(target_tokens - source_tokens)
+        if self.engine is not None:
+            try:
+                result = self.engine.check_translation(source, translation)
+                source_tokens = source_tokens | set(result.missing) | set(result.unexpected)
+                target_tokens = target_tokens | set(result.unexpected)
+                # Rebuild the exact token drift from the Rust engine's result.
+                missing = sorted(result.missing)
+                unexpected = sorted(result.unexpected)
+            except (OSError, RuntimeError, ValueError):
+                missing = sorted(source_tokens - target_tokens)
+                unexpected = sorted(target_tokens - source_tokens)
+        else:
+            missing = sorted(source_tokens - target_tokens)
+            unexpected = sorted(target_tokens - source_tokens)
 
         if missing:
             findings.append({

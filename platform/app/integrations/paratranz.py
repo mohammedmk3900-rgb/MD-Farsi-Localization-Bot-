@@ -23,6 +23,19 @@ class ParaTranzClient:
             response.raise_for_status()
             data = response.json()
 
+        # Reject malformed/empty API responses rather than overwriting a
+        # previously valid snapshot with a fabricated all-zero report.
+        if not isinstance(data, dict):
+            raise ValueError("ParaTranz returned a non-object project response")
+        required = ("wordCount", "stringCount", "translated", "reviewed", "fileCount", "memberCount")
+        missing = [key for key in required if key not in data or data[key] is None]
+        if missing:
+            raise ValueError(f"ParaTranz response missing project metrics: {', '.join(missing)}")
+        if int(data["stringCount"]) <= 0 or int(data["wordCount"]) <= 0:
+            raise ValueError("ParaTranz returned an empty project snapshot")
+        if int(data["translated"]) > int(data["stringCount"]) or int(data["reviewed"]) > int(data["stringCount"]):
+            raise ValueError("ParaTranz project counters exceed total strings")
+
         return ProjectSnapshot(
             project_id=self.settings.paratranz_project_id,
             captured_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),

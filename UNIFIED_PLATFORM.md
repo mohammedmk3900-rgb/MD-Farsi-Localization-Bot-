@@ -52,3 +52,18 @@ workflow permissions, actual ParaTranz API response format, and GitHub Actions
 test results before merging. This rewrite changes the automation control
 plane; it does not replace the existing bot commands or the separate Genesis
 feature branch.
+
+
+## Operational API
+
+- `GET /health` is a lightweight liveness check.
+- `GET /ready` verifies that the operational SQLite database exists and passes `PRAGMA integrity_check`.
+- `GET /api/v1/operations/last` returns the last aggregate orchestration result.
+- `GET /api/v1/operations/metrics` returns dashboard-safe counts of successful, failed, and skipped jobs.
+- `POST /api/v1/project/sync` is management-only and requires the configured Bearer token.
+
+## Discord history indexing
+
+The Discord indexer keeps a private SQLite history of messages the bot is authorized to see. Gateway events handle create/edit/delete in real time; scheduled REST history sync uses channel cursors to avoid replaying the entire history on every six-hour run. Search, channel reads, server snapshots, channel statistics, and author statistics are exposed through the MCP layer. Discord permissions remain authoritative.
+
+The index is operational/private data and is never committed to Git or exposed through public platform snapshots.

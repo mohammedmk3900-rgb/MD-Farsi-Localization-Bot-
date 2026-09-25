@@ -72,6 +72,25 @@ class DiscordCommandGateway:
         self.authorize(actor, "sync.run")
         return self.application.sync.project(self.application, integration)
 
+    def missions(self, actor: DiscordActor, status: str | None = None):
+        self.authorize(actor, "project.read")
+        return self.application.command_center.missions(status)
+
+    def generate_missions(self, actor: DiscordActor, scopes: list[str], limit: int = 5):
+        self.authorize(actor, "tasks.manage")
+        return self.application.command_center.generate_missions(scopes, limit)
+
+    def activate_mission(self, actor: DiscordActor, mission_id: int):
+        self.authorize(actor, "tasks.manage")
+        return self.application.command_center.activate_mission(mission_id)
+
+    def notifications(self, actor: DiscordActor):
+        return self.application.command_center.notifications(actor.user_id)
+
+    def events(self, actor: DiscordActor, limit: int = 50):
+        self.authorize(actor, "project.read")
+        return self.application.command_center.events(limit)
+
 
 @dataclass(frozen=True)
 class DiscordCommand:
@@ -87,6 +106,9 @@ class DiscordTransport:
         "status": DiscordCommand("status", "project.read"),
         "tasks": DiscordCommand("tasks", "tasks.self"),
         "review": DiscordCommand("review", "translation.check"),
+        "missions": DiscordCommand("missions", "project.read"),
+        "events": DiscordCommand("events", "project.read"),
+        "notifications": DiscordCommand("notifications", "project.read"),
     }
 
     def __init__(self, gateway: DiscordCommandGateway):
@@ -105,4 +127,10 @@ class DiscordTransport:
             return self.gateway.tasks(actor)
         if command == "review":
             return self.gateway.review_queue(actor)
+        if command == "missions":
+            return self.gateway.missions(actor, kwargs.get("status"))
+        if command == "events":
+            return self.gateway.events(actor, int(kwargs.get("limit", 50)))
+        if command == "notifications":
+            return self.gateway.notifications(actor)
         raise DiscordCommandError(f"unsupported command: {command}")

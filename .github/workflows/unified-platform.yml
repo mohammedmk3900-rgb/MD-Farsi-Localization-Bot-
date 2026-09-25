@@ -239,6 +239,19 @@ jobs:
           print(result)
           PY
 
+      - name: Build Discord project news digest
+        env:
+          DISCORD_DB_PATH: ${{ github.workspace }}/discord-mcp/data/discord.db
+        working-directory: discord-mcp
+        run: |
+          set -euo pipefail
+          python news.py \
+            --db "$DISCORD_DB_PATH" \
+            --hours 24 \
+            --limit 12 \
+            --output "$GITHUB_WORKSPACE/platform/data/discord_news.json" \
+            --mark-read
+
       - name: Select report schedule
         id: reports
         shell: bash
@@ -320,7 +333,7 @@ jobs:
           # binary merge-conflict class this workflow is designed to avoid.
           git restore --worktree -- data/platform.db 2>/dev/null || true
 
-          find data -maxdepth 1 -type f -name '*.json' -print0 | xargs -0 -r git add --
+          find data -maxdepth 1 -type f -name '*.json' ! -name 'discord_news.json' -print0 | xargs -0 -r git add --
 
           if git diff --cached --quiet; then
             echo "No public JSON snapshot changes to publish."

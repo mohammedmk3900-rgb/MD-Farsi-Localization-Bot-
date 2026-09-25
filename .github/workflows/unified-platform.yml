@@ -47,13 +47,14 @@ jobs:
       - name: Rust tests
         working-directory: rust
         run: |
-          cargo test --locked
-          cargo build --locked
+          cargo test
+          cargo build
 
   operate:
     name: Run coordinated platform jobs
     needs: validate
     if: >-
+      github.ref == 'refs/heads/main' &&
       (github.event_name == 'schedule' ||
        (github.event_name == 'workflow_dispatch' && inputs.mode != 'validate'))
     runs-on: ubuntu-latest

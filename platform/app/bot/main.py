@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import discord
 from discord import app_commands
@@ -203,6 +204,28 @@ async def check(interaction: discord.Interaction, source: str, translation: str)
     await interaction.response.defer(ephemeral=True)
     result = commands.check_translation(source, translation)
     await interaction.followup.send(render(result), ephemeral=True)
+
+
+@project.command(name="operations", description="وضعیت آخرین اجرای یکپارچه")
+async def operations(interaction: discord.Interaction):
+    if not require(interaction, "health.read"):
+        await deny(interaction)
+        return
+    path = Path("data/last_run.json")
+    if not path.is_file():
+        await interaction.response.send_message("هنوز اجرای یکپارچه‌ای ثبت نشده است.", ephemeral=True)
+        return
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        summary = {
+            "status": payload.get("status"),
+            "generated_at": payload.get("generated_at"),
+            "jobs": {key: value.get("status") for key, value in payload.get("jobs", {}).items()},
+        }
+    except (OSError, ValueError, AttributeError):
+        await interaction.response.send_message("گزارش اجرای قبلی قابل خواندن نیست.", ephemeral=True)
+        return
+    await interaction.response.send_message(render(summary), ephemeral=True)
 
 
 @project.command(name="help", description="فهرست فرمان‌های پروژه")

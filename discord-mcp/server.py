@@ -212,6 +212,18 @@ async def get_server_snapshot(include_messages: bool = False, message_limit_per_
 
 
 @mcp.tool()
+async def get_channel_statistics() -> list[dict[str, Any]]:
+    """Return aggregate activity statistics for every indexed channel."""
+    return index.channel_stats()
+
+
+@mcp.tool()
+async def get_author_statistics(limit: int = 100) -> list[dict[str, Any]]:
+    """Return aggregate message counts by author; no message content is returned."""
+    return index.author_stats(limit)
+
+
+@mcp.tool()
 async def get_sync_status() -> dict[str, Any]:
     """Return current local history-index status."""
     return {

@@ -10,6 +10,7 @@ from app.services.discord_notifications import DiscordNotificationService
 from app.services.reports import ReportService
 from app.services.glossary import GlossaryService
 from app.services.health import HealthService
+from app.services.polyglot import PolyglotEngine
 
 
 def sync() -> dict:
@@ -82,4 +83,21 @@ def audit() -> dict:
         "channels": payload["server"]["channels"],
         "roles": payload["server"]["roles"],
     })
+    return payload
+
+
+def polyglot_health() -> dict:
+    """Exercise the polyglot boundary without publishing translations."""
+    engine = PolyglotEngine()
+    qa = engine.run_rust_qa(
+        "$COUNTRY has £fuel_texticon",
+        "$COUNTRY دارای £fuel_texticon است",
+    )
+    worker = engine.run_worker({
+        "type": "platform_health",
+        "id": "platform-health",
+        "payload": {"qa": qa.get("status")},
+    })
+    payload = {"qa": qa, "worker": worker}
+    application.record("polyglot.health", payload)
     return payload

@@ -72,6 +72,38 @@ class MissionEngineService:
         )
         return task
 
+    def complete(self, mission_id: int, actor: str) -> MissionRecord:
+        record = self._get(mission_id)
+        if record.status != "active":
+            raise ValueError("mission is not active")
+        updated = MissionRecord(
+            record.id, record.title, record.scope, record.priority,
+            record.reward, "completed", record.task_id, record.created_at,
+        )
+        self.store.save_mission(updated)
+        self.events.publish(
+            "mission.completed",
+            actor,
+            {"mission_id": record.id, "task_id": record.task_id, "reward": record.reward},
+        )
+        return updated
+
+    def cancel(self, mission_id: int, actor: str) -> MissionRecord:
+        record = self._get(mission_id)
+        if record.status not in {"open", "active"}:
+            raise ValueError("mission cannot be cancelled")
+        updated = MissionRecord(
+            record.id, record.title, record.scope, record.priority,
+            record.reward, "cancelled", record.task_id, record.created_at,
+        )
+        self.store.save_mission(updated)
+        self.events.publish(
+            "mission.cancelled",
+            actor,
+            {"mission_id": record.id, "task_id": record.task_id},
+        )
+        return updated
+
     def list(self, status: str | None = None) -> list[MissionRecord]:
         return [
             MissionRecord(

@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from app.integrations.paratranz import ParaTranzIntegration
-from app.services.application import GenesisApplication
+from typing import TYPE_CHECKING
+
 from app.domain.models import GlossaryTerm
+from app.integrations.paratranz import ParaTranzIntegration
+
+if TYPE_CHECKING:
+    from app.services.application import GenesisApplication
 
 
 class SyncService:

@@ -139,7 +139,7 @@ jobs:
           restored=false
           while read -r run_id; do
             [[ -n "$run_id" ]] || continue
-            rm -rf "$RUNNER_TEMP/previous-state/*"
+            rm -rf "$RUNNER_TEMP/previous-state"/*
             mkdir -p "$RUNNER_TEMP/previous-state"
 
             if ! gh run download "$run_id" --name "platform-run-$run_id" --dir "$RUNNER_TEMP/previous-state"; then
@@ -263,7 +263,7 @@ jobs:
           # Runtime SQLite belongs in artifacts, not in Git history. Restore any
           # tracked DB to HEAD before rebasing so it can never reintroduce the
           # binary merge-conflict class this workflow is designed to avoid.
-          git restore --worktree -- platform/data/platform.db 2>/dev/null || true
+          git restore --worktree -- data/platform.db 2>/dev/null || true
 
           find data -maxdepth 1 -type f -name '*.json' -print0 | xargs -0 -r git add --
 
@@ -292,8 +292,8 @@ jobs:
               # run changed the same snapshot files, resolve only those files
               # in favor of the current run and continue the rebase.
               if git diff --name-only --diff-filter=U | grep -Eq '^platform/data/.*\.json$'; then
-                git checkout --theirs -- platform/data/*.json
-                git add platform/data/*.json
+                git checkout --theirs -- data/*.json
+                git add data/*.json
                 GIT_EDITOR=true git rebase --continue
                 if git push origin HEAD:main; then
                   exit 0

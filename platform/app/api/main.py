@@ -1,7 +1,8 @@
 import json
+import secrets
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.application import application
@@ -26,7 +27,7 @@ commands = CommandService()
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "application": "md-news", "database": application.context.settings.database_path}
+    return {"status": "ok", "application": "md-news"}
 
 
 @app.get("/api/v1/project")
@@ -39,7 +40,10 @@ def project() -> dict:
 
 
 @app.post("/api/v1/project/sync")
-def project_sync() -> dict:
+def project_sync(authorization: str | None = Header(default=None)) -> dict:
+    token = application.context.settings.api_token
+    if not token or not authorization or not secrets.compare_digest(authorization, f"Bearer {token}"):
+        raise HTTPException(status_code=403, detail="Management API authorization required")
     try:
         return sync_project()
     except Exception as exc:

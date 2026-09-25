@@ -1,67 +1,30 @@
-# Discord MCP — Read-Only Automatic History Bridge
+# Discord Indexer & MCP
 
-This component gives the project a read-only bridge from the **Millennium Dawn Farsi Localization Discord server** to an MCP client such as ChatGPT.
+This service provides a permission-respecting read model of the configured Discord guild.
 
-## Architecture
+## Data flow
 
-Discord Server → Discord Bot Gateway → SQLite History Index → MCP Server → ChatGPT
-
-The bot respects Discord permissions. It can only index channels and messages that the bot account can access.
-
-## What it can inspect
-
-- 🏛️ Server name, ID and owner ID
-- 📁 All visible categories and channels
-- 🔐 Channel permission overwrites returned by Discord
-- 👥 Server roles and permission bitsets
-- 💬 Message history from accessible text channels
-- 🔎 Full-text search over indexed messages
-- 📊 Sync/index status
-
-## Automatic behavior
-
-- New message → indexed automatically.
-- Edited message → indexed version updated.
-- Deleted message → retained as a deletion tombstone and excluded from search.
-- Restart → resumes historical work or performs incremental catch-up.
-- SQLite WAL → bot and MCP share the same database.
-- Inaccessible channels → skipped; Discord permissions remain authoritative.
+1. The Gateway bot receives authorized guild events.
+2. On startup it backfills accessible text, forum and thread history.
+3. Message create/edit/delete events keep SQLite current.
+4. The MCP server exposes structure, indexed history, search and aggregate analytics.
 
 ## MCP tools
 
-- `get_server_overview` — complete visible server summary
-- `list_channels` — categories/channels + permission overwrites
-- `list_roles` — server roles + permission bitsets
-- `sync_channel_history` — sync one accessible channel
-- `sync_server_history` — sync all accessible text channels
-- `get_sync_status` — index status
-- `search_index` — search indexed messages
-- `read_channel` — read indexed channel history
+- `get_server_overview`
+- `get_server_snapshot(include_messages, message_limit_per_channel)`
+- `list_channels`
+- `list_roles`
+- `sync_channel_history`
+- `sync_server_history`
+- `get_sync_status`
+- `search_index`
+- `read_channel`
+- `get_channel_statistics`
+- `get_author_statistics`
 
-## Configuration
+The bot never bypasses Discord permissions. Private channels unavailable to the bot are not indexed. Deleted messages are represented as local tombstones and their content is removed from the index.
 
-Required:
+The Discord `message_content` privileged intent must be enabled for message content to be available. Historical backfill is limited to channels/history the bot can actually read.
 
-- `DISCORD_BOT_TOKEN`
-- `DISCORD_GUILD_ID`
-
-Optional:
-
-- `MCP_HOST` (default `0.0.0.0`)
-- `MCP_PORT` (default `8000`)
-- `DISCORD_DB_PATH` (default `/app/data/discord.db`)
-- `DISCORD_BACKFILL_ON_START` (default `true`)
-- `DISCORD_BACKFILL_CONCURRENCY` (default `2`)
-- `LOG_LEVEL` (default `INFO`)
-
-**Never commit a real bot token.**
-
-## Discord configuration
-
-The bot needs permission to view target channels and read message history. Enable **Message Content Intent** in the Discord Developer Portal.
-
-The MCP endpoint should be placed behind HTTPS before connecting a remote client.
-
-## Privacy and scope
-
-This bridge is intentionally **read-only**. It does not send messages, moderate, change roles, or bypass Discord permissions. It is intended to let an authorized MCP client inspect the server so project management can be based on the actual Discord state rather than screenshots or copied text.
+The SQLite database contains message content and must be treated as private operational data. It must not be committed to Git or exposed in public snapshots.

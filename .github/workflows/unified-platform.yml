@@ -165,6 +165,15 @@ jobs:
           name: polyglot-binaries-${{ github.run_id }}
           path: ${{ github.workspace }}
 
+      - name: Restore executable permissions for validated polyglot binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x \
+            "$GITHUB_WORKSPACE/genesis/engine/rust/target/debug/mdfarsi-qa" \
+            "$GITHUB_WORKSPACE/genesis/engine/go/worker" \
+            "$GITHUB_WORKSPACE/build/genesis-native/md_native_probe"
+
       - name: Install platform
         run: |
           set -euo pipefail

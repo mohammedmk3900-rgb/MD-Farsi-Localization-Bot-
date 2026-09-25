@@ -83,8 +83,18 @@ async def get_channels() -> list[dict[str, Any]]:
 
 
 async def get_message_channels() -> list[dict[str, Any]]:
+    """Return message-bearing channels plus currently active thread channels."""
     channels = await get_channels()
-    return [c for c in channels if c.get("type") in {0, 5, 10, 11, 12, 15}]
+    result = [c for c in channels if c.get("type") in {0, 5, 10, 11, 12, 15}]
+    try:
+        active = await discord_get(f"/guilds/{GUILD_ID}/threads/active")
+        known = {str(c.get("id")) for c in result}
+        for thread in active.get("threads", []):
+            if str(thread.get("id")) not in known:
+                result.append(thread)
+    except httpx.HTTPStatusError:
+        pass
+    return result
 
 
 @mcp.tool()
@@ -152,6 +162,30 @@ async def fetch_page(channel_id: str, before: str | None = None) -> list[dict[st
         normalize_message(message, channel)
         for message in await discord_get(f"/channels/{channel_id}/messages", params=params)
     ]
+
+
+@mcp.tool()
+async def read_replies(message_id: str, limit: int = 100) -> list[dict[str, Any]]:
+    """Return indexed messages that explicitly reference a message."""
+    return index.read_replies(message_id, limit)
+
+
+@mcp.tool()
+async def read_thread(thread_id: str, limit: int = 200) -> list[dict[str, Any]]:
+    """Return indexed messages belonging to one Discord thread."""
+    return index.read_thread(thread_id, limit)
+
+
+async def fetch_archived_threads(parent_channel_id: str) -> list[dict[str, Any]]:
+    """Best-effort discovery of public archived threads for a channel."""
+    try:
+        payload = await discord_get(
+            f"/channels/{parent_channel_id}/threads/archived/public",
+            params={"limit": 100},
+        )
+        return payload.get("threads", [])
+    except httpx.HTTPStatusError:
+        return []
 
 
 @mcp.tool()

@@ -27,9 +27,9 @@ class GenesisApplication:
         self.store = store
         self.translation = TranslationService()
         self.glossary = GlossaryService()
-        self.tasks = TaskService(store)
-        self.missions = MissionService()
         self.events = EventService(store)
+        self.tasks = TaskService(store, self.events)
+        self.missions = MissionService()
         self.reviews = ReviewQueue(store)
         self.achievements = AchievementService()
         self.alerts = AlertService()

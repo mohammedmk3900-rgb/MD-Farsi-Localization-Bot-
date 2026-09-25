@@ -69,3 +69,30 @@ def test_mission_and_notification_pipeline_survives_restart(tmp_path):
     second.events.acknowledge(notifications[0].id)
     third = build(tmp_path)
     assert third.events.pending_notifications("member-1") == []
+
+
+def test_task_lifecycle_emits_durable_events(tmp_path):
+    app = build(tmp_path)
+    task = app.tasks.create(title="Translate event strings")
+    app.tasks.claim(task, "member-1")
+    app.tasks.submit(task, "member-1")
+    app.tasks.complete(task, "reviewer-1")
+
+    events = app.events.recent(20)
+    kinds = [event["event_type"] for event in events]
+    assert "task.created" in kinds
+    assert "task.claimed" in kinds
+    assert "task.submitted" in kinds
+    assert "task.completed" in kinds
+
+
+def test_mission_can_complete_or_cancel(tmp_path):
+    app = build(tmp_path)
+    first = app.mission_engine.generate(["scope-a"], limit=1)[0]
+    app.mission_engine.activate(first.id)
+    completed = app.mission_engine.complete(first.id, "reviewer-1")
+    assert completed.status == "completed"
+
+    second = app.mission_engine.generate(["scope-b"], limit=1)[0]
+    cancelled = app.mission_engine.cancel(second.id, "manager-1")
+    assert cancelled.status == "cancelled"

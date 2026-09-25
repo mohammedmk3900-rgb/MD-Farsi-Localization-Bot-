@@ -73,6 +73,14 @@ class Store:
                     ON schedules(delivered, run_at);
                 """
             )
+            columns = {row["name"] for row in db.execute("PRAGMA table_info(reviews)").fetchall()}
+            for name, definition in {
+                "status": "TEXT NOT NULL DEFAULT 'pending'",
+                "decision": "TEXT",
+                "reviewer": "TEXT",
+            }.items():
+                if name not in columns:
+                    db.execute(f"ALTER TABLE reviews ADD COLUMN {name} {definition}")
 
     def record_event(self, event_type: str, actor: str | None, created_at: str, payload: dict[str, Any]) -> None:
         with self._connect() as db:

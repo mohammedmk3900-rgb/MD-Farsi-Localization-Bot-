@@ -17,7 +17,8 @@ class ParaTranzClient:
             raise RuntimeError("PARATRANZ_TOKEN is not configured")
 
         token = self.settings.paratranz_token.strip()
-        headers = {"Authorization": token if token.lower().startswith("bearer ") else f"Bearer {token}"}
+        authorization = token if token.lower().startswith("bearer ") else f"Bearer {token}"
+        headers = {"Authorization": authorization}
         url = f"{self.base_url}/projects/{self.settings.paratranz_project_id}"
         with httpx.Client(headers=headers, timeout=30) as client:
             response = client.get(url)

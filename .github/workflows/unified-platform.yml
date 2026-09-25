@@ -90,18 +90,21 @@ jobs:
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
-          mkdir -p data
+          mkdir -p data discord-mcp/data
           # Find the newest completed unified run with an available artifact.
           # Missing or expired artifacts are safe: use the checked-out seed.
           for run_id in $(gh run list --workflow unified-platform.yml --branch main --status completed --limit 12 --json databaseId --jq '.[].databaseId'); do
             mkdir -p "$RUNNER_TEMP/previous-state"
             if gh run download "$run_id" --name "platform-run-$run_id" --dir "$RUNNER_TEMP/previous-state"; then
-              if [[ -s "$RUNNER_TEMP/previous-state/platform.db" ]]; then
-                if python -c 'import sqlite3,sys; db=sqlite3.connect(sys.argv[1]); assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"; db.close()' "$RUNNER_TEMP/previous-state/platform.db"; then
-                  cp "$RUNNER_TEMP/previous-state/platform.db" data/platform.db
-                  echo "Restored verified database from run $run_id"
-                  break
+              previous_platform="$RUNNER_TEMP/previous-state/platform/data/platform.db"
+              previous_discord="$RUNNER_TEMP/previous-state/discord-mcp/data/discord.db"
+              if [[ -s "$previous_platform" ]] && python -c 'import sqlite3,sys; db=sqlite3.connect(sys.argv[1]); assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"; db.close()' "$previous_platform"; then
+                cp "$previous_platform" data/platform.db
+                if [[ -s "$previous_discord" ]] && python -c 'import sqlite3,sys; db=sqlite3.connect(sys.argv[1]); assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"; db.close()' "$previous_discord"; then
+                  cp "$previous_discord" discord-mcp/data/discord.db
                 fi
+                echo "Restored verified runtime databases from run $run_id"
+                break
               fi
             fi
           done
@@ -164,6 +167,7 @@ PY
           path: |
             platform/data/platform.db
             platform/data/*.json
+            discord-mcp/data/discord.db
           if-no-files-found: warn
           retention-days: 30
       - name: Publish public JSON snapshots only

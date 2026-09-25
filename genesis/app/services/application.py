@@ -15,6 +15,7 @@ from app.services.translation import TranslationService
 from app.services.progress import ProgressService
 from app.services.scheduling import ReminderService
 from app.services.sync import SyncService
+from app.services.command_center import CommandCenterService
 
 
 class GenesisApplication:
@@ -33,6 +34,7 @@ class GenesisApplication:
         self.progress = ProgressService()
         self.reminders = ReminderService()
         self.sync = SyncService()
+        self.command_center = CommandCenterService(self)
 
     def initialize(self) -> None:
         self.store.initialize()

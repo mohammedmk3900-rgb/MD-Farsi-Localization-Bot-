@@ -1,3 +1,12 @@
 using System.Text.Json;
-var health = new { component = "windows-bridge", status = "ok", runtime = Environment.Version.ToString() };
-Console.WriteLine(JsonSerializer.Serialize(health));
+
+var result = new
+{
+    schema_version = 1,
+    operation = "windows_probe",
+    status = "ok",
+    runtime = ".NET 8",
+    generated_at = DateTimeOffset.UtcNow
+};
+
+Console.WriteLine(JsonSerializer.Serialize(result));

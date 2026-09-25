@@ -84,6 +84,14 @@ class DiscordCommandGateway:
         self.authorize(actor, "tasks.manage")
         return self.application.command_center.activate_mission(mission_id)
 
+    def complete_mission(self, actor: DiscordActor, mission_id: int):
+        self.authorize(actor, "tasks.manage")
+        return self.application.command_center.complete_mission(mission_id, actor.user_id)
+
+    def cancel_mission(self, actor: DiscordActor, mission_id: int):
+        self.authorize(actor, "tasks.manage")
+        return self.application.command_center.cancel_mission(mission_id, actor.user_id)
+
     def notifications(self, actor: DiscordActor):
         self.authorize(actor, "project.read")
         return self.application.command_center.notifications(actor.user_id)

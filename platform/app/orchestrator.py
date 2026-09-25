@@ -25,7 +25,8 @@ def execute(*, daily: bool = False, weekly: bool = False) -> dict:
             if name == "sync":
                 project_ok = True
         except Exception as exc:
-            # Do not expose HTTP credentials, URLs or response bodies in public logs.
+            # Avoid logging exception messages: HTTP exceptions may contain
+            # authorization URLs or private upstream response details.
             results[name] = {"status": "failed", "error_type": type(exc).__name__}
 
     run("sync", jobs.sync)

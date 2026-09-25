@@ -98,6 +98,19 @@ async def get_message_channels() -> list[dict[str, Any]]:
 
 
 @mcp.tool()
+async def deep_scan_server(max_pages_per_channel: int = 0, incremental: bool = True) -> dict[str, Any]:
+    """Perform a full server scan: structure, members, resources, threads, and message history."""
+    history = await sync_server_history(
+        max_pages_per_channel=max_pages_per_channel,
+        incremental=incremental,
+    )
+    snapshot = await build_full_server_snapshot(include_messages=False)
+    snapshot["scan"] = history
+    snapshot["scan"]["indexed_messages"] = index.count()
+    return snapshot
+
+
+@mcp.tool()
 async def get_server_overview() -> dict[str, Any]:
     """Return the complete visible server structure without message content."""
     if full:

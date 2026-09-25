@@ -177,15 +177,18 @@ async def read_thread(thread_id: str, limit: int = 200) -> list[dict[str, Any]]:
 
 
 async def fetch_archived_threads(parent_channel_id: str) -> list[dict[str, Any]]:
-    """Best-effort discovery of public archived threads for a channel."""
-    try:
-        payload = await discord_get(
-            f"/channels/{parent_channel_id}/threads/archived/public",
-            params={"limit": 100},
-        )
-        return payload.get("threads", [])
-    except httpx.HTTPStatusError:
-        return []
+    """Best-effort discovery of public and private archived threads."""
+    threads: list[dict[str, Any]] = []
+    for endpoint in (
+        f"/channels/{parent_channel_id}/threads/archived/public",
+        f"/channels/{parent_channel_id}/threads/archived/private",
+    ):
+        try:
+            payload = await discord_get(endpoint, params={"limit": 100})
+            threads.extend(payload.get("threads", []))
+        except httpx.HTTPStatusError:
+            continue
+    return threads
 
 
 @mcp.tool()

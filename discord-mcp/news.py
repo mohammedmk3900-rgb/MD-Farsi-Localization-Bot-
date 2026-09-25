@@ -40,6 +40,21 @@ def _normalize(text: str) -> str:
 
 def _category(content: str) -> str:
     lowered = content.casefold()
+
+    # Prefer explicit domain phrases over broad project/update markers.
+    # This keeps messages such as "واژه‌نامه پروژه آپدیت شد" in the
+    # glossary stream instead of letting generic project/update terms win.
+    strong_categories = (
+        ("واژه‌نامه", ("واژه نامه", "واژه‌نامه", "glossary", "ترمینولوژی", "terminology")),
+        ("بازبینی", ("بازبینی", "reviewed", "review")),
+        ("ترجمه", ("ترجمه", "translation", "localization")),
+        ("همکاری", ("همکاری", "مترجم", "translator")),
+        ("مشکل", ("خطا", "error", "bug", "failed", "خراب", "ارور")),
+    )
+    for name, markers in strong_categories:
+        if any(marker.casefold() in lowered for marker in markers):
+            return name
+
     scores = {
         name: sum(1 for word in words if word.casefold() in lowered)
         for name, words in CATEGORIES.items()

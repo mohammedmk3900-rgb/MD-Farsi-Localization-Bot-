@@ -1,6 +1,7 @@
 """Read-only Discord MCP bridge for authorized server structure and message history."""
 from __future__ import annotations
 
+import asyncio
 import os
 from typing import Any
 
@@ -49,7 +50,19 @@ async def discord_get(path: str, params: dict[str, Any] | None = None) -> Any:
         "User-Agent": "MD-Farsi-Localization-Discord-MCP/3.0",
     }
     async with httpx.AsyncClient(base_url=API, headers=headers, timeout=30.0) as client:
-        response = await client.get(path, params=params)
+        for attempt in range(4):
+            response = await client.get(path, params=params)
+            if response.status_code != 429:
+                response.raise_for_status()
+                return response.json()
+
+            retry_after = response.headers.get("Retry-After")
+            try:
+                delay = float(retry_after) if retry_after is not None else 1.0
+            except ValueError:
+                delay = 1.0
+            await asyncio.sleep(min(max(delay, 0.25), 30.0))
+
         response.raise_for_status()
         return response.json()
 
@@ -131,13 +144,19 @@ async def fetch_page(channel_id: str, before: str | None = None) -> list[dict[st
 
 
 @mcp.tool()
-async def sync_channel_history(channel_id: str, max_pages: int = 0, incremental: bool = True) -> dict[str, Any]:
+async def sync_channel_history(
+    channel_id: str,
+    max_pages: int = 0,
+    incremental: bool = True,
+    channels: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Index accessible channel history, using the stored cursor for incremental runs."""
-    channels = {str(c["id"]): c for c in await get_message_channels()}
+    visible_channels = channels if channels is not None else await get_message_channels()
+    channel_map = {str(c["id"]): c for c in visible_channels}
     if channel_id not in channels:
         raise ValueError("Channel is not visible to the bot or is not a supported text channel")
 
-    channel = channels[channel_id]
+    channel = channel_map[channel_id]
     cursor = index.get_cursor(channel_id)
     known_newest = str(cursor["newest_message_id"]) if cursor and cursor.get("newest_message_id") else None
     before: str | None = None
@@ -180,9 +199,15 @@ async def sync_channel_history(channel_id: str, max_pages: int = 0, incremental:
 @mcp.tool()
 async def sync_server_history(max_pages_per_channel: int = 0, incremental: bool = True) -> dict[str, Any]:
     """Index accessible text channels without bypassing Discord permissions."""
+    channels = await get_message_channels()
     results = [
-        await sync_channel_history(str(channel["id"]), max_pages_per_channel, incremental)
-        for channel in await get_message_channels()
+        await sync_channel_history(
+            str(channel["id"]),
+            max_pages_per_channel,
+            incremental,
+            channels,
+        )
+        for channel in channels
     ]
     return {
         "channels_processed": len(results),

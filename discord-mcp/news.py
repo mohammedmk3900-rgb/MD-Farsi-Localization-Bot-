@@ -163,10 +163,6 @@ class DiscordNewsEngine:
 
             if mark_read:
                 db.execute(
-                    """INSERT INTO news_state(key,value) VALUES('last_digest_at,?)""",
-                    (now.isoformat(),),
-                )
-                db.execute(
                     """INSERT INTO news_state(key,value) VALUES('last_digest_at',?)
                     ON CONFLICT(key) DO UPDATE SET value=excluded.value""",
                     (now.isoformat(),),

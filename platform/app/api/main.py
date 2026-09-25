@@ -3,18 +3,22 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.application import application
 from app.services.commands import CommandService
-from app.services.dashboard import DashboardService
 from app.services.glossary import GlossaryService
 from app.services.sync import sync_project
 
-app = FastAPI(title="MD Farsi Localization Platform", version="2.2.0", description="Unified MD news application API.")
+app = FastAPI(title="MD Farsi Localization Platform", version="2.3.0", description="Unified MD news application API.")
 
 origins = [x.strip() for x in application.context.settings.cors_origins.split(",") if x.strip()]
 if origins:
-    app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["Accept", "Content-Type"])
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Accept", "Content-Type"],
+    )
 
 commands = CommandService()
-dashboard = DashboardService()
 
 
 @app.get("/health")
@@ -63,15 +67,6 @@ def events(limit: int = 100) -> dict:
     return {"items": application.context.database.recent_events(limit)}
 
 
-@app.get("/api/v1/dashboard")
-def dashboard_contract() -> dict:
-    snapshots = application.context.database.recent_snapshots(50)
-    for row in snapshots:
-        if row["payload"].get("project"):
-            return dashboard.public_contract(row["payload"])
-    return {"schema": 1, "project": None, "health": None, "discord": None}
-
-
 @app.get("/api/v1/commands")
 def command_contract() -> dict:
     return {"commands": commands.help()}
@@ -79,4 +74,17 @@ def command_contract() -> dict:
 
 @app.get("/api/v1/architecture")
 def architecture() -> dict:
-    return {"application": "MD news", "core": "platform", "sources_of_truth": {"translations": "ParaTranz", "glossary": "ParaTranz Terms", "history": "SQLite snapshot/event store"}, "discord_transport": "Bot API", "webhooks_required": False, "human_review_required": True, "sync_policy": "Only POST /api/v1/project/sync performs live synchronization"}
+    return {
+        "application": "MD news",
+        "core": "platform",
+        "sources_of_truth": {
+            "translations": "ParaTranz",
+            "glossary": "ParaTranz Terms",
+            "history": "SQLite snapshot/event store",
+        },
+        "discord_transport": "Bot API",
+        "webhooks_required": False,
+        "human_review_required": True,
+        "auto_publish": False,
+        "sync_policy": "Only POST /api/v1/project/sync performs live synchronization",
+    }

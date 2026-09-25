@@ -98,6 +98,16 @@ def polyglot_health() -> dict:
         "id": "platform-health",
         "payload": {"qa": qa.get("status")},
     })
-    payload = {"qa": qa, "worker": worker}
+    native = None
+    windows = None
+    try:
+        native = engine.run_native_probe()
+    except (FileNotFoundError, OSError):
+        native = {"status": "unavailable"}
+    try:
+        windows = engine.run_windows_probe()
+    except (FileNotFoundError, OSError):
+        windows = {"status": "unavailable"}
+    payload = {"qa": qa, "worker": worker, "native": native, "windows": windows}
     application.record("polyglot.health", payload)
     return payload

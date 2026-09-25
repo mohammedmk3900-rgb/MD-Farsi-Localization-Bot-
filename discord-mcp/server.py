@@ -11,6 +11,7 @@ from mcp.server import MCPServer
 
 from indexer import MessageIndex
 from news import DiscordNewsEngine
+from intelligence import DiscordIntelligence
 
 load_dotenv()
 
@@ -27,6 +28,7 @@ if not TOKEN or not GUILD_ID:
 mcp = MCPServer("Millennium Dawn Farsi Localization Discord")
 index = MessageIndex(DB_PATH)
 news_engine = DiscordNewsEngine(DB_PATH)
+intelligence_engine = DiscordIntelligence(DB_PATH)
 
 
 def normalize_message(message: dict[str, Any], channel: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -113,9 +115,6 @@ async def deep_scan_server(max_pages_per_channel: int = 0, incremental: bool = T
 @mcp.tool()
 async def get_server_overview() -> dict[str, Any]:
     """Return the complete visible server structure without message content."""
-    if full:
-        return await build_full_server_snapshot(include_messages=include_messages, message_limit_per_channel=message_limit_per_channel)
-
     guild = await discord_get(f"/guilds/{GUILD_ID}")
     channels = await get_channels()
     roles = await discord_get(f"/guilds/{GUILD_ID}/roles")
@@ -455,6 +454,12 @@ async def get_author_statistics(limit: int = 100) -> list[dict[str, Any]]:
 async def get_news_digest(hours: int = 24, limit: int = 12, mark_read: bool = False) -> dict[str, Any]:
     """Return deterministic project news from indexed Discord messages."""
     return news_engine.digest(hours=hours, limit=limit, mark_read=mark_read)
+
+
+@mcp.tool()
+async def get_project_intelligence(hours: int = 24, limit: int = 12) -> dict[str, Any]:
+    """Return deterministic event-level intelligence from indexed Discord history."""
+    return intelligence_engine.build(hours=hours, limit=limit)
 
 
 @mcp.tool()

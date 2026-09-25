@@ -19,6 +19,7 @@ def sync() -> dict:
     automation = Automation(application)
     automation.publish_project()
     automation.publish_intelligence()
+    automation.publish_manager_digest()
     return snapshot.model_dump(mode="json")
 
 

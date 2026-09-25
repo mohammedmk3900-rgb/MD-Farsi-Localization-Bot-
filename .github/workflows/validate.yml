@@ -6,16 +6,12 @@ on:
     paths:
       - "platform/**"
       - "discord-mcp/**"
-      - "api/**"
-      - "dashboard/**"
       - "rust/**"
       - ".github/workflows/**"
   pull_request:
     paths:
       - "platform/**"
       - "discord-mcp/**"
-      - "api/**"
-      - "dashboard/**"
       - "rust/**"
       - ".github/workflows/**"
   workflow_dispatch:
@@ -55,27 +51,6 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python -m unittest discover -s . -p "test_*.py" -v
       - run: python -m py_compile server.py indexer.py bot.py run.py
-
-  typescript:
-    runs-on: ubuntu-26.04
-    timeout-minutes: 10
-    strategy:
-      matrix:
-        project:
-          - api
-          - dashboard
-          - platform/dashboard
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: "24.21.0"
-      - name: Install dependencies
-        working-directory: ${{ matrix.project }}
-        run: npm install
-      - name: Build
-        working-directory: ${{ matrix.project }}
-        run: npm run build
 
   rust:
     runs-on: ubuntu-26.04

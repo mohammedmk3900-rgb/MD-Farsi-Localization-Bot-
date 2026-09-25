@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from app.services.achievements import AchievementService
@@ -10,10 +11,10 @@ from app.services.discord_notifications import DiscordNotificationService
 
 
 class Automation:
-    """Deterministic Discord publishing for project state.
+    """Deterministic project operations for the MD Farsi translation team.
 
-    Nothing is published unless its source state changed. Glossary and
-    milestone state is persisted in SQLite so scheduled runs stay idempotent.
+    The platform owns the decision logic; Discord is only the delivery surface.
+    Every publication is idempotent and persisted in SQLite.
     """
 
     def __init__(self, application):
@@ -37,13 +38,24 @@ class Automation:
         self.database.set_automation_state(key, digest, self._now())
         return True
 
-    def publish_project(self) -> dict[str, Any]:
+    def _embed_if_changed(self, state_key: str, channel: str, title: str, body: str) -> bool:
+        if not channel or not self._changed(state_key, {"title": title, "body": body}):
+            return False
+        self.discord.embed(channel, title, body)
+        return True
+
+    def _project_state(self) -> tuple[dict[str, Any], dict[str, Any]]:
         rows = self.database.recent_snapshots(2)
         if not rows:
-            return {"progress": False, "stats": False, "achievements": 0}
-
+            return {}, {}
         current = rows[0]["payload"].get("project") or {}
         previous = rows[1]["payload"].get("project") if len(rows) > 1 else {}
+        return current, previous or {}
+
+    def publish_project(self) -> dict[str, Any]:
+        current, previous = self._project_state()
+        if not current:
+            return {"progress": False, "stats": False, "achievements": 0, "alerts": 0}
 
         progress = {
             "translation_percent": round(float(current.get("translation_percent", 0) or 0), 2),
@@ -63,8 +75,9 @@ class Automation:
 
         sent_progress = False
         sent_stats = False
-        if self.settings.channel_progress and self._changed("publish.progress", progress):
-            self.discord.embed(
+        if self.settings.channel_progress:
+            sent_progress = self._embed_if_changed(
+                "publish.progress",
                 self.settings.channel_progress,
                 "📈 پیشرفت ترجمه • MILLENNIUM DAWN",
                 (
@@ -74,10 +87,10 @@ class Automation:
                     f"رشته‌های بازبینی‌شده: **{progress['reviewed']:,}**"
                 ),
             )
-            sent_progress = True
 
-        if self.settings.channel_stats and self._changed("publish.stats", stats):
-            self.discord.embed(
+        if self.settings.channel_stats:
+            sent_stats = self._embed_if_changed(
+                "publish.stats",
                 self.settings.channel_stats,
                 "📊 آمار پروژه • PROJECT STATS",
                 (
@@ -89,7 +102,6 @@ class Automation:
                     f"بازبینی‌شده: **{stats['reviewed']:,}**"
                 ),
             )
-            sent_stats = True
 
         previous_percent = float(previous.get("translation_percent", 0) or 0)
         current_percent = float(current.get("translation_percent", 0) or 0)
@@ -106,31 +118,61 @@ class Automation:
             self.database.set_automation_state(key, "published", self._now())
             sent_achievements += 1
 
+        alerts = self._project_quality_alerts(current, previous)
+        sent_alerts = self.publish_alerts(alerts)
+
         payload = {
             "progress": sent_progress,
             "stats": sent_stats,
             "achievements": sent_achievements,
+            "alerts": sent_alerts,
         }
         self.application.record("automation.project_published", payload)
         return payload
 
+    def _project_quality_alerts(self, current: dict[str, Any], previous: dict[str, Any]) -> list[str]:
+        alerts: list[str] = []
+        translation = float(current.get("translation_percent", 0) or 0)
+        review = float(current.get("review_percent", 0) or 0)
+        if review > translation + 0.01:
+            alerts.append("درصد بازبینی از درصد ترجمه بیشتر شده؛ داده‌های منبع یا محاسبه باید بررسی شود.")
+        if previous:
+            old = float(previous.get("translation_percent", 0) or 0)
+            if translation + 0.01 < old:
+                alerts.append(f"درصد ترجمه از {old:.2f}% به {translation:.2f}% کاهش یافته؛ احتمال rollback یا تغییر منبع وجود دارد.")
+        if int(current.get("translated", 0) or 0) > int(current.get("strings_total", 0) or 0):
+            alerts.append("تعداد رشته‌های ترجمه‌شده از کل رشته‌ها بیشتر است؛ snapshot معتبر نیست.")
+        return alerts
+
+    def publish_alerts(self, alerts: list[str]) -> int:
+        if not alerts or not self.settings.channel_health:
+            return 0
+        body = "\n".join(f"• {item}" for item in alerts)
+        return int(self._embed_if_changed(
+            "publish.project_alerts",
+            self.settings.channel_health,
+            "⚠️ هشدار عملیاتی پروژه • PROJECT ALERTS",
+            body,
+        ))
+
     def publish_glossary(self, terms: list[dict[str, Any]]) -> dict[str, Any]:
         if not terms or not self.settings.channel_glossary:
-            return {"published": False, "count": len(terms)}
+            return {"published": False, "count": len(terms), "qa": {}}
 
         normalized = sorted(
             [
                 {
-                    "source": item.get("source") or item.get("term") or "",
-                    "target": item.get("translation") or item.get("target") or "",
-                    "description": item.get("description") or "",
+                    "source": str(item.get("source") or item.get("term") or "").strip(),
+                    "target": str(item.get("translation") or item.get("target") or "").strip(),
+                    "description": str(item.get("description") or "").strip(),
                 }
                 for item in terms
             ],
-            key=lambda item: (item["source"], item["target"]),
+            key=lambda item: (item["source"], item["target"], item["description"]),
         )
+        qa = self._glossary_qa(normalized)
         if not self._changed("publish.glossary", normalized):
-            return {"published": False, "count": len(terms)}
+            return {"published": False, "count": len(terms), "qa": qa}
 
         chunks: list[str] = []
         current: list[str] = []
@@ -154,6 +196,68 @@ class Automation:
                 chunk,
             )
 
-        payload = {"published": True, "count": len(terms), "chunks": len(chunks)}
+        if qa["issues"] and self.settings.channel_health:
+            self._embed_if_changed(
+                "publish.glossary_qa",
+                self.settings.channel_health,
+                "🧪 QA واژه‌نامه • GLOSSARY QUALITY",
+                "\n".join(f"• {issue}" for issue in qa["issues"]),
+            )
+
+        payload = {"published": True, "count": len(terms), "chunks": len(chunks), "qa": qa}
         self.application.record("automation.glossary_published", payload)
         return payload
+
+    @staticmethod
+    def _glossary_qa(terms: list[dict[str, Any]]) -> dict[str, Any]:
+        empty = [item["source"] or "(بدون اصطلاح)" for item in terms if not item["source"] or not item["target"]]
+        by_source: dict[str, set[str]] = {}
+        for item in terms:
+            if item["source"]:
+                by_source.setdefault(item["source"].casefold(), set()).add(item["target"])
+        conflicts = [
+            source for source, targets in by_source.items()
+            if len(targets) > 1
+        ]
+        duplicates = len(terms) - len({(x["source"], x["target"], x["description"]) for x in terms})
+        issues: list[str] = []
+        if empty:
+            issues.append(f"{len(empty)} اصطلاح ورودی/ترجمه خالی دارد.")
+        if conflicts:
+            issues.append(f"{len(conflicts)} اصطلاح برای یک source چند ترجمه متفاوت دارد.")
+        if duplicates:
+            issues.append(f"{duplicates} ورودی تکراری در واژه‌نامه وجود دارد.")
+        return {"issues": issues, "empty_or_incomplete": len(empty), "conflicting_sources": len(conflicts), "duplicates": duplicates}
+
+    def publish_intelligence(self) -> dict[str, Any]:
+        path = Path(getattr(self.settings, "discord_intelligence_path", "data/discord_intelligence.json"))
+        if not path.exists():
+            return {"published": False, "reason": "artifact_missing"}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {"published": False, "reason": "artifact_invalid"}
+
+        current = payload.get("current", {})
+        health = payload.get("health", {})
+        events = payload.get("events", [])
+        body_parts = [
+            f"پیام‌ها: **{current.get('messages', 0):,}**",
+            f"پاسخ‌ها: **{current.get('replies', 0):,}**",
+            f"اعضای فعال: **{current.get('authors_active', 0):,}**",
+            f"کانال‌های فعال: **{current.get('channels_active', 0):,}**",
+            f"تغییر فعالیت: **{health.get('activity_change_percent') if health.get('activity_change_percent') is not None else '—'}%**",
+            f"پیگیری‌های حل‌نشده: **{health.get('unresolved_followups', 0):,}**",
+        ]
+        for event in events[:5]:
+            body_parts.append(f"• [{event.get('category', 'عمومی')}] {event.get('message_count', 0)} پیام، {event.get('participant_count', 0)} مشارکت‌کننده")
+
+        published = self._embed_if_changed(
+            "publish.intelligence",
+            self.settings.channel_reports,
+            "🧠 وضعیت عملیاتی جامعه ترجمه • PROJECT INTELLIGENCE",
+            "\n".join(body_parts),
+        )
+        result = {"published": published, "events": len(events), "unresolved_followups": health.get("unresolved_followups", 0)}
+        self.application.record("automation.intelligence_published", result)
+        return result

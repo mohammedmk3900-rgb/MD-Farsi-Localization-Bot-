@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from app.domain.models import TaskStatus
-from app.integrations.discord import DiscordActor, DiscordTransport
+from app.integrations.discord import DiscordActor, DiscordCommandGateway, DiscordTransport
 from app.persistence.store import Store
 from app.services.application import GenesisApplication
 
@@ -37,6 +37,6 @@ def test_review_survives_restart_until_decided(tmp_path):
 
 def test_discord_transport_reads_command_center(tmp_path):
     app = build(tmp_path)
-    transport = DiscordTransport(app.command_center and __import__("app.integrations.discord", fromlist=["DiscordCommandGateway"]).DiscordCommandGateway(app))
+    transport = DiscordTransport(DiscordCommandGateway(app))
     result = transport.dispatch(DiscordActor("u1", ("manager",)), "status")
     assert "tasks" in result

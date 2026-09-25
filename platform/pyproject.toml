@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=75"]
+requires = ["setuptools>=84,<85"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,16 +8,16 @@ version = "1.0.0"
 description = "Production platform for Millennium Dawn Farsi Localization"
 requires-python = ">=3.12"
 dependencies = [
-  "fastapi>=0.115,<1",
-  "uvicorn[standard]>=0.30,<1",
-  "httpx>=0.27,<1",
-  "discord.py>=2.5,<3",
-  "pydantic>=2.8,<3",
-  "pydantic-settings>=2.5,<3",
+  "fastapi==0.141.1",
+  "uvicorn[standard]==0.53.0",
+  "httpx==0.28.1",
+  "discord.py==2.7.1",
+  "pydantic==2.13.5",
+  "pydantic-settings==2.15.0",
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8,<9"]
+test = ["pytest==9.1.1"]
 
 [tool.setuptools.packages.find]
 where = ["."]

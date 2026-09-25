@@ -27,10 +27,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: "3.14.7"
 
       - name: Platform tests
         working-directory: platform
@@ -48,8 +48,11 @@ jobs:
           python -m pip install -r requirements.txt
           python -m unittest discover -s . -p "test_*.py" -v
           python -m py_compile server.py indexer.py bot.py run.py
+          DISCORD_BOT_TOKEN=test DISCORD_GUILD_ID=1 DISCORD_DB_PATH="$RUNNER_TEMP/discord-mcp-test.db" python -c "from server import mcp; print(type(mcp).__name__)"
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
 
       - name: Rust tests
         working-directory: rust
@@ -60,11 +63,30 @@ jobs:
 
       - name: Genesis Rust QA tests
         working-directory: genesis/engine/rust
-        run: cargo test
+        run: |
+          cargo test
+          cargo build --bin mdfarsi-qa
+
+      - name: Setup Go 1.27.1
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.27.1"
+          cache: true
 
       - name: Genesis Go worker tests
         working-directory: genesis/engine/go
         run: go test ./...
+
+      - name: Build Genesis Go worker
+        working-directory: genesis/engine/go
+        run: go build -o worker ./cmd/worker
+
+      - name: Setup Node.js 24 LTS
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24.21.0"
+          cache: npm
+          cache-dependency-path: genesis/engine/typescript/package.json
 
       - name: Genesis TypeScript contract typecheck
         working-directory: genesis/engine/typescript
@@ -78,10 +100,28 @@ jobs:
           set -euo pipefail
           cmake -S genesis/engine/cpp -B build/genesis-native
           cmake --build build/genesis-native
+          cmake --version
+
+      - name: Setup .NET 10 LTS
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
 
       - name: Genesis C# bridge build
         working-directory: genesis/engine/csharp
         run: dotnet build --configuration Release
+
+      - name: Archive polyglot runtime binaries
+        uses: actions/upload-artifact@v7
+        with:
+          name: polyglot-binaries-${{ github.run_id }}
+          path: |
+            genesis/engine/rust/target/debug/mdfarsi-qa
+            genesis/engine/go/worker
+            build/genesis-native/md_native_probe
+            genesis/engine/csharp/bin/Release/net10.0/MDNativeBridge
+          if-no-files-found: error
+          retention-days: 7
 
   operate:
     name: Run coordinated platform jobs
@@ -111,13 +151,19 @@ jobs:
       CHANNEL_GLOSSARY: ${{ secrets.CHANNEL_GLOSSARY }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: true
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: "3.14.7"
+
+      - name: Download validated polyglot binaries
+        uses: actions/download-artifact@v8
+        with:
+          name: polyglot-binaries-${{ github.run_id }}
+          path: ${{ github.workspace }}
 
       - name: Install platform
         run: |
@@ -160,7 +206,7 @@ jobs:
               restored=true
               break
             fi
-          done < <(gh run list --workflow unified-platform.yml --branch main --status completed --limit 12 --json databaseId --jq '.[].databaseId')
+          done < <(gh run list --workflow unified-platform.yml --branch main --status success --limit 12 --json databaseId --jq '.[].databaseId')
 
           if [[ "$restored" != "true" ]]; then
             echo "No verified previous runtime artifact found; using repository seed state."

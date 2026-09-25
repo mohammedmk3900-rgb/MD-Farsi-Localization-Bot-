@@ -7,8 +7,9 @@ from app.persistence.store import Store
 
 
 class TaskService:
-    def __init__(self, store: Store | None = None):
+    def __init__(self, store: Store | None = None, events=None):
         self.store = store
+        self.events = events
         self._tasks: dict[int, Task] = {}
         if store is not None:
             self._tasks = {task.id: task for task in store.tasks()}
@@ -32,7 +33,10 @@ class TaskService:
         task = Task(id=task_id, title=title.strip(), scope=scope.strip(),
                     priority=priority, due_at=due_at)
         self._tasks[task.id] = task
-        return self._touch(task)
+        task = self._touch(task)
+        if self.events:
+            self.events.publish("task.created", None, {"task_id": task.id, "title": task.title})
+        return task
 
     def get(self, task_id: int) -> Task:
         try:
@@ -60,7 +64,10 @@ class TaskService:
             raise ValueError("task is owned by another member")
         task.owner = member_id
         task.status = TaskStatus.IN_PROGRESS
-        return self._touch(task)
+        task = self._touch(task)
+        if self.events:
+            self.events.publish("task.claimed", member_id, {"task_id": task.id}, notifications=[(member_id, f"مأموریت #{task.id} با موفقیت به شما واگذار شد.")])
+        return task
 
     def submit(self, task: Task, member_id: str) -> Task:
         if task.owner != member_id:
@@ -68,17 +75,28 @@ class TaskService:
         if task.status != TaskStatus.IN_PROGRESS:
             raise ValueError("task is not in progress")
         task.status = TaskStatus.REVIEW
-        return self._touch(task)
+        task = self._touch(task)
+        if self.events:
+            self.events.publish("task.submitted", member_id, {"task_id": task.id, "owner": task.owner})
+        return task
 
     def complete(self, task: Task, reviewer_id: str) -> Task:
         if task.status != TaskStatus.REVIEW:
             raise ValueError("task is not awaiting review")
         task.reviewer = reviewer_id
         task.status = TaskStatus.DONE
-        return self._touch(task)
+        task = self._touch(task)
+        if self.events:
+            recipients = [(task.owner, f"مأموریت #{task.id} تأیید و تکمیل شد.")] if task.owner else None
+            self.events.publish("task.completed", reviewer_id, {"task_id": task.id, "owner": task.owner}, notifications=recipients)
+        return task
 
     def cancel(self, task: Task) -> Task:
         if task.status == TaskStatus.DONE:
             raise ValueError("completed task cannot be cancelled")
         task.status = TaskStatus.CANCELLED
-        return self._touch(task)
+        task = self._touch(task)
+        if self.events:
+            recipients = [(task.owner, f"مأموریت #{task.id} لغو شد.")] if task.owner else None
+            self.events.publish("task.cancelled", None, {"task_id": task.id, "owner": task.owner}, notifications=recipients)
+        return task

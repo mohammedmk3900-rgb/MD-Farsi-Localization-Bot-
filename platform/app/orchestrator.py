@@ -38,6 +38,11 @@ def execute(*, daily: bool = False, weekly: bool = False) -> dict:
                     "discord": bool(result.get("discord", False)),
                     "database": bool(result.get("database", False)),
                 }
+            elif name == "polyglot":
+                safe = {
+                    "qa": result.get("qa", {}).get("status", "unknown"),
+                    "worker": result.get("worker", {}).get("status", "unknown"),
+                }
             elif name == "sync":
                 project = result.get("project", {})
                 safe = {
@@ -60,6 +65,7 @@ def execute(*, daily: bool = False, weekly: bool = False) -> dict:
     run("glossary", jobs.glossary_sync)
     run("discord_audit", jobs.audit)
     run("health", jobs.health)
+    run("polyglot", jobs.polyglot_health)
 
     if daily:
         if project_ok:

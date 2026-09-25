@@ -100,6 +100,9 @@ async def get_message_channels() -> list[dict[str, Any]]:
 @mcp.tool()
 async def get_server_overview() -> dict[str, Any]:
     """Return the complete visible server structure without message content."""
+    if full:
+        return await build_full_server_snapshot(include_messages=include_messages, message_limit_per_channel=message_limit_per_channel)
+
     guild = await discord_get(f"/guilds/{GUILD_ID}")
     channels = await get_channels()
     roles = await discord_get(f"/guilds/{GUILD_ID}/roles")
@@ -287,9 +290,115 @@ async def sync_server_history(max_pages_per_channel: int = 0, incremental: bool 
     }
 
 
+async def get_all_guild_members() -> list[dict[str, Any]]:
+    """Fetch guild members in pages, respecting the bot's Discord permissions."""
+    members: list[dict[str, Any]] = []
+    after = "0"
+    while True:
+        page = await discord_get(
+            f"/guilds/{GUILD_ID}/members",
+            params={"limit": 1000, "after": after},
+        )
+        if not page:
+            break
+        members.extend(page)
+        if len(page) < 1000:
+            break
+        after = str(page[-1].get("user", {}).get("id") or "")
+        if not after:
+            break
+    return members
+
+
+async def get_optional_guild_resource(path: str, key: str) -> list[dict[str, Any]]:
+    try:
+        payload = await discord_get(path)
+        return payload if isinstance(payload, list) else payload.get(key, [])
+    except httpx.HTTPStatusError:
+        return []
+
+
+async def build_full_server_snapshot(include_messages: bool = False, message_limit_per_channel: int = 50) -> dict[str, Any]:
+    """Collect the server structure, members, roles, channels, threads and indexed activity."""
+    guild = await discord_get(f"/guilds/{GUILD_ID}")
+    channels = await get_channels()
+    roles = await discord_get(f"/guilds/{GUILD_ID}/roles")
+    members = await get_all_guild_members()
+    active_threads = await discord_get(f"/guilds/{GUILD_ID}/threads/active")
+
+    emojis = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/emojis", "items")
+    stickers = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/stickers", "items")
+    events = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/scheduled-events", "items")
+
+    channel_rows = []
+    for channel in channels:
+        row = {
+            "id": channel.get("id"),
+            "name": channel.get("name"),
+            "type": channel.get("type"),
+            "parent_id": channel.get("parent_id"),
+            "position": channel.get("position"),
+            "topic": channel.get("topic"),
+            "nsfw": channel.get("nsfw", False),
+            "slowmode": channel.get("rate_limit_per_user", 0),
+            "permissions": channel.get("permission_overwrites", []),
+            "thread_metadata": channel.get("thread_metadata"),
+        }
+        if include_messages and channel.get("type") in {0, 5, 10, 11, 12, 15}:
+            row["messages"] = index.read_channel(str(channel["id"]), message_limit_per_channel)
+        channel_rows.append(row)
+
+    member_rows = []
+    for member in members:
+        user = member.get("user") or {}
+        member_rows.append({
+            "id": user.get("id"),
+            "username": user.get("username"),
+            "global_name": user.get("global_name"),
+            "bot": user.get("bot", False),
+            "joined_at": member.get("joined_at"),
+            "roles": member.get("roles", []),
+            "nick": member.get("nick"),
+            "communication_disabled_until": member.get("communication_disabled_until"),
+        })
+
+    return {
+        "server": {
+            "id": guild.get("id"),
+            "name": guild.get("name"),
+            "owner_id": guild.get("owner_id"),
+            "description": guild.get("description"),
+            "icon": guild.get("icon"),
+            "banner": guild.get("banner"),
+            "verification_level": guild.get("verification_level"),
+            "default_message_notifications": guild.get("default_message_notifications"),
+            "explicit_content_filter": guild.get("explicit_content_filter"),
+            "features": guild.get("features", []),
+            "preferred_locale": guild.get("preferred_locale"),
+            "system_channel_id": guild.get("system_channel_id"),
+            "rules_channel_id": guild.get("rules_channel_id"),
+            "public_updates_channel_id": guild.get("public_updates_channel_id"),
+        },
+        "categories": [c for c in channel_rows if c.get("type") == 4],
+        "channels": [c for c in channel_rows if c.get("type") != 4],
+        "roles": roles,
+        "members": member_rows,
+        "active_threads": active_threads.get("threads", []),
+        "emojis": emojis,
+        "stickers": stickers,
+        "scheduled_events": events,
+        "indexed_activity": {
+            "messages": index.count(),
+            "channels": index.channel_count(),
+            "channel_statistics": index.channel_stats(),
+            "author_statistics": index.author_stats(),
+        },
+    }
+
+
 @mcp.tool()
-async def get_server_snapshot(include_messages: bool = False, message_limit_per_channel: int = 50) -> dict[str, Any]:
-    """Return a detailed server snapshot, optionally including indexed messages."""
+async def get_server_snapshot(include_messages: bool = False, message_limit_per_channel: int = 50, full: bool = False) -> dict[str, Any]:
+    """Return a detailed server snapshot; full=True collects members and server resources too."""
     guild = await discord_get(f"/guilds/{GUILD_ID}")
     channels = await get_channels()
     roles = await discord_get(f"/guilds/{GUILD_ID}/roles")

@@ -85,6 +85,7 @@ class DiscordCommandGateway:
         return self.application.command_center.activate_mission(mission_id)
 
     def notifications(self, actor: DiscordActor):
+        self.authorize(actor, "project.read")
         return self.application.command_center.notifications(actor.user_id)
 
     def events(self, actor: DiscordActor, limit: int = 50):

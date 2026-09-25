@@ -89,7 +89,10 @@ def test_task_lifecycle_emits_durable_events(tmp_path):
 def test_mission_can_complete_or_cancel(tmp_path):
     app = build(tmp_path)
     first = app.mission_engine.generate(["scope-a"], limit=1)[0]
-    app.mission_engine.activate(first.id)
+    task = app.mission_engine.activate(first.id)
+    app.tasks.claim(task, "member-1")
+    app.tasks.submit(task, "member-1")
+    app.tasks.complete(task, "reviewer-1")
     completed = app.mission_engine.complete(first.id, "reviewer-1")
     assert completed.status == "completed"
 

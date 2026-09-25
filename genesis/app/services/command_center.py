@@ -20,6 +20,14 @@ class CommandCenterService:
         })
         return {
             "tasks": self.application.tasks.summary(),
+            "missions": {
+                "total": len(self.application.mission_engine.list()),
+                "open": len(self.application.mission_engine.list("open")),
+                "active": len(self.application.mission_engine.list("active")),
+                "completed": len(self.application.mission_engine.list("completed")),
+                "cancelled": len(self.application.mission_engine.list("cancelled")),
+            },
+            "events": len(self.application.events.recent(100)),
             "health": {"status": health.status, "checks": health.checks},
             "glossary_terms": len(self.application.glossary.all()),
             "review_pending": len(self.application.reviews.pending()),

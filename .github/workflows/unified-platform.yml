@@ -49,6 +49,24 @@ jobs:
         run: |
           cargo test
           cargo build
+      - name: Genesis Rust QA tests
+        working-directory: genesis/engine/rust
+        run: cargo test
+      - name: Genesis Go worker tests
+        working-directory: genesis/engine/go
+        run: go test ./...
+      - name: Genesis TypeScript contract typecheck
+        working-directory: genesis/engine/typescript
+        run: |
+          npm install --no-audit --no-fund
+          npm run typecheck
+      - name: Genesis C++ native build
+        run: |
+          cmake -S genesis/engine/cpp -B build/genesis-native
+          cmake --build build/genesis-native
+      - name: Genesis C# bridge build
+        working-directory: genesis/engine/csharp
+        run: dotnet build --configuration Release --no-restore
 
   operate:
     name: Run coordinated platform jobs

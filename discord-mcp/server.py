@@ -209,8 +209,10 @@ async def sync_server_history(max_pages_per_channel: int = 0, incremental: bool 
         )
         for channel in channels
     ]
+    processed_results = [result for result in results if not result.get("skipped")]
     return {
-        "channels_processed": len(results),
+        "channels_processed": len(processed_results),
+        "channels_skipped": len(results) - len(processed_results),
         "results": results,
         "indexed_messages": index.count(),
     }

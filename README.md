@@ -1,69 +1,47 @@
 # 🇮🇷 MD Farsi Localization
 
-## Platform Next — Unified Localization Operations Platform
+## MD News — V11 Genesis
 
-سامانه یکپارچه فارسی‌سازی **Millennium Dawn**؛ متصل به ParaTranz، Discord و یک Command Center عمومی، با مرزبندی روشن بین اتوماسیون و تصمیم انسانی.
+بازسازی کامل هستهٔ عملیاتی فارسی‌سازی **Millennium Dawn**.
 
-### معماری
+Genesis از صفر با یک مرزبندی روشن ساخته می‌شود:
 
-~~~text
-                       ParaTranz
-                           │
-                    🐍 Platform Next
-                           │
-          ┌────────────────┼────────────────┐
-          │                │                │
-       SQLite           MD news          Dashboard
-     history/events    Discord Bot API    public view
-          │                │                │
-          └────────────────┼────────────────┘
-                           │
-                    Jobs / Scheduler
-              sync • glossary • health • audit
-~~~
+- 🧠 **Domain** — قوانین واقعی پروژه و مدل‌های مستقل از Discord
+- ⚙️ **Application Services** — منطق ترجمه، مأموریت، بازبینی و دسترسی
+- 🗄️ **SQLite** — state عملیاتی و audit history
+- 🔌 **Integrations** — ParaTranz و سرویس‌های بیرونی
+- 💬 **Discord** — رابط اصلی مدیریت و عملیات
+- 🚫 **بدون Dashboard**
+- 👥 **Human-in-the-loop** — هیچ ترجمه‌ای خودکار منتشر نمی‌شود
 
-### نقش زبان‌ها
+### جریان اصلی
 
-- 🐍 **Python 3.12+** — Platform Next، orchestration، ParaTranz، analytics، persistence و Discord automation.
-- 🦀 **Rust** — validation قطعی و سریع برای tokenهای حساس HOI4/Paradox.
-- 🟦 **TypeScript / Node.js** — API gateway فقط‌خواندنی برای deploymentهای نیازمند HTTP API.
-- ⚛️ **React + TypeScript + Vite** — داشبورد عمومی و Command Center.
-- 🗄️ **SQLite + JSON** — persistence محلی، history و operational snapshots؛ بدون تحمیل سرویس خارجی.
-- ⚙️ **GitHub Actions** — CI، validation و انتشار.
+```
+Domain
+  ↓
+Application Services
+  ↓
+Persistence / Integrations
+  ↓
+Discord
+```
 
-هیچ زبانی صرفاً برای افزایش تعداد زبان‌ها اضافه نشده است.
+### Translation Intelligence
 
-### مرز اتوماسیون
+دستیار ترجمه فقط این کارها را انجام می‌دهد:
 
-- 🟢 خودکار: آمار، پیشرفت، تغییرات، تاریخچه، رکوردها، دستاوردها، سلامت، Discord، Terms و انتشار داشبورد.
-- 👥 انسانی: مدیریت.
-- 💬 انسانی: جامعه و moderation.
-- 🔎 انسانی: تصمیم نهایی بازبینی و تأیید/رد ترجمه.
+1. **Detect** — خطای Placeholder / Variable / Script Tag و ناسازگاری واژه‌نامه
+2. **Explain** — توضیح دقیق ایراد
+3. **Suggest** — پیشنهاد اصلاح
+
+تصمیم نهایی، بازبینی و انتشار با انسان است.
 
 ### منبع حقیقت
 
-**ParaTranz** منبع حقیقت داده‌های ترجمه است و **ParaTranz Terms** منبع حقیقت واژه‌نامه رسمی. Discord و Dashboard لایه‌های نمایش و عملیات هستند.
+- ترجمه و آمار پروژه: **ParaTranz**
+- واژه‌نامه رسمی: **ParaTranz Terms**
+- state و تاریخچه عملیاتی: **SQLite**
 
-### امنیت
+**ParaTranz Project: 19621**
 
-- Secretها فقط در runtimeهای خصوصی CI استفاده می‌شوند.
-- public dashboard فقط contract پاک‌سازی‌شده را دریافت می‌کند.
-- API عمومی فقط داده‌های public را می‌خواند.
-- Rust engine هیچ credential یا webhookی دریافت نمی‌کند.
-
-**ParaTranz Project: 19621**  
-**Platform: Next**
-
-
-### مهاجرت معماری
-
-Platform Next اکنون مسیر عملیاتی canonical پروژه است. مسیرهای قدیمی V9، webhook-based Command Center، workflowهای legacy و اسکریپت‌های مهاجرت‌شده حذف شده‌اند. همه عملیات زمان‌بندی‌شده از `platform/app/cli.py` عبور می‌کنند و Discord فقط از طریق MD news Bot API دریافت‌کننده خروجی است.
-
-اجرای دستی jobها از داخل `platform`:
-
-- `python -m app.cli sync`
-- `python -m app.cli report --period daily`
-- `python -m app.cli report --period weekly`
-- `python -m app.cli glossary-sync`
-- `python -m app.cli health`
-- `python -m app.cli audit`
+> V10 و Platform Next فعلاً برای حفظ تاریخچه و مقایسه در repository باقی می‌مانند. Genesis مسیر بازسازی جدید است.

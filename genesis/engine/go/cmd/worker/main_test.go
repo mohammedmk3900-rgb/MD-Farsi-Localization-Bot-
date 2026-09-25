@@ -26,12 +26,6 @@ func TestJobLifecycle(t *testing.T) {
 	defer cancel()
 	w.Start(ctx)
 
-	req := httptest.NewRequest(http.MethodPost, "/jobs", httptest.NewRequest(http.MethodPost, "/", nil).Body)
-	// Replace the body with a minimal valid JSON request.
-	req.Body.Close()
-	req = httptest.NewRequest(http.MethodPost, "/jobs", nil)
-	req.Body = http.NoBody
-
 	job, err := w.enqueue(JobRequest{Type: "paratranz.sync", Payload: map[string]any{"project_id": 19621}})
 	if err != nil { t.Fatal(err) }
 	if job.Status != "queued" { t.Fatalf("expected queued, got %s", job.Status) }

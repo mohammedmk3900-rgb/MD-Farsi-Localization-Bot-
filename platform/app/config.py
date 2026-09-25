@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     database_path: str = "data/platform.db"
     recent_messages_per_channel: int = 50
+    api_token: str = ""
     api_host: str = "127.0.0.1"
     api_port: int = 8000
     cors_origins: str = ""

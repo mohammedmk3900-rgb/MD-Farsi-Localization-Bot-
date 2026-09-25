@@ -50,5 +50,42 @@ class DiscordMCPIndexTests(unittest.TestCase):
             self.assertTrue(cursor["complete"])
 
 
+
+    def test_message_relationships_are_persisted(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            index = MessageIndex(os.path.join(tmp, "discord.db"))
+            index.upsert_messages([
+                {
+                    "id": "root", "channel_id": "channel", "channel_name": "translation",
+                    "author_id": "1", "author_name": "MK", "content": "Faction -> اتحاد",
+                    "timestamp": "2026-09-25T10:00:00+00:00",
+                    "url": "https://discord.com/channels/g/channel/root",
+                    "attachment_count": 1, "link_count": 1,
+                },
+                {
+                    "id": "reply", "channel_id": "channel", "channel_name": "translation",
+                    "author_id": "2", "author_name": "Reviewer", "content": "ثبت شد",
+                    "timestamp": "2026-09-25T10:01:00+00:00",
+                    "url": "https://discord.com/channels/g/channel/reply",
+                    "reference_message_id": "root", "reference_channel_id": "channel",
+                },
+                {
+                    "id": "thread-message", "channel_id": "thread", "channel_name": "discussion",
+                    "author_id": "3", "author_name": "Translator", "content": "بررسی شد",
+                    "timestamp": "2026-09-25T10:02:00+00:00",
+                    "url": "https://discord.com/channels/g/thread/thread-message",
+                    "thread_id": "thread",
+                },
+            ])
+            replies = index.read_replies("root")
+            self.assertEqual([item["id"] for item in replies], ["reply"])
+            self.assertEqual(replies[0]["reference_channel_id"], "channel")
+            thread = index.read_thread("thread")
+            self.assertEqual([item["id"] for item in thread], ["thread-message"])
+            result = index.search("Faction")
+            self.assertEqual(result[0]["attachment_count"], 1)
+            self.assertEqual(result[0]["link_count"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

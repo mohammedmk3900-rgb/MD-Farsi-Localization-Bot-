@@ -22,6 +22,7 @@ export interface CommandCenterStatus {
   glossary_terms: number;
   review_pending: number;
   health: { status: string; checks: Record<string, string> };
+  engines: { python: string; rust: string; go: string };
 }
 
 export interface MissionRecord {

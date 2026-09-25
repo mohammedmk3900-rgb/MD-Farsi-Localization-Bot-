@@ -73,10 +73,17 @@ class MissionEngineService:
         return task
 
     def list(self, status: str | None = None) -> list[MissionRecord]:
-        return self.store.missions(status=status)
+        return [
+            MissionRecord(
+                int(row["id"]), str(row["title"]), str(row["scope"]),
+                row["priority"], int(row["reward"]), str(row["status"]),
+                row["task_id"], str(row["created_at"]),
+            )
+            for row in self.store.missions(status=status)
+        ]
 
     def _get(self, mission_id: int) -> MissionRecord:
-        for mission in self.store.missions():
+        for mission in self.list():
             if mission.id == mission_id:
                 return mission
         raise KeyError(f"mission #{mission_id} not found")

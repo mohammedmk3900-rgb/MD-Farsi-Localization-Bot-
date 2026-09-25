@@ -29,6 +29,7 @@ class CommandCenterService:
             },
             "events": len(self.application.events.recent(100)),
             "health": {"status": health.status, "checks": health.checks},
+            "engines": self.application.engine_health(),
             "glossary_terms": len(self.application.glossary.all()),
             "review_pending": len(self.application.reviews.pending()),
         }
@@ -41,6 +42,11 @@ class CommandCenterService:
 
     def project_sync(self) -> dict[str, Any]:
         return self.application.sync.project(self.application, ParaTranzIntegration())
+
+    def submit_background_job(self, job_type: str, payload: dict[str, Any]) -> dict[str, Any]:
+        if self.application.go_worker is None:
+            raise RuntimeError("Go worker is not configured")
+        return self.application.go_worker.submit(job_type, payload)
 
     def due_reminders(self, now_iso: str | None = None) -> list:
         now_iso = now_iso or datetime.now(timezone.utc).isoformat()

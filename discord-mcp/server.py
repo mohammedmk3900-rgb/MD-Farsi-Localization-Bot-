@@ -253,8 +253,17 @@ async def sync_channel_history(
 
 @mcp.tool()
 async def sync_server_history(max_pages_per_channel: int = 0, incremental: bool = True) -> dict[str, Any]:
-    """Index accessible text channels without bypassing Discord permissions."""
+    """Index accessible channels, active threads, and discoverable archived threads."""
     channels = await get_message_channels()
+    known = {str(channel["id"]) for channel in channels}
+    archived: list[dict[str, Any]] = []
+    for channel in list(channels):
+        if channel.get("type") in {0, 5, 15}:
+            for thread in await fetch_archived_threads(str(channel["id"])):
+                if str(thread.get("id")) not in known:
+                    archived.append(thread)
+                    known.add(str(thread.get("id")))
+    channels.extend(archived)
     results = [
         await sync_channel_history(
             str(channel["id"]),
@@ -268,6 +277,8 @@ async def sync_server_history(max_pages_per_channel: int = 0, incremental: bool 
     return {
         "channels_processed": len(processed_results),
         "channels_skipped": len(results) - len(processed_results),
+        "channels_discovered": len(channels),
+        "archived_threads_discovered": len(archived),
         "results": results,
         "indexed_messages": index.count(),
     }

@@ -62,7 +62,9 @@ jobs:
 
       - name: Genesis Rust QA tests
         working-directory: genesis/engine/rust
-        run: cargo test
+        run: |
+          cargo test
+          cargo build --bin mdfarsi-qa
 
       - name: Setup Go 1.27.1
         uses: actions/setup-go@v7

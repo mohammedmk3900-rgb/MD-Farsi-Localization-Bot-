@@ -48,7 +48,7 @@ def test_mission_and_notification_pipeline_survives_restart(tmp_path):
     assert mission.status == "open"
 
     task = first.mission_engine.activate(mission.id)
-    assert task.id == mission.task_id if mission.task_id is not None else task.id
+    assert first.mission_engine.list()[0].task_id == task.id
 
     first.events.publish(
         "mission.assigned",

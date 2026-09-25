@@ -28,6 +28,7 @@ class AutomationTests(unittest.TestCase):
             channel_achievements="achievements",
             channel_glossary="glossary",
             discord_bot_token="test",
+            discord_intelligence_path="data/discord_intelligence.json",
         )
         self.application = SimpleNamespace(
             context=SimpleNamespace(settings=self.settings, database=self.db),
@@ -68,6 +69,26 @@ class AutomationTests(unittest.TestCase):
         self.assertEqual(second["achievements"], 0)
         self.assertEqual(len(fake.embeds), 3)
         self.assertEqual(len([x for x in fake.embeds if x[0] == "progress"]), 1)
+
+    def test_project_quality_alerts_detect_bad_state(self):
+        automation = Automation(self.application)
+        alerts = automation._project_quality_alerts(
+            {"translation_percent": 10, "review_percent": 12, "translated": 101, "strings_total": 100},
+            {"translation_percent": 11},
+        )
+        self.assertEqual(len(alerts), 3)
+
+    def test_glossary_qa_detects_conflicts_and_duplicates(self):
+        automation = Automation(self.application)
+        qa = automation._glossary_qa([
+            {"source": "Faction", "target": "اتحاد", "description": ""},
+            {"source": "Faction", "target": "ائتلاف", "description": ""},
+            {"source": "Faction", "target": "اتحاد", "description": ""},
+            {"source": "", "target": "", "description": ""},
+        ])
+        self.assertEqual(qa["conflicting_sources"], 1)
+        self.assertEqual(qa["duplicates"], 1)
+        self.assertEqual(qa["empty_or_incomplete"], 1)
 
     def test_glossary_is_published_only_when_changed(self):
         automation = Automation(self.application)

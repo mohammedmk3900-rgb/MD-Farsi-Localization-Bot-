@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Genesis Operation Result",
+  "type": "object",
+  "required": ["schema_version", "operation", "status", "generated_at"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "operation": {"type": "string", "minLength": 1},
+    "status": {"enum": ["ok", "failed", "skipped"]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "job_id": {"type": "string", "minLength": 1},
+    "payload": {"type": "object"}
+  },
+  "additionalProperties": true
+}

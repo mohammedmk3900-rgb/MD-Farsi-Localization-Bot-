@@ -27,6 +27,19 @@ class DiscordMCPIndexTests(unittest.TestCase):
             self.assertEqual(index.count(), 0)
             self.assertEqual(index.search("Millennium"), [])
 
+    def test_incremental_cursor_state_is_preserved(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            index = MessageIndex(os.path.join(tmp, "discord.db"))
+            index.upsert_messages([{
+                "id": "200", "channel_id": "10", "channel_name": "general",
+                "author_id": "20", "author_name": "MK",
+                "content": "new", "timestamp": "2026-09-25T00:00:00+00:00",
+            }])
+            index.set_cursor("10", newest_message_id="200", oldest_message_id="200", complete=True)
+            cursor = index.get_cursor("10")
+            self.assertEqual(cursor["newest_message_id"], "200")
+            self.assertTrue(cursor["complete"])
+
     def test_channel_cursor_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             index = MessageIndex(os.path.join(tmp, "discord.db"))

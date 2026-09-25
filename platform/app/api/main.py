@@ -1,4 +1,9 @@
-from fastapi import FastAPI, HTTPException
+import json
+import secrets
+import sqlite3
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.application import application
@@ -23,7 +28,23 @@ commands = CommandService()
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "application": "md-news", "database": application.context.settings.database_path}
+    return {"status": "ok", "application": "md-news"}
+
+
+@app.get("/ready")
+def readiness() -> dict:
+    """Verify the platform can read its operational database."""
+    path = Path(application.context.settings.database_path)
+    if not path.is_file():
+        raise HTTPException(status_code=503, detail="Operational database is unavailable")
+    try:
+        with sqlite3.connect(path) as db:
+            result = db.execute("PRAGMA integrity_check").fetchone()[0]
+    except sqlite3.Error as exc:
+        raise HTTPException(status_code=503, detail="Operational database check failed") from exc
+    if result != "ok":
+        raise HTTPException(status_code=503, detail="Operational database integrity check failed")
+    return {"status": "ready", "database": "ok"}
 
 
 @app.get("/api/v1/project")
@@ -36,7 +57,10 @@ def project() -> dict:
 
 
 @app.post("/api/v1/project/sync")
-def project_sync() -> dict:
+def project_sync(authorization: str | None = Header(default=None)) -> dict:
+    token = application.context.settings.api_token
+    if not token or not authorization or not secrets.compare_digest(authorization, f"Bearer {token}"):
+        raise HTTPException(status_code=403, detail="Management API authorization required")
     try:
         return sync_project()
     except Exception as exc:
@@ -88,3 +112,39 @@ def architecture() -> dict:
         "auto_publish": False,
         "sync_policy": "Only POST /api/v1/project/sync performs live synchronization",
     }
+
+
+@app.get("/api/v1/operations/metrics")
+def operation_metrics() -> dict:
+    """Return safe aggregate counters for dashboards and uptime checks."""
+    path = Path("data/last_run.json")
+    if not path.is_file():
+        return {"status": "unknown", "jobs": {}}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="Operation summary is unavailable") from exc
+    jobs = payload.get("jobs", {}) if isinstance(payload, dict) else {}
+    return {
+        "status": payload.get("status", "unknown"),
+        "generated_at": payload.get("generated_at"),
+        "jobs_total": len(jobs),
+        "jobs_ok": sum(1 for item in jobs.values() if isinstance(item, dict) and item.get("status") == "ok"),
+        "jobs_failed": sum(1 for item in jobs.values() if isinstance(item, dict) and item.get("status") == "failed"),
+        "jobs_skipped": sum(1 for item in jobs.values() if isinstance(item, dict) and item.get("status") == "skipped"),
+    }
+
+
+@app.get("/api/v1/operations/last")
+def last_operation() -> dict:
+    """Expose the last aggregate orchestration result without live side effects."""
+    path = Path("data/last_run.json")
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="No completed orchestration run available")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="Operation summary is unavailable") from exc
+    if not isinstance(data, dict) or data.get("schema_version") != 1:
+        raise HTTPException(status_code=503, detail="Operation summary schema is invalid")
+    return data

@@ -131,17 +131,20 @@ async def fetch_page(channel_id: str, before: str | None = None) -> list[dict[st
 
 
 @mcp.tool()
-async def sync_channel_history(channel_id: str, max_pages: int = 0) -> dict[str, Any]:
-    """Index all accessible history in a channel; zero means unlimited pages."""
+async def sync_channel_history(channel_id: str, max_pages: int = 0, incremental: bool = True) -> dict[str, Any]:
+    """Index accessible channel history, using the stored cursor for incremental runs."""
     channels = {str(c["id"]): c for c in await get_message_channels()}
     if channel_id not in channels:
         raise ValueError("Channel is not visible to the bot or is not a supported text channel")
 
     channel = channels[channel_id]
+    cursor = index.get_cursor(channel_id)
+    known_newest = str(cursor["newest_message_id"]) if cursor and cursor.get("newest_message_id") else None
     before: str | None = None
     pages = 0
     processed = 0
     complete = False
+    reached_cursor = False
 
     while True:
         page = await fetch_page(channel_id, before)
@@ -153,25 +156,32 @@ async def sync_channel_history(channel_id: str, max_pages: int = 0) -> dict[str,
         processed += index.upsert_messages(page)
         pages += 1
         before = page[-1]["id"]
+        if incremental and known_newest and any(item["id"] == known_newest for item in page):
+            reached_cursor = True
+            complete = bool(cursor.get("complete"))
+            break
         if len(page) < 100 or (max_pages > 0 and pages >= max_pages):
             complete = len(page) < 100
             break
 
-    index.set_cursor(channel_id, oldest_message_id=before, complete=complete)
+    newest_message_id = page[0]["id"] if pages and page else None
+    index.set_cursor(channel_id, newest_message_id=newest_message_id, oldest_message_id=before, complete=complete)
     return {
         "channel_id": channel_id,
         "channel_name": channel.get("name"),
         "pages": pages,
         "messages_processed": processed,
         "complete": complete,
+        "incremental": incremental,
+        "reached_cursor": reached_cursor,
     }
 
 
 @mcp.tool()
-async def sync_server_history(max_pages_per_channel: int = 0) -> dict[str, Any]:
-    """Index all accessible text channels without bypassing Discord permissions."""
+async def sync_server_history(max_pages_per_channel: int = 0, incremental: bool = True) -> dict[str, Any]:
+    """Index accessible text channels without bypassing Discord permissions."""
     results = [
-        await sync_channel_history(str(channel["id"]), max_pages_per_channel)
+        await sync_channel_history(str(channel["id"]), max_pages_per_channel, incremental)
         for channel in await get_message_channels()
     ]
     return {
@@ -179,6 +189,48 @@ async def sync_server_history(max_pages_per_channel: int = 0) -> dict[str, Any]:
         "results": results,
         "indexed_messages": index.count(),
     }
+
+
+@mcp.tool()
+async def get_server_snapshot(include_messages: bool = False, message_limit_per_channel: int = 50) -> dict[str, Any]:
+    """Return a detailed server snapshot, optionally including indexed messages."""
+    guild = await discord_get(f"/guilds/{GUILD_ID}")
+    channels = await get_channels()
+    roles = await discord_get(f"/guilds/{GUILD_ID}/roles")
+    payload = {
+        "server": {
+            "id": guild.get("id"),
+            "name": guild.get("name"),
+            "owner_id": guild.get("owner_id"),
+            "description": guild.get("description"),
+            "verification_level": guild.get("verification_level"),
+            "features": guild.get("features", []),
+        },
+        "categories": [c for c in channels if c.get("type") == 4],
+        "channels": channels,
+        "roles": roles,
+        "indexed_messages": index.count(),
+        "indexed_channels": index.channel_count(),
+    }
+    if include_messages:
+        payload["messages"] = {
+            str(channel["id"]): index.read_channel(str(channel["id"]), message_limit_per_channel)
+            for channel in channels
+            if channel.get("type") in {0, 5, 10, 11, 12, 15}
+        }
+    return payload
+
+
+@mcp.tool()
+async def get_channel_statistics() -> list[dict[str, Any]]:
+    """Return aggregate activity statistics for every indexed channel."""
+    return index.channel_stats()
+
+
+@mcp.tool()
+async def get_author_statistics(limit: int = 100) -> list[dict[str, Any]]:
+    """Return aggregate message counts by author; no message content is returned."""
+    return index.author_stats(limit)
 
 
 @mcp.tool()

@@ -26,10 +26,21 @@ class GlossaryService:
             page += 1
 
         terms = terms[:max_entries]
+        # A nonempty published glossary must never be replaced by an empty
+        # response that could represent an API/authentication regression.
         output = Path("data/glossary.json")
+        if not terms and output.exists():
+            try:
+                previous = json.loads(output.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                previous = None
+            if isinstance(previous, list) and previous:
+                raise ValueError("Refusing to replace a populated glossary with an empty response")
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(
+        temporary = output.with_suffix(".json.tmp")
+        temporary.write_text(
             json.dumps(terms, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
+        temporary.replace(output)
         return terms

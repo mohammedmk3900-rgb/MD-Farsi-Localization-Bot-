@@ -70,3 +70,32 @@ class MessageIndex:
             FROM messages WHERE channel_id=? AND deleted=0 ORDER BY timestamp DESC LIMIT ?""",
             (channel_id,max(1,min(limit,100)))).fetchall()
         return [dict(r) for r in rows]
+
+
+    def channel_stats(self) -> list[dict[str, Any]]:
+        with self._connect() as db:
+            rows = db.execute("""
+                SELECT channel_id, MAX(channel_name) AS channel_name,
+                       COUNT(*) AS messages,
+                       MIN(timestamp) AS oldest,
+                       MAX(timestamp) AS newest
+                FROM messages
+                WHERE deleted=0
+                GROUP BY channel_id
+                ORDER BY messages DESC
+            """).fetchall()
+        return [dict(r) for r in rows]
+
+    def author_stats(self, limit: int = 100) -> list[dict[str, Any]]:
+        with self._connect() as db:
+            rows = db.execute("""
+                SELECT author_id, MAX(author_name) AS author_name,
+                       COUNT(*) AS messages,
+                       MAX(timestamp) AS last_message
+                FROM messages
+                WHERE deleted=0
+                GROUP BY author_id
+                ORDER BY messages DESC
+                LIMIT ?
+            """, (max(1, min(limit, 1000)),)).fetchall()
+        return [dict(r) for r in rows]

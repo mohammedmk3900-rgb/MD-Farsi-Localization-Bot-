@@ -48,6 +48,7 @@ jobs:
           python -m pip install -r requirements.txt
           python -m unittest discover -s . -p "test_*.py" -v
           python -m py_compile server.py indexer.py bot.py run.py
+          DISCORD_BOT_TOKEN=test DISCORD_GUILD_ID=1 DISCORD_DB_PATH="$RUNNER_TEMP/discord-mcp-test.db" python -c "from server import mcp; print(type(mcp).__name__)"
 
       - uses: dtolnay/rust-toolchain@stable
         with:

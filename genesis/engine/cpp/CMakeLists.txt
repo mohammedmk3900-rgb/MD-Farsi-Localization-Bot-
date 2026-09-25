@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.20)
+project(md_native LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_library(md_native STATIC src/native.cpp)
+target_include_directories(md_native PUBLIC include)

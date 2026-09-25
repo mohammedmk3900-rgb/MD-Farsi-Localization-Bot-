@@ -11,6 +11,7 @@ from app.services.reports import ReportService
 from app.services.glossary import GlossaryService
 from app.services.health import HealthService
 from app.services.polyglot import PolyglotEngine
+from app.services.automation import Automation
 
 
 def sync() -> dict:
@@ -18,6 +19,7 @@ def sync() -> dict:
         application.context.settings,
         application.context.database,
     ).collect()
+    Automation(application).publish_project()
     return snapshot.model_dump(mode="json")
 
 
@@ -40,8 +42,9 @@ def report(period: str = "daily") -> dict:
 
 def glossary_sync() -> dict:
     result = GlossaryService(application.context.settings).sync_all()
-    application.record("glossary.synced", {"count": len(result)})
-    return {"count": len(result)}
+    publication = Automation(application).publish_glossary(result)
+    application.record("glossary.synced", {"count": len(result), "publication": publication})
+    return {"count": len(result), "publication": publication}
 
 
 def health() -> dict:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from app.config import Settings
-from app.domain.models import CommandCenterSnapshot, HealthStatus
+from app.domain.models import CommandCenterSnapshot, HealthStatus, ProjectSnapshot
 from app.integrations.discord import DiscordClient
 from app.integrations.paratranz import ParaTranzClient
 from app.persistence.database import Database
@@ -18,7 +18,16 @@ class CommandCenter:
 
     def collect(self) -> CommandCenterSnapshot:
         captured = datetime.now(timezone.utc)
-        project = ParaTranzClient(self.settings).project_snapshot()
+        project_error: Exception | None = None
+        try:
+            project = ParaTranzClient(self.settings).project_snapshot()
+        except Exception as exc:
+            project_error = exc
+            previous = self.database.recent_snapshots(1)
+            previous_project = previous[0]["payload"].get("project") if previous else None
+            if not previous_project:
+                raise
+            project = ProjectSnapshot.model_validate(previous_project)
 
         discord = None
         discord_configured = bool(
@@ -35,9 +44,9 @@ class CommandCenter:
                 discord = None
 
         health = HealthStatus(
-            status="healthy" if (not discord_configured or discord_ok) else "degraded",
+            status="healthy" if (project_error is None and (not discord_configured or discord_ok)) else "degraded",
             checked_at=captured,
-            paratranz=True,
+            paratranz=project_error is None,
             discord=discord_ok if discord_configured else False,
             database=True,
         )
@@ -49,6 +58,8 @@ class CommandCenter:
             health=health,
         )
         payload = snapshot.model_dump(mode="json")
+        if project_error is not None:
+            payload["health"]["status"] = "degraded"
         previous = self.database.recent_snapshots(1)
         previous_project = previous[0]["payload"].get("project") if previous else None
 

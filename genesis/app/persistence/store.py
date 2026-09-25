@@ -71,6 +71,29 @@ class Store:
                 );
                 CREATE INDEX IF NOT EXISTS idx_schedules_due
                     ON schedules(delivered, run_at);
+
+                CREATE TABLE IF NOT EXISTS missions (
+                    id INTEGER PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    scope TEXT NOT NULL,
+                    priority TEXT NOT NULL,
+                    reward INTEGER NOT NULL DEFAULT 0,
+                    status TEXT NOT NULL,
+                    task_id INTEGER,
+                    created_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_missions_status ON missions(status);
+
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    recipient TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    delivered INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE INDEX IF NOT EXISTS idx_notifications_due
+                    ON notifications(delivered, recipient, id);
                 """
             )
             columns = {row["name"] for row in db.execute("PRAGMA table_info(reviews)").fetchall()}
@@ -211,3 +234,78 @@ class Store:
     def mark_schedule_delivered(self, schedule_id: int) -> None:
         with self._connect() as db:
             db.execute("UPDATE schedules SET delivered=1 WHERE id=?", (schedule_id,))
+
+    def next_mission_id(self) -> int:
+        with self._connect() as db:
+            row = db.execute("SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM missions").fetchone()
+            return int(row["next_id"])
+
+    def save_mission(self, mission) -> None:
+        with self._connect() as db:
+            db.execute(
+                """
+                INSERT INTO missions(id,title,scope,priority,reward,status,task_id,created_at)
+                VALUES (?,?,?,?,?,?,?,?)
+                ON CONFLICT(id) DO UPDATE SET
+                    title=excluded.title, scope=excluded.scope, priority=excluded.priority,
+                    reward=excluded.reward, status=excluded.status, task_id=excluded.task_id
+                """,
+                (
+                    mission.id, mission.title, mission.scope, mission.priority.value,
+                    mission.reward, mission.status, mission.task_id, mission.created_at,
+                ),
+            )
+
+    def missions(self, status: str | None = None) -> list[dict[str, Any]]:
+        with self._connect() as db:
+            if status is None:
+                rows = db.execute("SELECT * FROM missions ORDER BY id").fetchall()
+            else:
+                rows = db.execute(
+                    "SELECT * FROM missions WHERE status=? ORDER BY id", (status,)
+                ).fetchall()
+        return [
+            {
+                "id": row["id"], "title": row["title"], "scope": row["scope"],
+                "priority": Priority(row["priority"]), "reward": row["reward"],
+                "status": row["status"], "task_id": row["task_id"],
+                "created_at": row["created_at"],
+            }
+            for row in rows
+        ]
+
+    def enqueue_notification(
+        self, recipient: str, event_type: str, message: str, created_at: str
+    ) -> int:
+        with self._connect() as db:
+            cur = db.execute(
+                "INSERT INTO notifications(recipient,event_type,message,created_at) VALUES (?,?,?,?)",
+                (recipient, event_type, message, created_at),
+            )
+            return int(cur.lastrowid)
+
+    def notifications(
+        self, recipient: str | None = None, delivered: bool | None = None
+    ) -> list[dict[str, Any]]:
+        query = "SELECT * FROM notifications"
+        clauses = []
+        params: list[Any] = []
+        if recipient is not None:
+            clauses.append("recipient=?")
+            params.append(recipient)
+        if delivered is not None:
+            clauses.append("delivered=?")
+            params.append(1 if delivered else 0)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY id"
+        with self._connect() as db:
+            rows = db.execute(query, params).fetchall()
+        return [dict(row) for row in rows]
+
+    def mark_notification_delivered(self, notification_id: int) -> None:
+        with self._connect() as db:
+            db.execute(
+                "UPDATE notifications SET delivered=1 WHERE id=?",
+                (notification_id,),
+            )

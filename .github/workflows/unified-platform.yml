@@ -97,13 +97,7 @@ jobs:
             mkdir -p "$RUNNER_TEMP/previous-state"
             if gh run download "$run_id" --name "platform-run-$run_id" --dir "$RUNNER_TEMP/previous-state"; then
               if [[ -s "$RUNNER_TEMP/previous-state/platform.db" ]]; then
-                if python - "$RUNNER_TEMP/previous-state/platform.db" <<'PY'
-import sqlite3
-import sys
-with sqlite3.connect(sys.argv[1]) as db:
-    assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
-PY
-                then
+                if python -c 'import sqlite3,sys; db=sqlite3.connect(sys.argv[1]); assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"; db.close()' "$RUNNER_TEMP/previous-state/platform.db"; then
                   cp "$RUNNER_TEMP/previous-state/platform.db" data/platform.db
                   echo "Restored verified database from run $run_id"
                   break
@@ -144,13 +138,7 @@ PY
         shell: bash
         run: |
           if [[ -f data/platform.db ]]; then
-            python - <<'PY'
-import sqlite3
-with sqlite3.connect("data/platform.db") as db:
-    result = db.execute("PRAGMA integrity_check").fetchone()[0]
-    if result != "ok":
-        raise SystemExit("SQLite integrity check failed")
-PY
+            python -c 'import sqlite3; db=sqlite3.connect("data/platform.db"); assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"; db.close()'
           fi
       - name: Archive runtime SQLite and snapshots
         if: always()

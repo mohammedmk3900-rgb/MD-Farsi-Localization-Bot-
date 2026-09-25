@@ -153,8 +153,18 @@ async def sync_channel_history(
     """Index accessible channel history, using the stored cursor for incremental runs."""
     visible_channels = channels if channels is not None else await get_message_channels()
     channel_map = {str(c["id"]): c for c in visible_channels}
-    if channel_id not in channels:
-        raise ValueError("Channel is not visible to the bot or is not a supported text channel")
+    if channel_id not in channel_map:
+        return {
+            "channel_id": channel_id,
+            "channel_name": None,
+            "pages": 0,
+            "messages_processed": 0,
+            "complete": False,
+            "incremental": incremental,
+            "reached_cursor": False,
+            "skipped": True,
+            "reason": "Channel is not visible to the bot or is not a supported message channel",
+        }
 
     channel = channel_map[channel_id]
     cursor = index.get_cursor(channel_id)

@@ -56,3 +56,18 @@ class PolyglotEngine:
         if payload.get("schema_version") != 1 or "operation" not in payload:
             raise ValueError("invalid Go worker contract")
         return payload
+
+
+    def run_native_probe(self, *, binary: str | None = None) -> dict[str, Any]:
+        command = [binary or str(self.root / "build/genesis-native/md_native_probe")]
+        payload = self._run(command, "")
+        if payload.get("schema_version") != 1 or payload.get("operation") != "native_probe":
+            raise ValueError("invalid C++ native contract")
+        return payload
+
+    def run_windows_probe(self, *, binary: str | None = None) -> dict[str, Any]:
+        command = [binary or str(self.root / "genesis/engine/csharp/bin/Release/net8.0/MDNativeBridge")]
+        payload = self._run(command, "")
+        if payload.get("schema_version") != 1 or payload.get("operation") != "windows_probe":
+            raise ValueError("invalid C# Windows contract")
+        return payload

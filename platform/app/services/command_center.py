@@ -27,7 +27,12 @@ class CommandCenter:
             previous_project = previous[0]["payload"].get("project") if previous else None
             if not previous_project:
                 raise
-            project = ProjectSnapshot.model_validate(previous_project)
+            # Persisted project snapshots include computed fields, while the
+            # domain model forbids unknown fields during fallback validation.
+            allowed = set(ProjectSnapshot.model_fields)
+            project = ProjectSnapshot.model_validate(
+                {key: value for key, value in previous_project.items() if key in allowed}
+            )
 
         discord = None
         discord_configured = bool(

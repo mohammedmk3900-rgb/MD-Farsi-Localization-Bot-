@@ -30,9 +30,17 @@ class CommandCenter:
             "findings": result.findings,
         }
 
+    def sync(self, role: str, integration) -> dict:
+        self._require(role, "sync.run")
+        return self.app.sync.project(self.app, integration)
+
     def pending_reviews(self, role: str) -> list:
         self._require(role, "tasks.review")
         return self.app.reviews.pending()
+
+    def achievements(self, role: str, completed_tasks: int, clean_reviews: int = 0) -> list[dict]:
+        self._require(role, "project.read")
+        return [a.__dict__ for a in self.app.achievements.earned(completed_tasks, clean_reviews)]
 
     def _require(self, role: str, permission: str) -> None:
         if not allowed(role, permission):

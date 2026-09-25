@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
 from indexer import MessageIndex
 
@@ -22,7 +22,7 @@ API = "https://discord.com/api/v10"
 if not TOKEN or not GUILD_ID:
     raise RuntimeError("DISCORD_BOT_TOKEN and DISCORD_GUILD_ID are required")
 
-mcp = FastMCP("Millennium Dawn Farsi Localization Discord", host=HOST, port=PORT)
+mcp = MCPServer("Millennium Dawn Farsi Localization Discord")
 index = MessageIndex(DB_PATH)
 
 
@@ -256,4 +256,4 @@ async def read_channel(channel_id: str, limit: int = 50) -> list[dict[str, Any]]
 
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    mcp.run(transport="streamable-http", host=HOST, port=PORT)

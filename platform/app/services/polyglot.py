@@ -66,7 +66,7 @@ class PolyglotEngine:
         return payload
 
     def run_windows_probe(self, *, binary: str | None = None) -> dict[str, Any]:
-        command = [binary or str(self.root / "genesis/engine/csharp/bin/Release/net8.0/MDNativeBridge")]
+        command = [binary or str(self.root / "genesis/engine/csharp/bin/Release/net10.0/MDNativeBridge")]
         payload = self._run(command, "")
         if payload.get("schema_version") != 1 or payload.get("operation") != "windows_probe":
             raise ValueError("invalid C# Windows contract")

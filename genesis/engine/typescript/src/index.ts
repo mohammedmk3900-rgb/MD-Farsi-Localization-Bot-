@@ -43,3 +43,23 @@ export interface Notification {
   created_at: string;
   delivered: boolean;
 }
+
+export interface EngineHealth {
+  status: string;
+  queued: number;
+  running: number;
+  handled: number;
+  workers: number;
+}
+
+export interface WorkerJob {
+  id: string;
+  type: string;
+  payload: Record<string, unknown>;
+  status: "queued" | "running" | "completed" | "failed";
+  created_at: string;
+  started_at?: string;
+  ended_at?: string;
+  result?: Record<string, unknown>;
+  error?: string;
+}

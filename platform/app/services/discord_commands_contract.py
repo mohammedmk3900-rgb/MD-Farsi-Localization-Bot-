@@ -9,6 +9,13 @@ COMMANDS = (
     "achievements",
     "sync",
     "report",
+    "center",
+    "tasks",
+    "task_create",
+    "task_claim",
+    "task_submit",
+    "task_complete",
+    "check",
 )
 
 

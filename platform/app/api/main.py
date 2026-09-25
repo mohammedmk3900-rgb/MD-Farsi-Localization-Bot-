@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -88,3 +91,18 @@ def architecture() -> dict:
         "auto_publish": False,
         "sync_policy": "Only POST /api/v1/project/sync performs live synchronization",
     }
+
+
+@app.get("/api/v1/operations/last")
+def last_operation() -> dict:
+    """Expose the last aggregate orchestration result without live side effects."""
+    path = Path("data/last_run.json")
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="No completed orchestration run available")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="Operation summary is unavailable") from exc
+    if not isinstance(data, dict) or data.get("schema_version") != 1:
+        raise HTTPException(status_code=503, detail="Operation summary schema is invalid")
+    return data

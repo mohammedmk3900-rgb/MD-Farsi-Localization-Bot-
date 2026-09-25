@@ -27,6 +27,7 @@ class AutomationTests(unittest.TestCase):
             channel_stats="stats",
             channel_achievements="achievements",
             channel_glossary="glossary",
+            discord_bot_token="test",
         )
         self.application = SimpleNamespace(
             context=SimpleNamespace(settings=self.settings, database=self.db),

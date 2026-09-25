@@ -97,9 +97,17 @@ jobs:
             mkdir -p "$RUNNER_TEMP/previous-state"
             if gh run download "$run_id" --name "platform-run-$run_id" --dir "$RUNNER_TEMP/previous-state"; then
               if [[ -s "$RUNNER_TEMP/previous-state/platform.db" ]]; then
-                cp "$RUNNER_TEMP/previous-state/platform.db" data/platform.db
-                echo "Restored database from run $run_id"
-                break
+                if python - "$RUNNER_TEMP/previous-state/platform.db" <<'PY'
+import sqlite3
+import sys
+with sqlite3.connect(sys.argv[1]) as db:
+    assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+PY
+                then
+                  cp "$RUNNER_TEMP/previous-state/platform.db" data/platform.db
+                  echo "Restored verified database from run $run_id"
+                  break
+                fi
               fi
             fi
           done
@@ -131,6 +139,19 @@ jobs:
           if [[ "$DAILY" == "true" ]]; then args+=(--daily); fi
           if [[ "$WEEKLY" == "true" ]]; then args+=(--weekly); fi
           python -m app.orchestrator "${args[@]}"
+      - name: Verify SQLite before archiving
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f data/platform.db ]]; then
+            python - <<'PY'
+import sqlite3
+with sqlite3.connect("data/platform.db") as db:
+    result = db.execute("PRAGMA integrity_check").fetchone()[0]
+    if result != "ok":
+        raise SystemExit("SQLite integrity check failed")
+PY
+          fi
       - name: Archive runtime SQLite and snapshots
         if: always()
         uses: actions/upload-artifact@v4

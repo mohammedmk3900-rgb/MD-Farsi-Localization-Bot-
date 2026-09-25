@@ -229,6 +229,53 @@ class Automation:
             issues.append(f"{duplicates} ورودی تکراری در واژه‌نامه وجود دارد.")
         return {"issues": issues, "empty_or_incomplete": len(empty), "conflicting_sources": len(conflicts), "duplicates": duplicates}
 
+    def publish_manager_digest(self) -> dict[str, Any]:
+        """Publish one concise manager-facing operational digest per state change."""
+        current, previous = self._project_state()
+        if not current or not self.settings.channel_reports:
+            return {"published": False, "reason": "missing_project_or_channel"}
+
+        translated_delta = int(current.get("translated", 0) or 0) - int(previous.get("translated", 0) or 0)
+        reviewed_delta = int(current.get("reviewed", 0) or 0) - int(previous.get("reviewed", 0) or 0)
+        translation = float(current.get("translation_percent", 0) or 0)
+        review = float(current.get("review_percent", 0) or 0)
+
+        intelligence_path = Path(getattr(self.settings, "discord_intelligence_path", "data/discord_intelligence.json"))
+        unresolved = 0
+        top_categories: list[str] = []
+        if intelligence_path.exists():
+            try:
+                intelligence = json.loads(intelligence_path.read_text(encoding="utf-8"))
+                health = intelligence.get("health", {})
+                unresolved = int(health.get("unresolved_followups", 0) or 0)
+                counts = intelligence.get("current", {}).get("category_counts", {})
+                top_categories = [f"{name}: {count}" for name, count in list(counts.items())[:4]]
+            except (OSError, ValueError, TypeError):
+                pass
+
+        body = (
+            f"ترجمه: **{translation:.2f}%** ({translated_delta:+,} رشته)\n"
+            f"بازبینی: **{review:.2f}%** ({reviewed_delta:+,} رشته)\n"
+            f"پیگیری‌های حل‌نشده: **{unresolved:,}**\n"
+            f"موضوعات فعال: **{', '.join(top_categories) if top_categories else '—'}**"
+        )
+        published = self._embed_if_changed(
+            "publish.manager_digest",
+            self.settings.channel_reports,
+            "🧭 داشبورد مدیر پروژه • MANAGER DIGEST",
+            body,
+        )
+        result = {
+            "published": published,
+            "translation_percent": translation,
+            "review_percent": review,
+            "translated_delta": translated_delta,
+            "reviewed_delta": reviewed_delta,
+            "unresolved_followups": unresolved,
+        }
+        self.application.record("automation.manager_digest", result)
+        return result
+
     def publish_intelligence(self) -> dict[str, Any]:
         path = Path(getattr(self.settings, "discord_intelligence_path", "data/discord_intelligence.json"))
         if not path.exists():

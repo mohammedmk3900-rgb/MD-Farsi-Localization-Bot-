@@ -38,6 +38,21 @@ class CommandCenterService:
         now_iso = now_iso or datetime.now(timezone.utc).isoformat()
         return self.application.reminders.due(now_iso)
 
+    def missions(self, status: str | None = None) -> list:
+        return self.application.mission_engine.list(status)
+
+    def generate_missions(self, scopes: list[str], limit: int = 5) -> list:
+        return self.application.mission_engine.generate(scopes, limit)
+
+    def activate_mission(self, mission_id: int):
+        return self.application.mission_engine.activate(mission_id)
+
+    def events(self, limit: int = 50) -> list[dict[str, Any]]:
+        return self.application.events.recent(limit)
+
+    def notifications(self, recipient: str) -> list:
+        return self.application.events.pending_notifications(recipient)
+
     def due_missions(self, now_iso: str | None = None) -> list:
         now_iso = now_iso or datetime.now(timezone.utc).isoformat()
         return self.application.mission_scheduler.due(now_iso)

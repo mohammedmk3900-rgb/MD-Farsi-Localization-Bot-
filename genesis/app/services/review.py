@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from app.domain.models import TranslationCheck
+from app.persistence.store import Store
 
 
 class ReviewDecision:
@@ -21,33 +22,42 @@ class ReviewItem:
 
 
 class ReviewQueue:
-    def __init__(self) -> None:
+    def __init__(self, store: Store | None = None) -> None:
+        self.store = store
         self._items: list[ReviewItem] = []
-        self._next_id = 1
+        if store is not None:
+            self._items = [
+                ReviewItem(
+                    id=row["id"], actor=row["actor"],
+                    check=TranslationCheck(row["source"], row["translation"], row["findings"]),
+                    created_at=row["created_at"],
+                )
+                for row in store.reviews()
+            ]
+        self._next_id = max((item.id for item in self._items), default=0) + 1
 
     def submit(self, actor: str, check: TranslationCheck) -> ReviewItem:
         item = ReviewItem(
-            id=self._next_id,
-            actor=actor,
-            check=check,
+            id=self._next_id, actor=actor, check=check,
             created_at=datetime.now(timezone.utc).isoformat(),
         )
         self._next_id += 1
         self._items.append(item)
+        if self.store is not None:
+            self.store.save_review(actor, check.source, check.translation, check.findings, item.created_at)
         return item
 
     def pending(self) -> list[ReviewItem]:
         return list(self._items)
 
     def decide(self, item_id: int, decision: str, reviewer: str) -> dict:
-        if decision not in {
-            ReviewDecision.APPROVE,
-            ReviewDecision.REJECT,
-            ReviewDecision.REQUEST_CHANGES,
-        }:
+        if decision not in {ReviewDecision.APPROVE, ReviewDecision.REJECT, ReviewDecision.REQUEST_CHANGES}:
             raise ValueError("invalid review decision")
         item = next((x for x in self._items if x.id == item_id), None)
         if item is None:
             raise KeyError(item_id)
         self._items.remove(item)
-        return {"item_id": item_id, "decision": decision, "reviewer": reviewer}
+        result = {"item_id": item_id, "decision": decision, "reviewer": reviewer}
+        if self.store is not None:
+            self.store.record_event("review.decided", reviewer, datetime.now(timezone.utc).isoformat(), result)
+        return result

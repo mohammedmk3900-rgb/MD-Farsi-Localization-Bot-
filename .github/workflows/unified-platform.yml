@@ -31,39 +31,54 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Platform tests
         working-directory: platform
         run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
           python -m pip install -e ".[test]"
           python -m pytest -q
           python -m compileall -q app
+
       - name: Discord MCP tests
         working-directory: discord-mcp
         run: |
+          set -euo pipefail
           python -m pip install -r requirements.txt
           python -m unittest discover -s . -p "test_*.py" -v
           python -m py_compile server.py indexer.py bot.py run.py
+
       - uses: dtolnay/rust-toolchain@stable
+
       - name: Rust tests
         working-directory: rust
         run: |
+          set -euo pipefail
           cargo test
           cargo build
+
       - name: Genesis Rust QA tests
         working-directory: genesis/engine/rust
         run: cargo test
+
       - name: Genesis Go worker tests
         working-directory: genesis/engine/go
         run: go test ./...
+
       - name: Genesis TypeScript contract typecheck
         working-directory: genesis/engine/typescript
         run: |
+          set -euo pipefail
           npm install --no-audit --no-fund
           npm run typecheck
+
       - name: Genesis C++ native build
         run: |
+          set -euo pipefail
           cmake -S genesis/engine/cpp -B build/genesis-native
           cmake --build build/genesis-native
+
       - name: Genesis C# bridge build
         working-directory: genesis/engine/csharp
         run: dotnet build --configuration Release
@@ -94,38 +109,63 @@ jobs:
       CHANNEL_HEALTH: ${{ secrets.CHANNEL_HEALTH }}
       CHANNEL_REPORTS: ${{ secrets.CHANNEL_REPORTS }}
       CHANNEL_GLOSSARY: ${{ secrets.CHANNEL_GLOSSARY }}
+
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install -e .
+
+      - name: Install platform
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
       - name: Restore previous durable runtime state
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p "$GITHUB_WORKSPACE/platform/data" "$GITHUB_WORKSPACE/discord-mcp/data"
-          # Find the newest completed unified run with an available artifact.
-          # Missing or expired artifacts are safe: use the checked-out seed.
-          for run_id in $(gh run list --workflow unified-platform.yml --branch main --status completed --limit 12 --json databaseId --jq '.[].databaseId'); do
+          rm -rf "$RUNNER_TEMP/previous-state"
+          mkdir -p "$RUNNER_TEMP/previous-state"
+
+          restored=false
+          while read -r run_id; do
+            [[ -n "$run_id" ]] || continue
+            rm -rf "$RUNNER_TEMP/previous-state/*"
             mkdir -p "$RUNNER_TEMP/previous-state"
-            if gh run download "$run_id" --name "platform-run-$run_id" --dir "$RUNNER_TEMP/previous-state"; then
-              previous_platform="$RUNNER_TEMP/previous-state/platform/data/platform.db"
-              previous_discord="$RUNNER_TEMP/previous-state/discord-mcp/data/discord.db"
-              if [[ -s "$previous_platform" ]] && python -c 'import sqlite3,sys; db=sqlite3.connect(sys.argv[1]); assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"; db.close()' "$previous_platform"; then
-                cp "$previous_platform" "$GITHUB_WORKSPACE/platform/data/platform.db"
-                if [[ -s "$previous_discord" ]] && python -c 'import sqlite3,sys; db=sqlite3.connect(sys.argv[1]); assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"; db.close()' "$previous_discord"; then
-                  cp "$previous_discord" "$GITHUB_WORKSPACE/discord-mcp/data/discord.db"
-                fi
-                echo "Restored verified runtime databases from run $run_id"
-                break
-              fi
+
+            if ! gh run download "$run_id" --name "platform-run-$run_id" --dir "$RUNNER_TEMP/previous-state"; then
+              continue
             fi
-          done
+
+            previous_platform="$RUNNER_TEMP/previous-state/platform/data/platform.db"
+            previous_discord="$RUNNER_TEMP/previous-state/discord-mcp/data/discord.db"
+
+            if [[ -s "$previous_platform" ]] &&                python -c 'import sqlite3,sys; db=sqlite3.connect(sys.argv[1]); ok=db.execute("PRAGMA integrity_check").fetchone()[0]=="ok"; db.close(); raise SystemExit(0 if ok else 1)' "$previous_platform"; then
+              cp "$previous_platform" "$GITHUB_WORKSPACE/platform/data/platform.db"
+
+              if [[ -s "$previous_discord" ]] &&                  python -c 'import sqlite3,sys; db=sqlite3.connect(sys.argv[1]); ok=db.execute("PRAGMA integrity_check").fetchone()[0]=="ok"; db.close(); raise SystemExit(0 if ok else 1)' "$previous_discord"; then
+                cp "$previous_discord" "$GITHUB_WORKSPACE/discord-mcp/data/discord.db"
+              fi
+
+              echo "Restored verified runtime databases from run $run_id"
+              restored=true
+              break
+            fi
+          done < <(gh run list --workflow unified-platform.yml --branch main --status completed --limit 12 --json databaseId --jq '.[].databaseId')
+
+          if [[ "$restored" != "true" ]]; then
+            echo "No verified previous runtime artifact found; using repository seed state."
+          fi
+
       - name: Index Discord history
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -134,14 +174,16 @@ jobs:
           DISCORD_BACKFILL_ON_START: "false"
         working-directory: discord-mcp
         run: |
+          set -euo pipefail
           python -m pip install -r requirements.txt
           python - <<'PY'
           import asyncio
-          import os
           from server import sync_server_history
+
           result = asyncio.run(sync_server_history())
           print(result)
           PY
+
       - name: Select report schedule
         id: reports
         shell: bash
@@ -149,16 +191,30 @@ jobs:
           RUN_MODE: ${{ inputs.mode }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
+          set -euo pipefail
           daily=false
           weekly=false
-          if [[ "$RUN_MODE" == "daily" || "$RUN_MODE" == "weekly" ]]; then daily=true; fi
-          if [[ "$RUN_MODE" == "weekly" ]]; then weekly=true; fi
+
+          case "$RUN_MODE" in
+            daily)
+              daily=true
+              ;;
+            weekly)
+              daily=true
+              weekly=true
+              ;;
+          esac
+
           if [[ "$EVENT_NAME" == "schedule" && "$(date -u +%H)" == "18" ]]; then
             daily=true
-            if [[ "$(date -u +%u)" == "1" ]]; then weekly=true; fi
+            if [[ "$(date -u +%u)" == "1" ]]; then
+              weekly=true
+            fi
           fi
+
           echo "daily=$daily" >> "$GITHUB_OUTPUT"
           echo "weekly=$weekly" >> "$GITHUB_OUTPUT"
+
       - name: Run all coordinated jobs
         id: orchestrate
         continue-on-error: true
@@ -166,17 +222,24 @@ jobs:
           DAILY: ${{ steps.reports.outputs.daily }}
           WEEKLY: ${{ steps.reports.outputs.weekly }}
         run: |
+          set -euo pipefail
           args=()
           if [[ "$DAILY" == "true" ]]; then args+=(--daily); fi
           if [[ "$WEEKLY" == "true" ]]; then args+=(--weekly); fi
           python -m app.orchestrator "${args[@]}"
+
       - name: Verify SQLite before archiving
         if: always()
         shell: bash
         run: |
+          set -euo pipefail
           if [[ -f data/platform.db ]]; then
-            python -c 'import sqlite3; db=sqlite3.connect("data/platform.db"); assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"; db.close()'
+            python -c 'import sqlite3; db=sqlite3.connect("data/platform.db"); ok=db.execute("PRAGMA integrity_check").fetchone()[0]=="ok"; db.close(); raise SystemExit(0 if ok else 1)'
           fi
+          if [[ -f ../discord-mcp/data/discord.db ]]; then
+            python -c 'import sqlite3; db=sqlite3.connect("../discord-mcp/data/discord.db"); ok=db.execute("PRAGMA integrity_check").fetchone()[0]=="ok"; db.close(); raise SystemExit(0 if ok else 1)'
+          fi
+
       - name: Archive runtime SQLite and snapshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -188,24 +251,65 @@ jobs:
             discord-mcp/data/discord.db
           if-no-files-found: warn
           retention-days: 30
-      - name: Publish public JSON snapshots only
-        if: always()
+
+      - name: Prepare public snapshot commit
+        if: steps.orchestrate.outcome == 'success'
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [[ -d data ]]; then
-            find data -maxdepth 1 -type f -name '*.json' -print0 | xargs -0 -r git add --
+
+          # Runtime SQLite belongs in artifacts, not in Git history. Restore any
+          # tracked DB to HEAD before rebasing so it can never reintroduce the
+          # binary merge-conflict class this workflow is designed to avoid.
+          git restore --worktree -- platform/data/platform.db 2>/dev/null || true
+
+          find data -maxdepth 1 -type f -name '*.json' -print0 | xargs -0 -r git add --
+
+          if git diff --cached --quiet; then
+            echo "No public JSON snapshot changes to publish."
+            exit 0
           fi
-          if git diff --cached --quiet; then exit 0; fi
+
           git commit -m "chore: refresh public platform snapshots"
+
+      - name: Publish public JSON snapshots only
+        if: steps.orchestrate.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+
           for attempt in 1 2 3; do
             git fetch origin main
-            if git rebase origin/main && git push origin HEAD:main; then exit 0; fi
+
+            if git rebase origin/main; then
+              if git push origin HEAD:main; then
+                exit 0
+              fi
+            else
+              # The generated JSON is authoritative for this run. If another
+              # run changed the same snapshot files, resolve only those files
+              # in favor of the current run and continue the rebase.
+              if git diff --name-only --diff-filter=U | grep -Eq '^platform/data/.*\.json$'; then
+                git checkout --theirs -- platform/data/*.json
+                git add platform/data/*.json
+                GIT_EDITOR=true git rebase --continue
+                if git push origin HEAD:main; then
+                  exit 0
+                fi
+              else
+                git rebase --abort || true
+              fi
+            fi
+
             git rebase --abort 2>/dev/null || true
             sleep "$((attempt * 3))"
           done
+
+          echo "Failed to publish public JSON snapshots after 3 attempts." >&2
           exit 1
+
       - name: Fail if any operational job failed
         if: steps.orchestrate.outcome == 'failure'
         run: exit 1

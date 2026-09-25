@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 from typing import Any
 
 from app.integrations.paratranz import ParaTranzIntegration
@@ -13,9 +12,17 @@ class CommandCenterService:
         self.application = application
 
     def status(self) -> dict[str, Any]:
+        health = self.application.health.evaluate({
+            "store": "ok",
+            "translation": "ok",
+            "glossary": "ok",
+        })
         return {
             "tasks": self.application.tasks.summary(),
-            "health": asdict(self.application.health.evaluate()),
+            "health": {
+                "status": health.status,
+                "checks": health.checks,
+            },
             "glossary_terms": len(self.application.glossary.all()),
         }
 

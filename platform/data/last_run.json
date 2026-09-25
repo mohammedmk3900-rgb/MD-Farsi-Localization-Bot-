@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-25T19:56:23.102306+00:00",
+  "status": "ok",
+  "jobs": {
+    "sync": {
+      "status": "ok",
+      "result": {
+        "project_id": 19621,
+        "strings_total": 0,
+        "translated": 0,
+        "reviewed": 0
+      }
+    },
+    "glossary": {
+      "status": "ok",
+      "result": {
+        "count": 0
+      }
+    },
+    "discord_audit": {
+      "status": "ok",
+      "result": {
+        "channels": 35,
+        "roles": 12,
+        "categories": 9
+      }
+    },
+    "health": {
+      "status": "ok",
+      "result": {
+        "status": "degraded",
+        "paratranz": false,
+        "discord": true,
+        "database": true
+      }
+    },
+    "polyglot": {
+      "status": "ok",
+      "result": {
+        "qa": "ok",
+        "worker": "ok"
+      }
+    }
+  }
+}

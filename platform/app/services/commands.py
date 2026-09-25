@@ -4,10 +4,12 @@ from app.application import application
 from app.services.glossary import GlossaryService
 from app.services.reports import ReportService
 from app.services.sync import sync_project
+from app.services.tasks import TaskService
+from app.services.translation_assistant import TranslationAssistant
 
 
 class CommandService:
-    """Read-only command facade; only sync() performs a live project fetch."""
+    """Command facade. Read commands use stored state; sync() is the explicit live fetch."""
 
     def _latest_project(self) -> dict:
         rows = application.context.database.recent_snapshots(50)
@@ -48,8 +50,7 @@ class CommandService:
         return {k: stats[k] for k in ("translation_percent", "review_percent", "translated", "reviewed", "synced")}
 
     def glossary(self, page: int = 1, page_size: int = 20) -> dict:
-        return {"page": page, "page_size": page_size,
-                "items": GlossaryService(application.context.settings).page(page, page_size)}
+        return {"page": page, "page_size": page_size, "items": GlossaryService(application.context.settings).page(page, page_size)}
 
     def history(self, limit: int = 10) -> list[dict]:
         return application.context.database.recent_snapshots(limit)
@@ -68,9 +69,47 @@ class CommandService:
             return {"period": period, "status": "no_snapshot", "project": None}
         return ReportService().build({"project": project}, period=period)
 
+    def tasks(self, status: str | None = None, owner: str | None = None) -> list[dict]:
+        return TaskService(application.context.database).list(status=status, owner=owner)
+
+    def task_summary(self) -> dict[str, int]:
+        return TaskService(application.context.database).summary()
+
+    def create_task(self, title: str, scope: str = "", priority: str = "normal") -> dict:
+        return TaskService(application.context.database).create(title, scope=scope, priority=priority)
+
+    def claim_task(self, task_id: int, owner: str) -> dict:
+        return TaskService(application.context.database).claim(task_id, owner)
+
+    def submit_task(self, task_id: int, owner: str) -> dict:
+        return TaskService(application.context.database).submit(task_id, owner)
+
+    def complete_task(self, task_id: int, reviewer: str) -> dict:
+        return TaskService(application.context.database).complete(task_id, reviewer)
+
+    def check_translation(self, source: str, translation: str, glossary: list[dict] | None = None) -> dict:
+        if glossary is None:
+            try:
+                glossary = GlossaryService(application.context.settings).sync_all(max_entries=5000)
+            except Exception:
+                glossary = []
+        return TranslationAssistant().check(source, translation, glossary)
+
+    def command_center(self) -> dict:
+        return {
+            "status": self.health(),
+            "project": self.stats(),
+            "tasks": self.task_summary(),
+            "human_approval_required": True,
+            "auto_publish": False,
+        }
+
     def help(self) -> list[str]:
         return [
             "/project status", "/project stats", "/project progress",
             "/project glossary", "/project history", "/project health",
             "/project achievements", "/project sync", "/project report",
+            "/project center", "/project tasks", "/project task_create",
+            "/project task_claim", "/project task_submit", "/project task_complete",
+            "/project check",
         ]

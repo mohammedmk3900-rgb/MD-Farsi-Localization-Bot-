@@ -76,6 +76,10 @@ class MissionEngineService:
         record = self._get(mission_id)
         if record.status != "active":
             raise ValueError("mission is not active")
+        if record.task_id is not None:
+            task = self.tasks.get(record.task_id)
+            if task.status.value != "done":
+                raise ValueError("mission task must be completed first")
         updated = MissionRecord(
             record.id, record.title, record.scope, record.priority,
             record.reward, "completed", record.task_id, record.created_at,

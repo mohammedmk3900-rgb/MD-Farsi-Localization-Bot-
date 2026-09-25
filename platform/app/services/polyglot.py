@@ -13,7 +13,11 @@ from typing import Any
 
 class PolyglotEngine:
     def __init__(self, root: Path | None = None) -> None:
-        self.root = (root or Path.cwd()).resolve()
+        if root is not None:
+            self.root = root.resolve()
+        else:
+            cwd = Path.cwd().resolve()
+            self.root = cwd.parent if (cwd.name == "platform" and (cwd.parent / "genesis").exists()) else cwd
 
     def _run(self, command: list[str], payload: str) -> dict[str, Any]:
         result = subprocess.run(

@@ -16,8 +16,16 @@ def main() -> int:
     sub.add_parser("glossary-sync")
     sub.add_parser("health")
     sub.add_parser("audit")
+    unified = sub.add_parser("run-all", help="Run all platform operations in one coordinated pass")
+    unified.add_argument("--daily", action="store_true")
+    unified.add_argument("--weekly", action="store_true")
 
     args = parser.parse_args()
+    if args.command == "run-all":
+        from app.orchestrator import execute
+        result = execute(daily=args.daily, weekly=args.weekly)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 1 if result["status"] == "failed" else 0
     if args.command == "sync":
         result = sync()
     elif args.command == "report":

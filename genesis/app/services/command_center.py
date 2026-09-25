@@ -1,0 +1,30 @@
+from __future__ import annotations
+
+from typing import Any
+
+from app.integrations.paratranz import ParaTranzIntegration
+
+
+class CommandCenterService:
+    """Read-model facade for Discord and future transports."""
+
+    def __init__(self, application):
+        self.application = application
+
+    def status(self) -> dict[str, Any]:
+        health = self.application.health.evaluate({
+            "store": "ok",
+            "translation": "ok",
+            "glossary": "ok",
+        })
+        return {
+            "tasks": self.application.tasks.summary(),
+            "health": {
+                "status": health.status,
+                "checks": health.checks,
+            },
+            "glossary_terms": len(self.application.glossary.all()),
+        }
+
+    def project_sync(self) -> dict[str, Any]:
+        return self.application.sync.project(self.application, ParaTranzIntegration())

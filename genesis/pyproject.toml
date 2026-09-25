@@ -1,0 +1,10 @@
+[project]
+name = "md-news-genesis"
+version = "11.0.0a1"
+description = "MD Farsi Localization V11 Genesis core"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

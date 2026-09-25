@@ -14,6 +14,8 @@ from app.services.tasks import TaskService
 from app.services.translation import TranslationService
 from app.services.progress import ProgressService
 from app.services.scheduling import ReminderService
+from app.services.events import EventService
+from app.services.mission_engine import MissionEngineService
 from app.services.sync import SyncService
 from app.services.command_center import CommandCenterService
 
@@ -27,6 +29,7 @@ class GenesisApplication:
         self.glossary = GlossaryService()
         self.tasks = TaskService(store)
         self.missions = MissionService()
+        self.events = EventService(store)
         self.reviews = ReviewQueue(store)
         self.achievements = AchievementService()
         self.alerts = AlertService()
@@ -36,6 +39,7 @@ class GenesisApplication:
         self.sync = SyncService()
         from app.services.scheduling import MissionScheduler
         self.mission_scheduler = MissionScheduler(store)
+        self.mission_engine = MissionEngineService(store, self.missions, self.tasks, self.events)
         self.command_center = CommandCenterService(self)
 
     def initialize(self) -> None:

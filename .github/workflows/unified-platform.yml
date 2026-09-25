@@ -91,9 +91,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p data
-          # Find the newest successful unified run with an available artifact.
+          # Find the newest completed unified run with an available artifact.
           # Missing or expired artifacts are safe: use the checked-out seed.
-          for run_id in $(gh run list --workflow unified-platform.yml --branch main --status success --limit 12 --json databaseId --jq '.[].databaseId'); do
+          for run_id in $(gh run list --workflow unified-platform.yml --branch main --status completed --limit 12 --json databaseId --jq '.[].databaseId'); do
             mkdir -p "$RUNNER_TEMP/previous-state"
             if gh run download "$run_id" --name "platform-run-$run_id" --dir "$RUNNER_TEMP/previous-state"; then
               if [[ -s "$RUNNER_TEMP/previous-state/platform.db" ]]; then

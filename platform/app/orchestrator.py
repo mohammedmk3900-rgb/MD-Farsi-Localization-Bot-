@@ -21,7 +21,34 @@ def execute(*, daily: bool = False, weekly: bool = False) -> dict:
         nonlocal project_ok
         try:
             result = action()
-            results[name] = {"status": "ok", "result": result}
+            # The public run summary contains aggregates only. Never expose
+            # raw Discord channel/role identifiers or other audit payloads.
+            if name == "discord_audit":
+                safe = {
+                    "channels": result.get("server", {}).get("channels", 0),
+                    "roles": result.get("server", {}).get("roles", 0),
+                    "categories": result.get("server", {}).get("categories", 0),
+                }
+            elif name == "glossary":
+                safe = {"count": result.get("count", 0)}
+            elif name == "health":
+                safe = {
+                    "status": result.get("status", "unknown"),
+                    "paratranz": bool(result.get("paratranz", False)),
+                    "discord": bool(result.get("discord", False)),
+                    "database": bool(result.get("database", False)),
+                }
+            elif name == "sync":
+                project = result.get("project", {})
+                safe = {
+                    "project_id": project.get("project_id"),
+                    "strings_total": project.get("strings_total"),
+                    "translated": project.get("translated"),
+                    "reviewed": project.get("reviewed"),
+                }
+            else:
+                safe = {"period": result.get("period", name)}
+            results[name] = {"status": "ok", "result": safe}
             if name == "sync":
                 project_ok = True
         except Exception as exc:

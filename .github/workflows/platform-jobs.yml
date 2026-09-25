@@ -83,7 +83,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # SQLite is runtime state, not a mergeable Git snapshot.
+          # Never commit the live SQLite database or its journal files.
+          # Only stable, reviewable public JSON snapshots belong in Git.
           if [ -d data ]; then
             find data -type f -name '*.json' -print0 | xargs -0 -r git add --
           fi
@@ -94,6 +95,9 @@ jobs:
           fi
 
           git commit -m "chore: refresh public platform JSON snapshots"
+
+          # The concurrency group serializes this workflow, but other workflows
+          # may still update main. Retry only text-based JSON snapshot rebases.
           for attempt in 1 2 3; do
             git fetch origin main
             if git rebase origin/main && git push origin HEAD:main; then
@@ -102,5 +106,5 @@ jobs:
             git rebase --abort 2>/dev/null || true
             sleep $((attempt * 3))
           done
-          echo "::error::Failed to publish snapshots after three attempts."
+          echo "::error::Unable to publish snapshots after three attempts."
           exit 1

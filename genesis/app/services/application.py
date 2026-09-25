@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from app.engine import GoWorkerClient, RustEngineClient
 from app.persistence.store import Store
 from app.services.achievements import AchievementService
 from app.services.alerts import AlertService
@@ -25,7 +26,9 @@ class GenesisApplication:
 
     def __init__(self, store: Store):
         self.store = store
-        self.translation = TranslationService()
+        self.rust_engine = RustEngineClient.from_env()
+        self.go_worker = GoWorkerClient.from_env()
+        self.translation = TranslationService(self.rust_engine)
         self.glossary = GlossaryService()
         self.events = EventService(store)
         self.tasks = TaskService(store, self.events)
@@ -44,6 +47,20 @@ class GenesisApplication:
 
     def initialize(self) -> None:
         self.store.initialize()
+
+    def engine_health(self) -> dict[str, str]:
+        result = {
+            "python": "ok",
+            "rust": "configured" if self.rust_engine is not None else "local-fallback",
+            "go": "disabled",
+        }
+        if self.go_worker is not None:
+            try:
+                self.go_worker.health()
+                result["go"] = "ok"
+            except (OSError, RuntimeError, ValueError):
+                result["go"] = "unavailable"
+        return result
 
     def audit(self, event_type: str, actor: str | None, payload: dict[str, Any]) -> None:
         self.store.record_event(

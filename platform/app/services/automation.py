@@ -33,15 +33,17 @@ class Automation:
 
     def _changed(self, key: str, value: Any) -> bool:
         digest = self._digest(value)
-        if self.database.get_automation_state(key) == digest:
-            return False
-        self.database.set_automation_state(key, digest, self._now())
-        return True
+        return self.database.get_automation_state(key) != digest
+
+    def _mark_published(self, key: str, value: Any) -> None:
+        self.database.set_automation_state(key, self._digest(value), self._now())
 
     def _embed_if_changed(self, state_key: str, channel: str, title: str, body: str) -> bool:
-        if not channel or not self._changed(state_key, {"title": title, "body": body}):
+        value = {"title": title, "body": body}
+        if not channel or not self._changed(state_key, value):
             return False
         self.discord.embed(channel, title, body)
+        self._mark_published(state_key, value)
         return True
 
     def _project_state(self) -> tuple[dict[str, Any], dict[str, Any]]:

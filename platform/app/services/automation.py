@@ -173,8 +173,17 @@ class Automation:
             key=lambda item: (item["source"], item["target"], item["description"]),
         )
         qa = self._glossary_qa(normalized)
+        if qa["issues"]:
+            if self.settings.channel_health:
+                self._embed_if_changed(
+                    "publish.glossary_qa",
+                    self.settings.channel_health,
+                    "🧪 QA واژه‌نامه • انتشار متوقف شد",
+                    "\n".join(f"• {issue}" for issue in qa["issues"]),
+                )
+            return {"published": False, "blocked": True, "count": len(terms), "qa": qa}
         if not self._changed("publish.glossary", normalized):
-            return {"published": False, "count": len(terms), "qa": qa}
+            return {"published": False, "blocked": False, "count": len(terms), "qa": qa}
 
         chunks: list[str] = []
         current: list[str] = []

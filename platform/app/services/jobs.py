@@ -6,6 +6,7 @@ from app.services.command_center import CommandCenter
 from app.services.discord_notifications import DiscordNotificationService
 from app.services.glossary import GlossaryService
 from app.services.health import HealthService
+from app.services.manager import ProjectManagerService
 from app.services.polyglot import PolyglotEngine
 from app.services.reports import ReportService
 from app.services.automation import Automation
@@ -113,4 +114,10 @@ def polyglot_health() -> dict:
         windows = {"status": "unavailable"}
     payload = {"qa": qa, "worker": worker, "native": native, "windows": windows}
     application.record("polyglot.health", payload)
+    return payload
+
+
+def manager() -> dict:
+    payload = ProjectManagerService(application.context.database).build()
+    application.record("manager.read_model", payload)
     return payload

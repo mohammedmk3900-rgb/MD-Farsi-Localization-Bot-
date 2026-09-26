@@ -47,7 +47,7 @@ jobs:
           set -euo pipefail
           python -m pip install -r requirements.txt
           python -m unittest discover -s . -p "test_*.py" -v
-          python -m py_compile server.py indexer.py bot.py run.py
+          python -m py_compile server.py indexer.py bot.py run.py news.py intelligence.py
           DISCORD_BOT_TOKEN=test DISCORD_GUILD_ID=1 DISCORD_DB_PATH="$RUNNER_TEMP/discord-mcp-test.db" python -c "from server import mcp; print(type(mcp).__name__)"
 
       - uses: dtolnay/rust-toolchain@stable
@@ -252,6 +252,18 @@ jobs:
             --output "$GITHUB_WORKSPACE/platform/data/discord_news.json" \
             --mark-read
 
+      - name: Build Discord project intelligence
+        env:
+          DISCORD_DB_PATH: ${{ github.workspace }}/discord-mcp/data/discord.db
+        working-directory: discord-mcp
+        run: |
+          set -euo pipefail
+          python intelligence.py \
+            --db "$DISCORD_DB_PATH" \
+            --hours 24 \
+            --limit 12 \
+            --output "$GITHUB_WORKSPACE/platform/data/discord_intelligence.json"
+
       - name: Select report schedule
         id: reports
         shell: bash
@@ -333,7 +345,7 @@ jobs:
           # binary merge-conflict class this workflow is designed to avoid.
           git restore --worktree -- data/platform.db 2>/dev/null || true
 
-          find data -maxdepth 1 -type f -name '*.json' ! -name 'discord_news.json' -print0 | xargs -0 -r git add --
+          find data -maxdepth 1 -type f -name '*.json' ! -name 'discord_news.json' ! -name 'discord_intelligence.json' -print0 | xargs -0 -r git add --
 
           if git diff --cached --quiet; then
             echo "No public JSON snapshot changes to publish."

@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import json
+from pathlib import Path
 
 from app.application import application
-from app.services.achievements import AchievementService
 from app.services.audit import DiscordAuditService
 from app.services.command_center import CommandCenter
 from app.services.discord_notifications import DiscordNotificationService
-from app.services.reports import ReportService
 from app.services.glossary import GlossaryService
 from app.services.health import HealthService
+from app.services.manager import ProjectManagerService
 from app.services.polyglot import PolyglotEngine
+from app.services.reports import ReportService
+from app.services.automation import Automation
 
 
 def sync() -> dict:
@@ -18,6 +20,10 @@ def sync() -> dict:
         application.context.settings,
         application.context.database,
     ).collect()
+    automation = Automation(application)
+    automation.publish_project()
+    automation.publish_intelligence()
+    automation.publish_manager_digest()
     return snapshot.model_dump(mode="json")
 
 
@@ -40,8 +46,9 @@ def report(period: str = "daily") -> dict:
 
 def glossary_sync() -> dict:
     result = GlossaryService(application.context.settings).sync_all()
-    application.record("glossary.synced", {"count": len(result)})
-    return {"count": len(result)}
+    publication = Automation(application).publish_glossary(result)
+    application.record("glossary.synced", {"count": len(result), "publication": publication})
+    return {"count": len(result), "publication": publication}
 
 
 def health() -> dict:
@@ -68,7 +75,8 @@ def health() -> dict:
     application.record("health.checked", status)
     channel = settings.channel_health
     if channel:
-        DiscordNotificationService(settings).embed(
+        Automation(application)._embed_if_changed(
+            "publish.health",
             channel,
             "🛰️ سلامت سیستم • SYSTEM HEALTH",
             f"وضعیت: **{status['status']}**\nParaTranz: {'✅' if paratranz_ok else '❌'}\nDiscord: {'✅' if discord_ok else '❌'}\nDatabase: ✅",
@@ -87,7 +95,6 @@ def audit() -> dict:
 
 
 def polyglot_health() -> dict:
-    """Exercise the polyglot boundary without publishing translations."""
     engine = PolyglotEngine()
     qa = engine.run_rust_qa(
         "$COUNTRY has £fuel_texticon",
@@ -110,4 +117,16 @@ def polyglot_health() -> dict:
         windows = {"status": "unavailable"}
     payload = {"qa": qa, "worker": worker, "native": native, "windows": windows}
     application.record("polyglot.health", payload)
+    return payload
+
+
+def manager() -> dict:
+    payload = ProjectManagerService(application.context.database).build()
+    output = Path("data/project_manager.json")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    application.record("manager.read_model", {
+        "status": payload.get("status"),
+        "attention_items": len(payload.get("attention", [])),
+    })
     return payload

@@ -38,6 +38,14 @@ def execute(*, daily: bool = False, weekly: bool = False) -> dict:
                     "discord": bool(result.get("discord", False)),
                     "database": bool(result.get("database", False)),
                 }
+            elif name == "manager":
+                safe = {
+                    "status": result.get("status", "unknown"),
+                    "translation_percent": result.get("progress", {}).get("translation_percent", 0),
+                    "review_percent": result.get("progress", {}).get("review_percent", 0),
+                    "review_gap": result.get("progress", {}).get("review_gap", 0),
+                    "attention_items": len(result.get("attention", [])),
+                }
             elif name == "polyglot":
                 safe = {
                     "qa": result.get("qa", {}).get("status", "unknown"),
@@ -66,6 +74,7 @@ def execute(*, daily: bool = False, weekly: bool = False) -> dict:
     run("discord_audit", jobs.audit)
     run("health", jobs.health)
     run("polyglot", jobs.polyglot_health)
+    run("manager", jobs.manager)
 
     if daily:
         if project_ok:

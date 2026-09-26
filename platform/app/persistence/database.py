@@ -51,6 +51,12 @@ class Database:
             );
             CREATE INDEX IF NOT EXISTS idx_tasks_status_owner
                 ON tasks(status, owner);
+
+            CREATE TABLE IF NOT EXISTS automation_state (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
             """)
 
     def append_event(self, event_type: str, created_at: str, payload: dict[str, Any]) -> None:
@@ -147,3 +153,18 @@ class Database:
             if cursor.rowcount == 0:
                 raise KeyError("task not found")
         return self.get_task(task_id) or {}
+
+
+    def get_automation_state(self, key: str) -> str | None:
+        with self.connect() as db:
+            row = db.execute("SELECT value FROM automation_state WHERE key = ?", (key,)).fetchone()
+        return str(row["value"]) if row else None
+
+    def set_automation_state(self, key: str, value: str, updated_at: str) -> None:
+        with self.connect() as db:
+            db.execute(
+                """INSERT INTO automation_state(key, value, updated_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at""",
+                (key, value, updated_at),
+            )

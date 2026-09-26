@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     channel_reports: str = ""
     channel_glossary: str = ""
 
+    discord_intelligence_path: str = "data/discord_intelligence.json"
+
     database_path: str = "data/platform.db"
     recent_messages_per_channel: int = 50
     api_token: str = ""

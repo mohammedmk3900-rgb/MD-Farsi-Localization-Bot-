@@ -70,6 +70,15 @@ class AutomationTests(unittest.TestCase):
         self.assertEqual(len(fake.embeds), 3)
         self.assertEqual(len([x for x in fake.embeds if x[0] == "progress"]), 1)
 
+    def test_glossary_qa_blocks_conflicts(self):
+        automation = Automation(self.application)
+        result = automation.publish_glossary([
+            {"source": "Faction", "target": "اتحاد", "description": ""},
+            {"source": "Faction", "target": "ائتلاف", "description": ""},
+        ])
+        self.assertTrue(result["blocked"])
+        self.assertFalse(result["published"])
+
     def test_project_quality_alerts_detect_bad_state(self):
         automation = Automation(self.application)
         alerts = automation._project_quality_alerts(

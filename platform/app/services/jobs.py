@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from app.application import application
 from app.services.audit import DiscordAuditService
 from app.services.command_center import CommandCenter
@@ -119,5 +122,11 @@ def polyglot_health() -> dict:
 
 def manager() -> dict:
     payload = ProjectManagerService(application.context.database).build()
-    application.record("manager.read_model", payload)
+    output = Path("data/project_manager.json")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    application.record("manager.read_model", {
+        "status": payload.get("status"),
+        "attention_items": len(payload.get("attention", [])),
+    })
     return payload

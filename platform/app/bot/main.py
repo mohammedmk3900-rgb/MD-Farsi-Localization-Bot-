@@ -211,7 +211,7 @@ async def operations(interaction: discord.Interaction):
     if not require(interaction, "health.read"):
         await deny(interaction)
         return
-    path = Path("data/last_run.json")
+    path = Path(application.context.settings.database_path).parent / "last_run.json"
     if not path.is_file():
         await interaction.response.send_message("هنوز اجرای یکپارچه‌ای ثبت نشده است.", ephemeral=True)
         return

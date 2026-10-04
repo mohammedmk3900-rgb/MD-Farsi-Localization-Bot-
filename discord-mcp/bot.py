@@ -46,7 +46,9 @@ def serialize(message: discord.Message) -> dict[str, Any]:
 
 
 def is_indexable(channel: object) -> bool:
-    return isinstance(channel, (discord.TextChannel, discord.ForumChannel, discord.Thread))
+    # Forum channels are containers for threads/posts, not message history
+    # channels themselves. Their threads are indexed separately.
+    return isinstance(channel, (discord.TextChannel, discord.Thread))
 
 
 class IndexerBot(discord.Client):

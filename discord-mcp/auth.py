@@ -3,41 +3,36 @@ from __future__ import annotations
 
 import hmac
 import os
-from collections.abc import Awaitable, Callable
-from typing import Any
+from starlette.types import ASGIApp, Receive, Scope, Send
 
-from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+def require_auth_token() -> str:
+    """Require a strong bearer token before constructing the public MCP app."""
+    token = os.getenv("MCP_AUTH_TOKEN", "").strip()
+    if len(token) < 32:
+        raise RuntimeError(
+            "MCP_AUTH_TOKEN is required and must contain at least 32 characters"
+        )
+    return token
 
 
 class BearerAuthMiddleware:
-    """Require a shared bearer token for the MCP endpoint.
-
-    The token is read only from the environment and compared with
-    hmac.compare_digest to avoid ordinary string-comparison timing leaks.
-    """
+    """Require a configured Bearer token for the MCP endpoint."""
 
     def __init__(self, app: ASGIApp, token: str | None = None, protected_path: str = "/mcp") -> None:
         self.app = app
-        self.token = (token if token is not None else os.getenv("MCP_AUTH_TOKEN", "")).strip()
+        self.token = (token if token is not None else require_auth_token())
         self.protected_path = protected_path
-
-        if not self.token:
-            raise RuntimeError(
-                "MCP_AUTH_TOKEN is required; refusing to start an unauthenticated MCP endpoint"
-            )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope.get("type") != "http" or scope.get("path") != self.protected_path:
             await self.app(scope, receive, send)
             return
 
-        headers = {
-            key.lower(): value
-            for key, value in scope.get("headers", [])
-        }
+        headers = {key.lower(): value for key, value in scope.get("headers", [])}
         authorization = headers.get(b"authorization", b"").decode("latin-1")
-
         scheme, _, supplied = authorization.partition(" ")
+
         if (
             scheme.lower() != "bearer"
             or not supplied

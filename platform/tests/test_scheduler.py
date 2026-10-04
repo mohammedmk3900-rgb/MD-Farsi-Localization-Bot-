@@ -48,3 +48,24 @@ def test_scheduler_failure_is_retriable(monkeypatch):
     ).fetchone()
     assert tuple(row) == ("failed", 1, "RuntimeError")
     temp.cleanup()
+
+
+def test_scheduler_manual_run_and_status(monkeypatch):
+    temp, database, scheduler = make_scheduler(monkeypatch)
+    calls = []
+    job = ScheduledJob("manual", 3600, lambda: calls.append("run"), "Manual test")
+    scheduler.register(job.name, job.interval_seconds, job.handler, job.description)
+
+    result = scheduler.run_now(job)
+
+    assert result["status"] == "success"
+    assert result["manual"] is True
+    assert calls == ["run"]
+
+    state = scheduler.status()
+    assert len(state) == 1
+    assert state[0]["name"] == "manual"
+    assert state[0]["description"] == "Manual test"
+    assert state[0]["status"] == "success"
+    assert state[0]["run_count"] == 1
+    temp.cleanup()

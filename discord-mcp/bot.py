@@ -32,6 +32,7 @@ index = MessageIndex(DB_PATH)
 
 
 def serialize(message: discord.Message) -> dict[str, Any]:
+    reference = message.reference
     return {
         "id": str(message.id),
         "channel_id": str(message.channel.id),
@@ -42,6 +43,12 @@ def serialize(message: discord.Message) -> dict[str, Any]:
         "timestamp": message.created_at.isoformat(),
         "edited_timestamp": message.edited_at.isoformat() if message.edited_at else None,
         "url": message.jump_url,
+        "reference_message_id": str(reference.message_id) if reference and reference.message_id else None,
+        "reference_channel_id": str(reference.channel_id) if reference and reference.channel_id else None,
+        "thread_id": str(message.channel.id) if isinstance(message.channel, discord.Thread) else None,
+        "message_type": int(message.type.value),
+        "attachment_count": len(message.attachments),
+        "link_count": (message.content or "").lower().count("http://") + (message.content or "").lower().count("https://"),
     }
 
 
@@ -71,6 +78,9 @@ class IndexerBot(discord.Client):
 
     async def backfill_guild(self, guild: discord.Guild) -> None:
         channels = [channel for channel in guild.channels if is_indexable(channel)]
+        for thread in guild.threads:
+            if thread not in channels:
+                channels.append(thread)
         log.info("Starting automatic backfill: %d channels", len(channels))
         sem = asyncio.Semaphore(BACKFILL_CONCURRENCY)
 

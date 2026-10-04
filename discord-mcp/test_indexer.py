@@ -87,5 +87,27 @@ class DiscordMCPIndexTests(unittest.TestCase):
             self.assertEqual(result[0]["link_count"], 1)
 
 
+    def test_advanced_search_and_message_lookup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            index = MessageIndex(os.path.join(tmp, "discord.db"))
+            index.upsert_messages([{
+                "id": "2", "channel_id": "c1", "channel_name": "general",
+                "author_id": "20", "author_name": "MK", "content": "hello world",
+                "timestamp": "2026-09-25T00:00:00+00:00",
+            }])
+            rows = index.search_advanced(query="hello", channel_id="c1", limit=10)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["id"], "2")
+            self.assertEqual(index.get_message("2")["content"], "hello world")
+
+    def test_cursor_stats(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            index = MessageIndex(os.path.join(tmp, "discord.db"))
+            index.set_cursor("c1", newest_message_id="2", oldest_message_id="1", complete=True)
+            rows = index.cursor_stats()
+            self.assertEqual(rows[0]["channel_id"], "c1")
+            self.assertEqual(rows[0]["complete"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

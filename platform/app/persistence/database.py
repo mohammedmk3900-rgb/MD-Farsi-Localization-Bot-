@@ -62,6 +62,7 @@ class Database:
                 name TEXT PRIMARY KEY,
                 status TEXT NOT NULL DEFAULT 'idle',
                 lock_until TEXT,
+        lock_owner TEXT,
                 last_run_at TEXT,
                 next_run_at TEXT,
                 last_error_type TEXT,

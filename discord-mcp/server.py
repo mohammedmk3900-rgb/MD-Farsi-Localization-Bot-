@@ -58,10 +58,10 @@ def normalize_message(message: dict[str, Any], channel: dict[str, Any] | None = 
 async def discord_get(path: str, params: dict[str, Any] | None = None) -> Any:
     headers = {
         "Authorization": f"Bot {TOKEN}",
-        "User-Agent": "MD-Farsi-Localization-Discord-MCP/3.0",
+        "User-Agent": "MD-Farsi-Localization-Discord-MCP/4.0",
     }
     async with httpx.AsyncClient(base_url=API, headers=headers, timeout=30.0) as client:
-        for attempt in range(4):
+        for attempt in range(5):
             response = await client.get(path, params=params)
             if response.status_code != 429:
                 response.raise_for_status()
@@ -72,7 +72,7 @@ async def discord_get(path: str, params: dict[str, Any] | None = None) -> Any:
                 delay = float(retry_after) if retry_after is not None else 1.0
             except ValueError:
                 delay = 1.0
-            await asyncio.sleep(min(max(delay, 0.25), 30.0))
+            await asyncio.sleep(min(max(delay, 0.25), 60.0))
 
         response.raise_for_status()
         return response.json()
@@ -170,10 +170,17 @@ async def list_roles() -> list[dict[str, Any]]:
     ]
 
 
-async def fetch_page(channel_id: str, before: str | None = None) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"limit": 100}
+async def fetch_page(
+    channel_id: str,
+    before: str | None = None,
+    after: str | None = None,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    params: dict[str, Any] = {"limit": max(1, min(limit, 100))}
     if before:
         params["before"] = before
+    if after:
+        params["after"] = after
     channel = {"id": channel_id}
     return [
         normalize_message(message, channel)
@@ -538,6 +545,41 @@ async def search_index(query: str, limit: int = 50) -> list[dict[str, Any]]:
 async def read_channel(channel_id: str, limit: int = 50) -> list[dict[str, Any]]:
     """Read the newest indexed messages from one visible channel."""
     return index.read_channel(channel_id, limit)
+
+@mcp.tool()
+async def get_message(message_id: str) -> dict[str, Any] | None:
+    """Return one indexed message by Discord message ID."""
+    return index.get_message(message_id)
+
+@mcp.tool()
+async def search_messages(
+    query: str = "",
+    channel_id: str | None = None,
+    author_id: str | None = None,
+    before: str | None = None,
+    after: str | None = None,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    """Search indexed history with optional channel, author, and timestamp filters."""
+    return index.search_advanced(query, channel_id, author_id, before, after, limit)
+
+@mcp.tool()
+async def get_index_cursors() -> list[dict[str, Any]]:
+    """Return per-channel history sync cursors and completeness state."""
+    return index.cursor_stats()
+
+@mcp.tool()
+async def read_channel_page(
+    channel_id: str,
+    before: str | None = None,
+    after: str | None = None,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    """Read a live Discord channel page using Discord pagination cursors."""
+    visible = {str(c["id"]) for c in await get_message_channels()}
+    if channel_id not in visible:
+        return []
+    return await fetch_page(channel_id, before=before, after=after, limit=limit)
 
 
 if __name__ == "__main__":

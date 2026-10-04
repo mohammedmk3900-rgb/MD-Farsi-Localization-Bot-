@@ -57,10 +57,6 @@ class DawnNexusOAuthProvider(
         self.resource_url = f"{self.public_url}/mcp"
         self.username = os.getenv("MCP_OAUTH_USERNAME", "admin").strip() or "admin"
         self.password = os.getenv("MCP_OAUTH_PASSWORD", "")
-        if len(self.password) < 16:
-            raise RuntimeError(
-                "MCP_OAUTH_PASSWORD is required and must contain at least 16 characters"
-            )
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 
@@ -353,6 +349,12 @@ Farsi Localization Discord data.</p>
         request_id = fields.get("request_id", "")
         username = fields.get("username", "")
         password = fields.get("password", "")
+        if len(provider.password) < 16:
+            return HTMLResponse(
+                "DawnNexus OAuth is not configured. Set MCP_OAUTH_PASSWORD on the server.",
+                status_code=503,
+                headers={"cache-control": "no-store"},
+            )
         if not secrets.compare_digest(username, provider.username) or not secrets.compare_digest(
             password, provider.password
         ):

@@ -7,6 +7,7 @@ import discord
 from discord import app_commands
 
 from app.application import application
+from app.config import PLATFORM_DIR
 from app.services.commands import CommandService
 from app.services.permissions import allowed, role_permissions
 
@@ -237,12 +238,20 @@ async def check(interaction: discord.Interaction, source: str, translation: str)
     await interaction.followup.send(render(result), ephemeral=True)
 
 
+@project.command(name="scheduler", description="وضعیت اجرای خودکار سامانه")
+async def scheduler(interaction: discord.Interaction):
+    if not require(interaction, "health.read"):
+        await deny(interaction)
+        return
+    await interaction.response.send_message(render(commands.command_center()["scheduler"]), ephemeral=True)
+
+
 @project.command(name="operations", description="وضعیت آخرین اجرای یکپارچه")
 async def operations(interaction: discord.Interaction):
     if not require(interaction, "health.read"):
         await deny(interaction)
         return
-    path = Path(application.context.settings.database_path).parent / "last_run.json"
+    path = PLATFORM_DIR / "data" / "last_run.json"
     if not path.is_file():
         await interaction.response.send_message("هنوز اجرای یکپارچه‌ای ثبت نشده است.", ephemeral=True)
         return

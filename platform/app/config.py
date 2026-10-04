@@ -25,9 +25,15 @@ class Settings(BaseSettings):
     channel_reports: str = ""
     channel_glossary: str = ""
 
+    discord_database_path: str = str(PLATFORM_DIR.parent / "discord-mcp" / "discord.db")
+    discord_intelligence_path: str = str(PLATFORM_DIR / "data" / "discord_intelligence.json")
+
     database_path: str = str(PLATFORM_DIR / "data" / "platform.db")
     recent_messages_per_channel: int = 50
     api_token: str = ""
     api_host: str = "127.0.0.1"
     api_port: int = 8000
     cors_origins: str = ""
+    scheduler_poll_seconds: int = 30
+    scheduler_lease_seconds: int = 900
+    scheduler_embedded: bool = False

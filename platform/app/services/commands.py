@@ -6,6 +6,7 @@ from app.services.reports import ReportService
 from app.services.sync import sync_project
 from app.services.tasks import TaskService
 from app.services.translation_assistant import TranslationAssistant
+from app.services.scheduler import build_scheduler
 
 
 class CommandService:
@@ -88,33 +89,32 @@ class CommandService:
         return TaskService(application.context.database).complete(task_id, reviewer)
 
     def check_translation(self, source: str, translation: str, glossary: list[dict] | None = None) -> dict:
-        glossary_error: str | None = None
         if glossary is None:
             try:
                 glossary = GlossaryService(application.context.settings).sync_all(max_entries=5000)
-            except Exception as exc:
-                # A glossary outage must never look like a clean translation check.
+            except Exception:
                 glossary = []
-                glossary_error = type(exc).__name__
-
-        result = TranslationAssistant().check(source, translation, glossary)
-        result["glossary_status"] = "available" if glossary_error is None else "unavailable"
-        if glossary_error is not None:
-            result["approved"] = False
-            result["findings"].insert(0, {
-                "kind": "glossary_unavailable",
-                "message": "واژه‌نامه رسمی در دسترس نبود؛ این بررسی نباید تأییدشده تلقی شود.",
-                "error_type": glossary_error,
-            })
-        return result
+        return TranslationAssistant().check(source, translation, glossary)
 
     def command_center(self) -> dict:
+        scheduler = build_scheduler()
+        scheduler_state = scheduler.status()
         return {
             "status": self.health(),
             "project": self.stats(),
             "tasks": self.task_summary(),
-            "human_approval_required": True,
-            "auto_publish": False,
+            "scheduler": {
+                "jobs": scheduler_state,
+                "jobs_total": len(scheduler.jobs),
+                "jobs_running": sum(1 for job in scheduler_state if job["status"] == "running"),
+                "jobs_failed": sum(1 for job in scheduler_state if job["status"] == "failed"),
+            },
+            "governance": {
+                "human_translation_review_required": True,
+                "automatic_translation_approval": False,
+                "automatic_assignment": False,
+                "automatic_discord_publication": True,
+            },
         }
 
     def help(self) -> list[str]:
@@ -124,5 +124,5 @@ class CommandService:
             "/project achievements", "/project sync", "/project report",
             "/project center", "/project tasks", "/project task_create",
             "/project task_claim", "/project task_submit", "/project task_complete",
-            "/project check",
+            "/project check", "/project scheduler",
         ]

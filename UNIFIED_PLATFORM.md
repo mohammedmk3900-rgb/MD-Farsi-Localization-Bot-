@@ -6,7 +6,7 @@ platform, Discord MCP, and Rust code before running scheduled operations.
 
 ## Runtime ownership
 
-- `platform/app/orchestrator.py` is the single operational entry point.
+- `platform/app/services/scheduler.py` is the single business scheduler; `platform/run_api.py` embeds it into the unified application runtime, while `platform/app/orchestrator.py` remains a manual compatibility entry point.
 - ParaTranz is the authoritative source for project totals and glossary terms.
 - Discord is an audit and optional notification transport, never a data store.
 - SQLite stores operational history and is archived as a private workflow artifact.
@@ -67,3 +67,10 @@ feature branch.
 The Discord indexer keeps a private SQLite history of messages the bot is authorized to see. Gateway events handle create/edit/delete in real time; scheduled REST history sync uses channel cursors to avoid replaying the entire history on every six-hour run. Search, channel reads, server snapshots, channel statistics, and author statistics are exposed through the MCP layer. Discord permissions remain authoritative.
 
 The index is operational/private data and is never committed to Git or exposed through public platform snapshots.
+
+
+## Autonomous runtime ownership
+
+The platform no longer relies on GitHub Actions for recurring business operations. The application scheduler owns recurring synchronization, glossary publication, Discord audit, health checks, manager read models, and daily/weekly reports. GitHub Actions is retained for validation, manual maintenance, and artifact publication.
+
+For a normal deployment, start the unified API runtime with `python platform/run_api.py`. It starts the FastAPI service and the persistent scheduler in the same application process. The scheduler uses SQLite leases so multiple application instances cannot execute the same job concurrently when they share the same operational database.

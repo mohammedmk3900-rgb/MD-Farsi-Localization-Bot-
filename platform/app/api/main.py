@@ -1,6 +1,8 @@
 import json
 import secrets
 import sqlite3
+from contextlib import asynccontextmanager
+from threading import Event, Thread
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Header
@@ -10,8 +12,31 @@ from app.application import application
 from app.services.commands import CommandService
 from app.services.glossary import GlossaryService
 from app.services.sync import sync_project
+from app.services.scheduler import build_scheduler
 
-app = FastAPI(title="MD Farsi Localization Platform", version="2.3.0", description="Unified MD news application API.")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    stop_event = Event()
+    scheduler_thread = None
+    if application.context.settings.scheduler_embedded:
+        scheduler = build_scheduler()
+        scheduler_thread = Thread(
+            target=scheduler.run_forever,
+            args=(stop_event,),
+            name="md-farsi-scheduler",
+            daemon=True,
+        )
+        scheduler_thread.start()
+    try:
+        yield
+    finally:
+        if scheduler_thread is not None:
+            stop_event.set()
+            scheduler_thread.join(timeout=max(5, application.context.settings.scheduler_poll_seconds + 2))
+
+
+app = FastAPI(title="MD Farsi Localization Platform", version="2.3.0", description="Unified MD Farsi Localization platform API.", lifespan=lifespan)
 
 origins = [x.strip() for x in application.context.settings.cors_origins.split(",") if x.strip()]
 if origins:
@@ -20,10 +45,16 @@ if origins:
         allow_origins=origins,
         allow_credentials=False,
         allow_methods=["GET", "POST"],
-        allow_headers=["Accept", "Content-Type"],
+        allow_headers=["Accept", "Content-Type", "Authorization"],
     )
 
 commands = CommandService()
+
+
+def _require_management(authorization: str | None) -> None:
+    token = application.context.settings.api_token
+    if not token or not authorization or not secrets.compare_digest(authorization, f"Bearer {token}"):
+        raise HTTPException(status_code=403, detail="Management API authorization required")
 
 
 @app.get("/health")
@@ -58,9 +89,7 @@ def project() -> dict:
 
 @app.post("/api/v1/project/sync")
 def project_sync(authorization: str | None = Header(default=None)) -> dict:
-    token = application.context.settings.api_token
-    if not token or not authorization or not secrets.compare_digest(authorization, f"Bearer {token}"):
-        raise HTTPException(status_code=403, detail="Management API authorization required")
+    _require_management(authorization)
     try:
         return sync_project()
     except Exception as exc:
@@ -109,8 +138,10 @@ def architecture() -> dict:
         "discord_transport": "Bot API",
         "webhooks_required": False,
         "human_review_required": True,
-        "auto_publish": False,
-        "sync_policy": "Only POST /api/v1/project/sync performs live synchronization",
+        "automatic_discord_publication": True,
+        "automatic_translation_approval": False,
+        "automatic_assignment": False,
+        "sync_policy": "Scheduler performs recurring synchronization; POST /api/v1/project/sync remains available for authorized manual runs",
     }
 
 
@@ -148,3 +179,32 @@ def last_operation() -> dict:
     if not isinstance(data, dict) or data.get("schema_version") != 1:
         raise HTTPException(status_code=503, detail="Operation summary schema is invalid")
     return data
+
+@app.get("/api/v1/scheduler")
+def scheduler_status(authorization: str | None = Header(default=None)) -> dict:
+    _require_management(authorization)
+    scheduler = build_scheduler()
+    jobs = scheduler.status()
+    return {
+        "status": "ok",
+        "jobs": jobs,
+        "jobs_total": len(jobs),
+        "jobs_running": sum(1 for job in jobs if job["status"] == "running"),
+        "jobs_failed": sum(1 for job in jobs if job["status"] == "failed"),
+        "jobs_degraded": sum(1 for job in jobs if job["status"] == "degraded"),
+    }
+
+
+@app.post("/api/v1/scheduler/{job_name}/run")
+def scheduler_run(job_name: str, authorization: str | None = Header(default=None)) -> dict:
+    _require_management(authorization)
+    scheduler = build_scheduler()
+    job = next((item for item in scheduler.jobs if item.name == job_name), None)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Unknown scheduler job: {job_name}")
+    result = scheduler.run_now(job)
+    if result["status"] == "locked":
+        raise HTTPException(status_code=409, detail="Scheduler job is already running")
+    if result["status"] == "failed":
+        raise HTTPException(status_code=502, detail={"message": "Scheduler job failed", **result})
+    return result

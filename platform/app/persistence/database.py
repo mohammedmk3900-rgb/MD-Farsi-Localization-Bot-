@@ -51,6 +51,27 @@ class Database:
             );
             CREATE INDEX IF NOT EXISTS idx_tasks_status_owner
                 ON tasks(status, owner);
+
+            CREATE TABLE IF NOT EXISTS automation_state (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS scheduler_jobs (
+                name TEXT PRIMARY KEY,
+                status TEXT NOT NULL DEFAULT 'idle',
+                lock_until TEXT,
+                lock_owner TEXT,
+                last_run_at TEXT,
+                next_run_at TEXT,
+                last_error_type TEXT,
+                run_count INTEGER NOT NULL DEFAULT 0,
+                failure_count INTEGER NOT NULL DEFAULT 0,
+                updated_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_scheduler_next_run
+                ON scheduler_jobs(next_run_at, status);
             """)
 
     def append_event(self, event_type: str, created_at: str, payload: dict[str, Any]) -> None:
@@ -131,34 +152,6 @@ class Database:
         with self.connect() as db:
             return [dict(row) for row in db.execute(query, values).fetchall()]
 
-    def claim_task(self, task_id: int, owner: str, updated_at: str) -> dict[str, Any]:
-        """Atomically claim an available/in-progress task for one owner."""
-        owner = owner.strip()
-        if not owner:
-            raise ValueError("owner is required")
-        with self.connect() as db:
-            row = db.execute(
-                "SELECT status, owner FROM tasks WHERE id = ?",
-                (task_id,),
-            ).fetchone()
-            if row is None:
-                raise KeyError("task not found")
-            if row["status"] not in {"available", "in_progress"}:
-                raise ValueError("task cannot be claimed")
-            if row["owner"] not in {None, "", owner}:
-                raise ValueError("task is owned by another member")
-            cursor = db.execute(
-                """UPDATE tasks
-                   SET owner = ?, status = 'in_progress', updated_at = ?
-                   WHERE id = ?
-                     AND status IN ('available', 'in_progress')
-                     AND (owner IS NULL OR owner = '' OR owner = ?)""",
-                (owner, updated_at, task_id, owner),
-            )
-            if cursor.rowcount != 1:
-                raise ValueError("task claim conflict")
-        return self.get_task(task_id) or {}
-
     def update_task(self, task_id: int, **changes: Any) -> dict[str, Any]:
         allowed = {"owner", "reviewer", "priority", "status", "due_at"}
         changes = {key: value for key, value in changes.items() if key in allowed}
@@ -175,3 +168,18 @@ class Database:
             if cursor.rowcount == 0:
                 raise KeyError("task not found")
         return self.get_task(task_id) or {}
+
+
+    def get_automation_state(self, key: str) -> str | None:
+        with self.connect() as db:
+            row = db.execute("SELECT value FROM automation_state WHERE key = ?", (key,)).fetchone()
+        return str(row["value"]) if row else None
+
+    def set_automation_state(self, key: str, value: str, updated_at: str) -> None:
+        with self.connect() as db:
+            db.execute(
+                """INSERT INTO automation_state(key, value, updated_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at""",
+                (key, value, updated_at),
+            )

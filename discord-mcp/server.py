@@ -12,6 +12,7 @@ from mcp.server import MCPServer
 
 from indexer import MessageIndex
 from news import DiscordNewsEngine
+from intelligence import DiscordIntelligence
 
 load_dotenv()
 
@@ -35,6 +36,7 @@ def validate_snowflake(value: str, field: str) -> str:
 mcp = MCPServer("Millennium Dawn Farsi Localization Discord")
 index = MessageIndex(DB_PATH)
 news_engine = DiscordNewsEngine(DB_PATH)
+intelligence_engine = DiscordIntelligence(DB_PATH)
 
 
 def normalize_message(message: dict[str, Any], channel: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -566,6 +568,12 @@ async def get_author_statistics(limit: int = 100) -> list[dict[str, Any]]:
 async def get_news_digest(hours: int = 24, limit: int = 12, mark_read: bool = False) -> dict[str, Any]:
     """Return deterministic project news from indexed Discord messages."""
     return news_engine.digest(hours=hours, limit=limit, mark_read=mark_read)
+
+
+@mcp.tool()
+async def get_project_intelligence(hours: int = 24, limit: int = 12) -> dict[str, Any]:
+    """Return deterministic event-level intelligence from indexed Discord history."""
+    return intelligence_engine.build(hours=hours, limit=limit)
 
 
 @mcp.tool()

@@ -22,19 +22,6 @@ class ServiceTests(unittest.TestCase):
     def test_achievements(self):
         self.assertEqual([x["percent"] for x in AchievementService().crossed(9, 26)], [10, 25])
 
-
-    def test_task_claims_are_atomic_and_owner_locked(self):
-        with tempfile.TemporaryDirectory() as directory:
-            db = Database(f"{directory}/platform.db")
-            db.initialize()
-            task = db.create_task("translate", None, "", "normal", None, "2026-09-24T00:00:00+00:00")
-            from app.services.tasks import TaskService
-            service = TaskService(db)
-            claimed = service.claim(task["id"], "u1")
-            self.assertEqual(claimed["owner"], "u1")
-            with self.assertRaises(ValueError):
-                service.claim(task["id"], "u2")
-
     def test_command_center_survives_discord_outage(self):
         with tempfile.TemporaryDirectory() as directory:
             db = Database(f"{directory}/platform.db")

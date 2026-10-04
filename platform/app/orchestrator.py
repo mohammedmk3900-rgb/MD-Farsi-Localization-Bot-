@@ -13,6 +13,7 @@ from pathlib import Path
 from app.application import application
 
 from app.services import jobs
+from app.config import PLATFORM_DIR
 
 
 def execute(*, daily: bool = False, weekly: bool = False) -> dict:
@@ -39,6 +40,14 @@ def execute(*, daily: bool = False, weekly: bool = False) -> dict:
                     "paratranz": bool(result.get("paratranz", False)),
                     "discord": bool(result.get("discord", False)),
                     "database": bool(result.get("database", False)),
+                }
+            elif name == "manager":
+                safe = {
+                    "status": result.get("status", "unknown"),
+                    "translation_percent": result.get("progress", {}).get("translation_percent", 0),
+                    "review_percent": result.get("progress", {}).get("review_percent", 0),
+                    "review_gap": result.get("progress", {}).get("review_gap", 0),
+                    "attention_items": len(result.get("attention", [])),
                 }
             elif name == "polyglot":
                 safe = {
@@ -68,6 +77,7 @@ def execute(*, daily: bool = False, weekly: bool = False) -> dict:
     run("discord_audit", jobs.audit)
     run("health", jobs.health)
     run("polyglot", jobs.polyglot_health)
+    run("manager", jobs.manager)
 
     if daily:
         if project_ok:
@@ -87,7 +97,7 @@ def execute(*, daily: bool = False, weekly: bool = False) -> dict:
         "status": status,
         "jobs": results,
     }
-    path = Path(application.context.settings.database_path).parent / "last_run.json"
+    path = Path.cwd() / "data" / "last_run.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return summary

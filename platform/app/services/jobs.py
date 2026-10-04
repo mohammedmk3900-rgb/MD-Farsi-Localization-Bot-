@@ -1,16 +1,58 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import json
+from pathlib import Path
+import importlib.util
 
 from app.application import application
-from app.services.achievements import AchievementService
+from app.config import PLATFORM_DIR
 from app.services.audit import DiscordAuditService
 from app.services.command_center import CommandCenter
 from app.services.discord_notifications import DiscordNotificationService
-from app.services.reports import ReportService
 from app.services.glossary import GlossaryService
 from app.services.health import HealthService
+from app.services.manager import ProjectManagerService
 from app.services.polyglot import PolyglotEngine
+from app.services.reports import ReportService
+from app.services.automation import Automation
+
+
+def build_discord_intelligence() -> dict:
+    """Build the Discord intelligence artifact before publication.
+
+    The scheduler owns this producer so normal application execution never
+    depends on a manually generated GitHub Actions artifact.
+    """
+    settings = application.context.settings
+    db_path = Path(getattr(settings, "discord_database_path", PLATFORM_DIR.parent / "discord-mcp" / "discord.db"))
+    output = Path(getattr(settings, "discord_intelligence_path", PLATFORM_DIR / "data" / "discord_intelligence.json"))
+    if not db_path.exists():
+        application.record("discord.intelligence_unavailable", {
+            "reason": "database_missing",
+            "path": str(db_path),
+        })
+        return {"_scheduler_status": "degraded", "status": "degraded", "reason": "database_missing"}
+
+    module_path = PLATFORM_DIR.parent / "discord-mcp" / "intelligence.py"
+    if not module_path.exists():
+        raise RuntimeError(f"Discord intelligence engine not found: {module_path}")
+    spec = importlib.util.spec_from_file_location("md_farsi_discord_intelligence", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Unable to load Discord intelligence engine")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    result = module.DiscordIntelligence(db_path).build(
+        hours=24,
+        limit=12,
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    application.record("discord.intelligence_built", {
+        "generated_at": result.get("generated_at"),
+        "events": len(result.get("events", [])),
+        "unresolved_followups": result.get("health", {}).get("unresolved_followups", 0),
+    })
+    return {"_scheduler_status": "success", "status": "success", "generated_at": result.get("generated_at")}
 
 
 def sync() -> dict:
@@ -18,7 +60,34 @@ def sync() -> dict:
         application.context.settings,
         application.context.database,
     ).collect()
-    return snapshot.model_dump(mode="json")
+    automation = Automation(application)
+
+    operations = (
+        ("intelligence_build", build_discord_intelligence),
+        ("project", automation.publish_project),
+        ("intelligence", automation.publish_intelligence),
+        ("manager_digest", automation.publish_manager_digest),
+    )
+    failures: list[dict[str, str]] = []
+    for operation, action in operations:
+        try:
+            action()
+        except Exception as exc:
+            failure = {"operation": operation, "error_type": type(exc).__name__}
+            failures.append(failure)
+            application.record("automation.delivery_failed", failure)
+
+    application.record(
+        "automation.sync",
+        {
+            "status": "degraded" if failures else "ok",
+            "operations": len(operations),
+            "failed_operations": len(failures),
+        },
+    )
+    payload = snapshot.model_dump(mode="json")
+    payload["_scheduler_status"] = "degraded" if failures else "success"
+    return payload
 
 
 def report(period: str = "daily") -> dict:
@@ -29,19 +98,41 @@ def report(period: str = "daily") -> dict:
     payload = ReportService().build({"project": project}, period=period)
     channel = application.context.settings.channel_reports
     if channel:
-        DiscordNotificationService(application.context.settings).embed(
-            channel,
-            payload["title"],
-            f"دوره: {period}\nترجمه: {project.get('translation_percent', 0):.2f}%\nبازبینی: {project.get('review_percent', 0):.2f}%\nرشته‌ها: {project.get('translated', 0):,}/{project.get('strings_total', 0):,}",
-        )
+        try:
+            DiscordNotificationService(application.context.settings).embed(
+                channel,
+                payload["title"],
+                f"دوره: {period}\nترجمه: {project.get('translation_percent', 0):.2f}%\nبازبینی: {project.get('review_percent', 0):.2f}%\nرشته‌ها: {project.get('translated', 0):,}/{project.get('strings_total', 0):,}",
+            )
+        except Exception as exc:
+            application.record("automation.delivery_failed", {
+                "operation": f"report.{period}",
+                "error_type": type(exc).__name__,
+            })
+            payload["_scheduler_status"] = "failed"
     application.record("report.generated", payload)
     return payload
 
 
 def glossary_sync() -> dict:
     result = GlossaryService(application.context.settings).sync_all()
-    application.record("glossary.synced", {"count": len(result)})
-    return {"count": len(result)}
+    try:
+        publication = Automation(application).publish_glossary(result)
+    except Exception as exc:
+        publication = {
+            "published": False,
+            "blocked": False,
+            "count": len(result),
+            "reason": "delivery_failed",
+            "error_type": type(exc).__name__,
+        }
+        application.record("automation.delivery_failed", {
+            "operation": "glossary",
+            "error_type": type(exc).__name__,
+        })
+    application.record("glossary.synced", {"count": len(result), "publication": publication})
+    scheduler_status = "degraded" if (publication.get("reason") == "delivery_failed" or publication.get("blocked") is True) else "success"
+    return {"count": len(result), "publication": publication, "_scheduler_status": scheduler_status}
 
 
 def health() -> dict:
@@ -68,11 +159,18 @@ def health() -> dict:
     application.record("health.checked", status)
     channel = settings.channel_health
     if channel:
-        DiscordNotificationService(settings).embed(
-            channel,
-            "🛰️ سلامت سیستم • SYSTEM HEALTH",
-            f"وضعیت: **{status['status']}**\nParaTranz: {'✅' if paratranz_ok else '❌'}\nDiscord: {'✅' if discord_ok else '❌'}\nDatabase: ✅",
-        )
+        try:
+            Automation(application)._embed_if_changed(
+                "publish.health",
+                channel,
+                "🛰️ سلامت سیستم • SYSTEM HEALTH",
+                f"وضعیت: **{status['status']}**\nParaTranz: {'✅' if paratranz_ok else '❌'}\nDiscord: {'✅' if discord_ok else '❌'}\nDatabase: ✅",
+            )
+        except Exception as exc:
+            application.record("automation.delivery_failed", {
+                "operation": "health",
+                "error_type": type(exc).__name__,
+            })
     return status
 
 
@@ -87,7 +185,6 @@ def audit() -> dict:
 
 
 def polyglot_health() -> dict:
-    """Exercise the polyglot boundary without publishing translations."""
     engine = PolyglotEngine()
     qa = engine.run_rust_qa(
         "$COUNTRY has £fuel_texticon",
@@ -110,4 +207,16 @@ def polyglot_health() -> dict:
         windows = {"status": "unavailable"}
     payload = {"qa": qa, "worker": worker, "native": native, "windows": windows}
     application.record("polyglot.health", payload)
+    return payload
+
+
+def manager() -> dict:
+    payload = ProjectManagerService(application.context.database).build()
+    output = PLATFORM_DIR / "data" / "project_manager.json"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    application.record("manager.read_model", {
+        "status": payload.get("status"),
+        "attention_items": len(payload.get("attention", [])),
+    })
     return payload

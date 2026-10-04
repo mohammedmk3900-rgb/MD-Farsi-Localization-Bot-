@@ -108,10 +108,8 @@ class DiscordNewsEngine:
                        content, timestamp, edited_timestamp, url
                 FROM messages
                 WHERE deleted=0 AND timestamp IS NOT NULL
-                  AND timestamp >= ? AND timestamp <= ?
                 ORDER BY timestamp DESC
-                LIMIT ?
-            """, (effective_cutoff.isoformat(), now.isoformat(), max(1, min(limit * 8, 200)))).fetchall()
+            """).fetchall()
 
             messages: list[dict[str, Any]] = []
             for row in rows:
@@ -126,6 +124,8 @@ class DiscordNewsEngine:
                 item["category"] = _category(content)
                 item["important"] = _important(content)
                 messages.append(item)
+                if len(messages) >= max(1, min(limit * 8, 200)):
+                    break
 
             by_category: dict[str, int] = {}
             for item in messages:

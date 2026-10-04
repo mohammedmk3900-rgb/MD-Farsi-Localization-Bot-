@@ -8,6 +8,7 @@ def build_manifest(scheduler: Scheduler) -> dict:
         "scheduler": "platform-core",
         "jobs": scheduler.manifest()["jobs"],
         "review_automation": False,
+        "automatic_discord_publication": True,
         "transport": "discord-bot-api",
         "webhooks": False,
     }

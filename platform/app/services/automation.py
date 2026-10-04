@@ -224,20 +224,17 @@ class Automation:
             chunks.append("\n".join(current))
 
         for index, chunk in enumerate(chunks, 1):
-            self.discord.embed(
-                self.settings.channel_glossary,
-                f"📚 واژه‌نامه رسمی • بخش {index}/{len(chunks)}",
-                chunk,
-            )
+            chunk_value = {"index": index, "total": len(chunks), "body": chunk}
+            chunk_key = f"publish.glossary.chunk.{index}"
+            if self._changed(chunk_key, chunk_value):
+                self.discord.embed(
+                    self.settings.channel_glossary,
+                    f"📚 واژه‌نامه رسمی • بخش {index}/{len(chunks)}",
+                    chunk,
+                )
+                self._mark_published(chunk_key, chunk_value)
 
-        if qa["issues"] and self.settings.channel_health:
-            self._embed_if_changed(
-                "publish.glossary_qa",
-                self.settings.channel_health,
-                "🧪 QA واژه‌نامه • GLOSSARY QUALITY",
-                "\n".join(f"• {issue}" for issue in qa["issues"]),
-            )
-
+        self._mark_published("publish.glossary", normalized)
         payload = {"published": True, "count": len(terms), "chunks": len(chunks), "qa": qa}
         self.application.record("automation.glossary_published", payload)
         return payload

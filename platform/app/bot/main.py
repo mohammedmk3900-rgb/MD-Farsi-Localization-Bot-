@@ -31,21 +31,27 @@ ROLE_ALIASES = (
 )
 
 
-def member_permissions(interaction: discord.Interaction) -> set[str]:
-    if not isinstance(interaction.user, discord.Member):
-        return role_permissions("contributor")
-
-    if interaction.guild and interaction.guild.owner_id == interaction.user.id:
+def permissions_for_role_names(role_names: set[str], *, is_owner: bool = False) -> set[str]:
+    if is_owner:
         return {"*"}
-
-    names = {role.name.casefold() for role in interaction.user.roles}
     permissions: set[str] = set()
+    normalized = {name.casefold() for name in role_names}
     for role, aliases in ROLE_ALIASES:
-        if names & aliases:
+        if normalized & aliases:
             permissions.update(role_permissions(role))
     if not permissions:
         permissions.update(role_permissions("contributor"))
     return permissions
+
+
+def member_permissions(interaction: discord.Interaction) -> set[str]:
+    if not isinstance(interaction.user, discord.Member):
+        return permissions_for_role_names(set())
+    is_owner = bool(interaction.guild and interaction.guild.owner_id == interaction.user.id)
+    return permissions_for_role_names(
+        {role.name for role in interaction.user.roles},
+        is_owner=is_owner,
+    )
 
 
 def member_role(interaction: discord.Interaction) -> str:

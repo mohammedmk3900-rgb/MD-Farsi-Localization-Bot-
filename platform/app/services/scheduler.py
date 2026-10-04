@@ -24,10 +24,11 @@ class ScheduledJob:
 class Scheduler:
     """Persistent autonomous scheduler with SQLite-backed execution leases."""
 
-    def __init__(self, poll_seconds: int = 30, lease_seconds: int = 900):
+    def __init__(self, poll_seconds: int | None = None, lease_seconds: int | None = None):
         self.database = application.context.database
-        self.poll_seconds = max(1, int(poll_seconds))
-        self.lease_seconds = max(30, int(lease_seconds))
+        settings = application.context.settings
+        self.poll_seconds = max(1, int(poll_seconds if poll_seconds is not None else settings.scheduler_poll_seconds))
+        self.lease_seconds = max(30, int(lease_seconds if lease_seconds is not None else settings.scheduler_lease_seconds))
         self.jobs: list[ScheduledJob] = []
         self._ensure_schema()
 
@@ -204,7 +205,7 @@ class Scheduler:
             time.sleep(self.poll_seconds)
 
 
-def build_scheduler(poll_seconds: int = 30, lease_seconds: int = 900) -> Scheduler:
+def build_scheduler(poll_seconds: int | None = None, lease_seconds: int | None = None) -> Scheduler:
     scheduler = Scheduler(poll_seconds, lease_seconds)
     scheduler.register("sync", 6 * 60 * 60, jobs.sync, "Project/ParaTranz synchronization")
     scheduler.register("glossary", 6 * 60 * 60, jobs.glossary_sync, "Glossary synchronization and publication")

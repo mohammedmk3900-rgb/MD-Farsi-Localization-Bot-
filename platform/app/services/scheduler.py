@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+from threading import Event
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Callable
@@ -198,11 +199,15 @@ class Scheduler:
     def run_once(self) -> list[dict[str, object]]:
         return [self.run_job(job) for job in self.jobs]
 
-    def run_forever(self) -> None:
+    def run_forever(self, stop_event: Event | None = None) -> None:
         LOGGER.info("MD Farsi autonomous scheduler started with %d jobs", len(self.jobs))
-        while True:
+        while stop_event is None or not stop_event.is_set():
             self.run_once()
-            time.sleep(self.poll_seconds)
+            if stop_event is None:
+                time.sleep(self.poll_seconds)
+            else:
+                stop_event.wait(self.poll_seconds)
+        LOGGER.info("MD Farsi autonomous scheduler stopped")
 
 
 def build_scheduler(poll_seconds: int | None = None, lease_seconds: int | None = None) -> Scheduler:

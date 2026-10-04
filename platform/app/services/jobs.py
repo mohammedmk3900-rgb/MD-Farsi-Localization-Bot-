@@ -56,11 +56,17 @@ def report(period: str = "daily") -> dict:
     payload = ReportService().build({"project": project}, period=period)
     channel = application.context.settings.channel_reports
     if channel:
-        DiscordNotificationService(application.context.settings).embed(
-            channel,
-            payload["title"],
-            f"دوره: {period}\nترجمه: {project.get('translation_percent', 0):.2f}%\nبازبینی: {project.get('review_percent', 0):.2f}%\nرشته‌ها: {project.get('translated', 0):,}/{project.get('strings_total', 0):,}",
-        )
+        try:
+            DiscordNotificationService(application.context.settings).embed(
+                channel,
+                payload["title"],
+                f"دوره: {period}\nترجمه: {project.get('translation_percent', 0):.2f}%\nبازبینی: {project.get('review_percent', 0):.2f}%\nرشته‌ها: {project.get('translated', 0):,}/{project.get('strings_total', 0):,}",
+            )
+        except Exception as exc:
+            application.record("automation.delivery_failed", {
+                "operation": f"report.{period}",
+                "error_type": type(exc).__name__,
+            })
     application.record("report.generated", payload)
     return payload
 

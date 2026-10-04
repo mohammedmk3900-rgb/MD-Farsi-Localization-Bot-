@@ -41,11 +41,7 @@ def test_readiness_reports_database_state(tmp_path, monkeypatch):
 
 def test_operation_metrics_handles_missing_summary(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    with patch.object(
-        __import__("app.api.main", fromlist=["application"]).application.context.settings,
-        "database_path",
-        str(tmp_path / "data" / "platform.db"),
-    ):
+    with patch("app.api.main.application.context.settings.database_path", str(tmp_path / "data" / "platform.db")):
         response = TestClient(app).get("/api/v1/operations/metrics")
     assert response.status_code == 200
     assert response.json()["status"] == "unknown"

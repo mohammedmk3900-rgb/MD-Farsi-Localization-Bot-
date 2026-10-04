@@ -69,3 +69,17 @@ def test_scheduler_manual_run_and_status(monkeypatch):
     assert state[0]["status"] == "success"
     assert state[0]["run_count"] == 1
     temp.cleanup()
+
+
+def test_scheduler_persists_degraded_handler_result(monkeypatch):
+    temp, database, scheduler = make_scheduler(monkeypatch)
+    job = ScheduledJob("degraded", 3600, lambda: {"_scheduler_status": "degraded"}, "Degraded test")
+
+    result = scheduler.run_job(job)
+
+    assert result["status"] == "degraded"
+    row = database.connect().execute(
+        "SELECT status, failure_count FROM scheduler_jobs WHERE name='degraded'"
+    ).fetchone()
+    assert tuple(row) == ("degraded", 0)
+    temp.cleanup()

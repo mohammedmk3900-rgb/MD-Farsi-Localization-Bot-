@@ -1,6 +1,8 @@
 import json
 import secrets
 import sqlite3
+from contextlib import asynccontextmanager
+from threading import Event, Thread
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Header
@@ -12,7 +14,29 @@ from app.services.glossary import GlossaryService
 from app.services.sync import sync_project
 from app.services.scheduler import build_scheduler
 
-app = FastAPI(title="MD Farsi Localization Platform", version="2.3.0", description="Unified MD news application API.")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    stop_event = Event()
+    scheduler_thread = None
+    if application.context.settings.scheduler_embedded:
+        scheduler = build_scheduler()
+        scheduler_thread = Thread(
+            target=scheduler.run_forever,
+            args=(stop_event,),
+            name="md-farsi-scheduler",
+            daemon=True,
+        )
+        scheduler_thread.start()
+    try:
+        yield
+    finally:
+        if scheduler_thread is not None:
+            stop_event.set()
+            scheduler_thread.join(timeout=max(5, application.context.settings.scheduler_poll_seconds + 2))
+
+
+app = FastAPI(title="MD Farsi Localization Platform", version="2.3.0", description="Unified MD Farsi Localization platform API.", lifespan=lifespan)
 
 origins = [x.strip() for x in application.context.settings.cors_origins.split(",") if x.strip()]
 if origins:

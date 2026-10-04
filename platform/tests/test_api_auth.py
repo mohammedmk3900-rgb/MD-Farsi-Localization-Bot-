@@ -42,7 +42,7 @@ def test_readiness_reports_database_state(tmp_path, monkeypatch):
 def test_operation_metrics_handles_missing_summary(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     with patch.object(
-        app.context.settings,
+        __import__("app.api.main", fromlist=["application"]).application.context.settings,
         "database_path",
         str(tmp_path / "data" / "platform.db"),
     ):

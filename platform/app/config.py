@@ -7,7 +7,11 @@ PLATFORM_DIR = Path(__file__).resolve().parents[1]
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=PLATFORM_DIR / ".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=PLATFORM_DIR / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     paratranz_project_id: int = 19621
     paratranz_token: str = ""
@@ -29,3 +33,5 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"
     api_port: int = 8000
     cors_origins: str = ""
+    scheduler_poll_seconds: int = 30
+    scheduler_lease_seconds: int = 900

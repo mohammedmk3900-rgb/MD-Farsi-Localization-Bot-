@@ -57,6 +57,20 @@ class Database:
                 value TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS scheduler_jobs (
+                name TEXT PRIMARY KEY,
+                status TEXT NOT NULL DEFAULT 'idle',
+                lock_until TEXT,
+                last_run_at TEXT,
+                next_run_at TEXT,
+                last_error_type TEXT,
+                run_count INTEGER NOT NULL DEFAULT 0,
+                failure_count INTEGER NOT NULL DEFAULT 0,
+                updated_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_scheduler_next_run
+                ON scheduler_jobs(next_run_at, status);
             """)
 
     def append_event(self, event_type: str, created_at: str, payload: dict[str, Any]) -> None:

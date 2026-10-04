@@ -449,8 +449,17 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
 
 
 @mcp.tool()
-async def get_server_snapshot(include_messages: bool = False, message_limit_per_channel: int = 50, full: bool = False) -> dict[str, Any]:
-    """Return a detailed server snapshot; full=True collects members and server resources too."""
+async def get_server_snapshot(
+    include_messages: bool = False,
+    message_limit_per_channel: int = 50,
+    full: bool = False,
+) -> dict[str, Any]:
+    """Return a server snapshot; full=True uses the complete read-only audit model."""
+    if full:
+        return await build_full_server_snapshot(
+            include_messages=include_messages,
+            message_limit_per_channel=max(1, min(message_limit_per_channel, 100)),
+        )
     guild = await discord_get(f"/guilds/{GUILD_ID}")
     channels = await get_channels()
     roles = await discord_get(f"/guilds/{GUILD_ID}/roles")

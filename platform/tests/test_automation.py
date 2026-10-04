@@ -76,6 +76,39 @@ class AutomationTests(unittest.TestCase):
             automation.discord.embed("channel", "title", "description")
 
     def test_project_publication_is_idempotent(self):
+
+    def test_glossary_publication_resumes_after_partial_failure(self):
+        class FailingDiscord(FakeDiscord):
+            def __init__(self):
+                super().__init__()
+                self.calls = 0
+
+            def embed(self, channel, title, description):
+                self.calls += 1
+                if self.calls == 2:
+                    raise RuntimeError("simulated Discord failure")
+                return super().embed(channel, title, description)
+
+        automation = Automation(self.application)
+        failing = FailingDiscord()
+        automation.discord = failing
+        terms = [
+            {"source": "Faction A", "target": "اتحاد", "description": "x" * 3000},
+            {"source": "Faction B", "target": "ائتلاف", "description": "y" * 3000},
+        ]
+
+        with self.assertRaises(RuntimeError):
+            automation.publish_glossary(terms)
+
+        self.assertEqual(len(failing.embeds), 1)
+
+        retry = FakeDiscord()
+        automation.discord = retry
+        result = automation.publish_glossary(terms)
+
+        self.assertTrue(result["published"])
+        self.assertEqual(len(retry.embeds), 1)
+
         self.db.save_snapshot("2026-09-25T00:00:00+00:00", 1, self._snapshot(10, 5, 10))
         self.db.save_snapshot("2026-09-25T01:00:00+00:00", 1, self._snapshot(11, 6, 11))
 

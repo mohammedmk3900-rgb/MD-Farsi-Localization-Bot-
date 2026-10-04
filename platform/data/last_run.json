@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-25T20:44:49.933909+00:00",
+  "generated_at": "2026-10-04T18:04:01.836283+00:00",
   "status": "ok",
   "jobs": {
     "sync": {
@@ -40,6 +40,16 @@
       "result": {
         "qa": "ok",
         "worker": "ok"
+      }
+    },
+    "manager": {
+      "status": "ok",
+      "result": {
+        "status": "attention",
+        "translation_percent": 0.0,
+        "review_percent": 0.0,
+        "review_gap": 0,
+        "attention_items": 1
       }
     }
   }

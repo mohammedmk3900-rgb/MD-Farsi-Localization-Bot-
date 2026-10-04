@@ -21,7 +21,7 @@ if origins:
         allow_origins=origins,
         allow_credentials=False,
         allow_methods=["GET", "POST"],
-        allow_headers=["Accept", "Content-Type"],
+        allow_headers=["Accept", "Content-Type", "Authorization"],
     )
 
 commands = CommandService()
@@ -114,8 +114,10 @@ def architecture() -> dict:
         "discord_transport": "Bot API",
         "webhooks_required": False,
         "human_review_required": True,
-        "auto_publish": False,
-        "sync_policy": "Only POST /api/v1/project/sync performs live synchronization",
+        "automatic_discord_publication": True,
+        "automatic_translation_approval": False,
+        "automatic_assignment": False,
+        "sync_policy": "Scheduler performs recurring synchronization; POST /api/v1/project/sync remains available for authorized manual runs",
     }
 
 

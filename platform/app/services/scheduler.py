@@ -177,6 +177,19 @@ class Scheduler:
         application.record(event_type, {"job": job.name, "status": final_status, "manual": True})
         return {"job": job.name, "status": final_status, "manual": True}
 
+    def manifest(self) -> dict[str, object]:
+        return {
+            "scheduler": "platform-core",
+            "jobs": [
+                {
+                    "name": job.name,
+                    "interval_seconds": job.interval_seconds,
+                    "retry_seconds": job.retry_seconds,
+                    "description": job.description,
+                }
+                for job in self.jobs
+            ],
+        }
     def status(self) -> list[dict[str, object]]:
         """Return durable state for the Command Center without executing jobs."""
         with self.database.connect() as db:

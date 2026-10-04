@@ -125,7 +125,7 @@ def manager() -> dict:
     payload = ProjectManagerService(application.context.database).build()
     output = PLATFORM_DIR / "data" / "project_manager.json"
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     application.record("manager.read_model", {
         "status": payload.get("status"),
         "attention_items": len(payload.get("attention", [])),

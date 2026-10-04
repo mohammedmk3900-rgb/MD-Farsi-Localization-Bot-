@@ -191,6 +191,7 @@ def scheduler_status(authorization: str | None = Header(default=None)) -> dict:
         "jobs_total": len(jobs),
         "jobs_running": sum(1 for job in jobs if job["status"] == "running"),
         "jobs_failed": sum(1 for job in jobs if job["status"] == "failed"),
+        "jobs_degraded": sum(1 for job in jobs if job["status"] == "degraded"),
     }
 
 

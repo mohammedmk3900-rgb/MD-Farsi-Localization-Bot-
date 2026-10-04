@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 from typing import Any
 
 import httpx
@@ -24,6 +25,13 @@ API = "https://discord.com/api/v10"
 
 if not TOKEN or not GUILD_ID:
     raise RuntimeError("DISCORD_BOT_TOKEN and DISCORD_GUILD_ID are required")
+
+
+def validate_snowflake(value: str, field: str) -> str:
+    value = str(value).strip()
+    if not re.fullmatch(r"\d{1,25}", value):
+        raise ValueError(f"{field} must be a Discord snowflake")
+    return value
 
 mcp = MCPServer("Millennium Dawn Farsi Localization Discord")
 index = MessageIndex(DB_PATH)
@@ -60,10 +68,10 @@ def normalize_message(message: dict[str, Any], channel: dict[str, Any] | None = 
 async def discord_get(path: str, params: dict[str, Any] | None = None) -> Any:
     headers = {
         "Authorization": f"Bot {TOKEN}",
-        "User-Agent": "MD-Farsi-Localization-Discord-MCP/3.0",
+        "User-Agent": "MD-Farsi-Localization-Discord-MCP/4.0",
     }
     async with httpx.AsyncClient(base_url=API, headers=headers, timeout=30.0) as client:
-        for attempt in range(4):
+        for attempt in range(5):
             response = await client.get(path, params=params)
             if response.status_code != 429:
                 response.raise_for_status()
@@ -74,7 +82,7 @@ async def discord_get(path: str, params: dict[str, Any] | None = None) -> Any:
                 delay = float(retry_after) if retry_after is not None else 1.0
             except ValueError:
                 delay = 1.0
-            await asyncio.sleep(min(max(delay, 0.25), 30.0))
+            await asyncio.sleep(min(max(delay, 0.25), 60.0))
 
         response.raise_for_status()
         return response.json()
@@ -114,7 +122,7 @@ async def deep_scan_server(max_pages_per_channel: int = 0, incremental: bool = T
 
 @mcp.tool()
 async def get_server_overview() -> dict[str, Any]:
-    """Return the complete visible server structure without message content."""
+    """Return a complete, lightweight overview of the configured guild."""
     guild = await discord_get(f"/guilds/{GUILD_ID}")
     channels = await get_channels()
     roles = await discord_get(f"/guilds/{GUILD_ID}/roles")
@@ -123,6 +131,10 @@ async def get_server_overview() -> dict[str, Any]:
             "id": guild.get("id"),
             "name": guild.get("name"),
             "owner_id": guild.get("owner_id"),
+            "description": guild.get("description"),
+            "features": guild.get("features", []),
+            "verification_level": guild.get("verification_level"),
+            "preferred_locale": guild.get("preferred_locale"),
         },
         "categories": sum(1 for c in channels if c.get("type") == 4),
         "channels": len(channels),
@@ -168,25 +180,36 @@ async def list_roles() -> list[dict[str, Any]]:
     ]
 
 
-async def fetch_page(channel_id: str, before: str | None = None) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"limit": 100}
+async def fetch_page(
+    channel_id: str,
+    before: str | None = None,
+    after: str | None = None,
+    limit: int = 100,
+    channel: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    channel_id = validate_snowflake(channel_id, "channel_id")
+    params: dict[str, Any] = {"limit": max(1, min(limit, 100))}
     if before:
-        params["before"] = before
-    channel = {"id": channel_id}
+        params["before"] = validate_snowflake(before, "before")
+    if after:
+        params["after"] = validate_snowflake(after, "after")
+    channel_data = channel or {"id": channel_id}
     return [
-        normalize_message(message, channel)
+        normalize_message(message, channel_data)
         for message in await discord_get(f"/channels/{channel_id}/messages", params=params)
     ]
 
 
 @mcp.tool()
 async def read_replies(message_id: str, limit: int = 100) -> list[dict[str, Any]]:
+    message_id = validate_snowflake(message_id, "message_id")
     """Return indexed messages that explicitly reference a message."""
     return index.read_replies(message_id, limit)
 
 
 @mcp.tool()
 async def read_thread(thread_id: str, limit: int = 200) -> list[dict[str, Any]]:
+    thread_id = validate_snowflake(thread_id, "thread_id")
     """Return indexed messages belonging to one Discord thread."""
     return index.read_thread(thread_id, limit)
 
@@ -231,15 +254,24 @@ async def sync_channel_history(
 
     channel = channel_map[channel_id]
     cursor = index.get_cursor(channel_id)
-    known_newest = str(cursor["newest_message_id"]) if cursor and cursor.get("newest_message_id") else None
-    before: str | None = None
+    cursor_complete = bool(cursor and cursor.get("complete"))
+    known_newest = (
+        str(cursor["newest_message_id"])
+        if cursor_complete and cursor and cursor.get("newest_message_id")
+        else None
+    )
+    before: str | None = (
+        str(cursor["oldest_message_id"])
+        if incremental and cursor and not cursor_complete and cursor.get("oldest_message_id")
+        else None
+    )
     pages = 0
     processed = 0
     complete = False
     reached_cursor = False
 
     while True:
-        page = await fetch_page(channel_id, before)
+        page = await fetch_page(channel_id, before=before, channel=channel)
         if not page:
             complete = True
             break
@@ -256,8 +288,17 @@ async def sync_channel_history(
             complete = len(page) < 100
             break
 
-    newest_message_id = page[0]["id"] if pages and page else None
-    index.set_cursor(channel_id, newest_message_id=newest_message_id, oldest_message_id=before, complete=complete)
+    newest_message_id = (
+        str(cursor["newest_message_id"])
+        if cursor and cursor.get("newest_message_id")
+        else page[0]["id"] if pages and page else None
+    )
+    index.set_cursor(
+        channel_id,
+        newest_message_id=newest_message_id,
+        oldest_message_id=before,
+        complete=complete,
+    )
     return {
         "channel_id": channel_id,
         "channel_name": channel.get("name"),
@@ -330,6 +371,13 @@ async def get_optional_guild_resource(path: str, key: str) -> list[dict[str, Any
         return []
 
 
+async def get_optional_single_resource(path: str) -> Any:
+    try:
+        return await discord_get(path)
+    except httpx.HTTPStatusError:
+        return None
+
+
 async def build_full_server_snapshot(include_messages: bool = False, message_limit_per_channel: int = 50) -> dict[str, Any]:
     """Collect the server structure, members, roles, channels, threads and indexed activity."""
     guild = await discord_get(f"/guilds/{GUILD_ID}")
@@ -341,6 +389,27 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
     emojis = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/emojis", "items")
     stickers = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/stickers", "items")
     events = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/scheduled-events", "items")
+    bans = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/bans", "items")
+    integrations = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/integrations", "items")
+    auto_moderation_rules = await get_optional_guild_resource(
+        f"/guilds/{GUILD_ID}/auto-moderation/rules", "items"
+    )
+    invites = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/invites", "items")
+    webhooks = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/webhooks", "items")
+    stage_instances = [
+        item
+        for item in await get_optional_guild_resource(f"/stage-instances", "items")
+        if str(item.get("guild_id") or GUILD_ID) == GUILD_ID
+    ]
+    audit_log = await get_optional_guild_resource(
+        f"/guilds/{GUILD_ID}/audit-logs", "audit_log_entries"
+    )
+
+    # Never expose webhook tokens or other credential-like fields through the MCP.
+    for webhook in webhooks:
+        webhook.pop("token", None)
+    for integration in integrations:
+        integration.pop("account", None)
 
     channel_rows = []
     for channel in channels:
@@ -399,6 +468,13 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
         "emojis": emojis,
         "stickers": stickers,
         "scheduled_events": events,
+        "bans": bans,
+        "integrations": integrations,
+        "auto_moderation_rules": auto_moderation_rules,
+        "invites": invites,
+        "webhooks": webhooks,
+        "stage_instances": stage_instances,
+        "audit_log_entries": audit_log,
         "indexed_activity": {
             "messages": index.count(),
             "channels": index.channel_count(),
@@ -409,8 +485,17 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
 
 
 @mcp.tool()
-async def get_server_snapshot(include_messages: bool = False, message_limit_per_channel: int = 50, full: bool = False) -> dict[str, Any]:
-    """Return a detailed server snapshot; full=True collects members and server resources too."""
+async def get_server_snapshot(
+    include_messages: bool = False,
+    message_limit_per_channel: int = 50,
+    full: bool = False,
+) -> dict[str, Any]:
+    """Return a server snapshot; full=True uses the complete read-only audit model."""
+    if full:
+        return await build_full_server_snapshot(
+            include_messages=include_messages,
+            message_limit_per_channel=max(1, min(message_limit_per_channel, 100)),
+        )
     guild = await discord_get(f"/guilds/{GUILD_ID}")
     channels = await get_channels()
     roles = await discord_get(f"/guilds/{GUILD_ID}/roles")
@@ -436,6 +521,35 @@ async def get_server_snapshot(include_messages: bool = False, message_limit_per_
             if channel.get("type") in {0, 5, 10, 11, 12, 15}
         }
     return payload
+
+
+@mcp.tool()
+async def full_server_audit(
+    include_messages: bool = False,
+    message_limit_per_channel: int = 100,
+) -> dict[str, Any]:
+    """Return the broadest read-only audit available to the bot.
+
+    This combines guild settings, categories/channels, exact channel overwrites,
+    roles, members, active threads, emojis, stickers, scheduled events, bans,
+    integrations, auto-moderation rules, invites, redacted webhooks, stage
+    instances, audit-log entries, and indexed message analytics. Message bodies
+    are included only when explicitly requested and are capped per channel.
+    """
+    snapshot = await build_full_server_snapshot(
+        include_messages=include_messages,
+        message_limit_per_channel=max(1, min(message_limit_per_channel, 100)),
+    )
+    snapshot["audit"] = {
+        "guild_id": GUILD_ID,
+        "read_only": True,
+        "permission_respecting": True,
+        "indexed_message_count": index.count(),
+        "indexed_channel_count": index.channel_count(),
+        "message_content_included": include_messages,
+        "message_limit_per_channel": max(1, min(message_limit_per_channel, 100)),
+    }
+    return snapshot
 
 
 @mcp.tool()
@@ -482,6 +596,53 @@ async def search_index(query: str, limit: int = 50) -> list[dict[str, Any]]:
 async def read_channel(channel_id: str, limit: int = 50) -> list[dict[str, Any]]:
     """Read the newest indexed messages from one visible channel."""
     return index.read_channel(channel_id, limit)
+
+@mcp.tool()
+async def get_message(message_id: str) -> dict[str, Any] | None:
+    """Return one indexed message by Discord message ID."""
+    return index.get_message(validate_snowflake(message_id, "message_id"))
+
+@mcp.tool()
+async def search_messages(
+    query: str = "",
+    channel_id: str | None = None,
+    author_id: str | None = None,
+    before: str | None = None,
+    after: str | None = None,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    """Search indexed history with optional channel, author, and timestamp filters."""
+    return index.search_advanced(query, channel_id, author_id, before, after, limit)
+
+@mcp.tool()
+async def get_index_cursors() -> list[dict[str, Any]]:
+    """Return per-channel history sync cursors and completeness state."""
+    return index.cursor_stats()
+
+@mcp.tool()
+async def read_channel_page(
+    channel_id: str,
+    before: str | None = None,
+    after: str | None = None,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    """Read a live Discord channel page using Discord pagination cursors."""
+    channel_id = validate_snowflake(channel_id, "channel_id")
+    visible_channels = await get_message_channels()
+    channel_map = {str(c["id"]): c for c in visible_channels}
+    if channel_id not in channel_map:
+        return []
+    if before:
+        validate_snowflake(before, "before")
+    if after:
+        validate_snowflake(after, "after")
+    return await fetch_page(
+        channel_id,
+        before=before,
+        after=after,
+        limit=limit,
+        channel=channel_map[channel_id],
+    )
 
 
 if __name__ == "__main__":

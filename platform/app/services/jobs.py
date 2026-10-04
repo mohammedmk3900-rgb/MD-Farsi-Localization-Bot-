@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import importlib.util
 
 from app.application import application
 from app.config import PLATFORM_DIR
@@ -16,6 +17,44 @@ from app.services.reports import ReportService
 from app.services.automation import Automation
 
 
+def build_discord_intelligence() -> dict:
+    """Build the Discord intelligence artifact before publication.
+
+    The scheduler owns this producer so normal application execution never
+    depends on a manually generated GitHub Actions artifact.
+    """
+    settings = application.context.settings
+    db_path = Path(settings.discord_database_path)
+    output = Path(settings.discord_intelligence_path)
+    if not db_path.exists():
+        application.record("discord.intelligence_unavailable", {
+            "reason": "database_missing",
+            "path": str(db_path),
+        })
+        return {"_scheduler_status": "degraded", "status": "degraded", "reason": "database_missing"}
+
+    module_path = PLATFORM_DIR.parent / "discord-mcp" / "intelligence.py"
+    if not module_path.exists():
+        raise RuntimeError(f"Discord intelligence engine not found: {module_path}")
+    spec = importlib.util.spec_from_file_location("md_farsi_discord_intelligence", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Unable to load Discord intelligence engine")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    result = module.DiscordIntelligence(db_path).build(
+        hours=24,
+        limit=12,
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    application.record("discord.intelligence_built", {
+        "generated_at": result.get("generated_at"),
+        "events": len(result.get("events", [])),
+        "unresolved_followups": result.get("health", {}).get("unresolved_followups", 0),
+    })
+    return {"_scheduler_status": "success", "status": "success", "generated_at": result.get("generated_at")}
+
+
 def sync() -> dict:
     snapshot = CommandCenter(
         application.context.settings,
@@ -24,6 +63,7 @@ def sync() -> dict:
     automation = Automation(application)
 
     operations = (
+        ("intelligence_build", build_discord_intelligence),
         ("project", automation.publish_project),
         ("intelligence", automation.publish_intelligence),
         ("manager_digest", automation.publish_manager_digest),

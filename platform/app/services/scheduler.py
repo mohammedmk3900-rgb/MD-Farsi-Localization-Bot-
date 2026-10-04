@@ -60,7 +60,18 @@ class Scheduler:
             raise ValueError("interval_seconds must be positive")
         if any(job.name == name for job in self.jobs):
             raise ValueError(f"duplicate scheduler job: {name}")
-        self.jobs.append(ScheduledJob(name, interval_seconds, handler, description, max(1, retry_seconds)))
+        job = ScheduledJob(name, interval_seconds, handler, description, max(1, retry_seconds))
+        self.jobs.append(job)
+        now = self._now().isoformat()
+        with self.database.connect() as db:
+            db.execute(
+                """
+                INSERT INTO scheduler_jobs(name, status, updated_at)
+                VALUES (?, 'idle', ?)
+                ON CONFLICT(name) DO NOTHING
+                """,
+                (name, now),
+            )
 
     def _claim(self, name: str, now: datetime) -> bool:
         now_text = now.isoformat()

@@ -50,6 +50,7 @@ def test_sync_survives_automation_delivery_failure():
         patch.object(jobs, "application", application),
         patch.object(jobs, "CommandCenter", return_value=command_center),
         patch.object(jobs, "Automation", return_value=automation),
+        patch.object(jobs, "build_discord_intelligence", return_value={"_scheduler_status": "success"}),
     ):
         result = jobs.sync()
 
@@ -61,7 +62,7 @@ def test_sync_survives_automation_delivery_failure():
     }) in events
     assert ("automation.sync", {
         "status": "degraded",
-        "operations": 3,
+        "operations": 4,
         "failed_operations": 1,
     }) in events
 

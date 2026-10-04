@@ -138,7 +138,7 @@ def operation_metrics() -> dict:
 @app.get("/api/v1/operations/last")
 def last_operation() -> dict:
     """Expose the last aggregate orchestration result without live side effects."""
-    path = Path("data/last_run.json")
+    path = Path(application.context.settings.database_path).parent / "last_run.json"
     if not path.is_file():
         raise HTTPException(status_code=404, detail="No completed orchestration run available")
     try:

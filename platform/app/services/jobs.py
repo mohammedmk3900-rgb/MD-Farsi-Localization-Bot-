@@ -22,9 +22,29 @@ def sync() -> dict:
         application.context.database,
     ).collect()
     automation = Automation(application)
-    automation.publish_project()
-    automation.publish_intelligence()
-    automation.publish_manager_digest()
+
+    operations = (
+        ("project", automation.publish_project),
+        ("intelligence", automation.publish_intelligence),
+        ("manager_digest", automation.publish_manager_digest),
+    )
+    failures: list[dict[str, str]] = []
+    for operation, action in operations:
+        try:
+            action()
+        except Exception as exc:
+            failure = {"operation": operation, "error_type": type(exc).__name__}
+            failures.append(failure)
+            application.record("automation.delivery_failed", failure)
+
+    application.record(
+        "automation.sync",
+        {
+            "status": "degraded" if failures else "ok",
+            "operations": len(operations),
+            "failed_operations": len(failures),
+        },
+    )
     return snapshot.model_dump(mode="json")
 
 
@@ -47,7 +67,20 @@ def report(period: str = "daily") -> dict:
 
 def glossary_sync() -> dict:
     result = GlossaryService(application.context.settings).sync_all()
-    publication = Automation(application).publish_glossary(result)
+    try:
+        publication = Automation(application).publish_glossary(result)
+    except Exception as exc:
+        publication = {
+            "published": False,
+            "blocked": False,
+            "count": len(result),
+            "reason": "delivery_failed",
+            "error_type": type(exc).__name__,
+        }
+        application.record("automation.delivery_failed", {
+            "operation": "glossary",
+            "error_type": type(exc).__name__,
+        })
     application.record("glossary.synced", {"count": len(result), "publication": publication})
     return {"count": len(result), "publication": publication}
 
@@ -76,12 +109,18 @@ def health() -> dict:
     application.record("health.checked", status)
     channel = settings.channel_health
     if channel:
-        Automation(application)._embed_if_changed(
-            "publish.health",
-            channel,
-            "🛰️ سلامت سیستم • SYSTEM HEALTH",
-            f"وضعیت: **{status['status']}**\nParaTranz: {'✅' if paratranz_ok else '❌'}\nDiscord: {'✅' if discord_ok else '❌'}\nDatabase: ✅",
-        )
+        try:
+            Automation(application)._embed_if_changed(
+                "publish.health",
+                channel,
+                "🛰️ سلامت سیستم • SYSTEM HEALTH",
+                f"وضعیت: **{status['status']}**\nParaTranz: {'✅' if paratranz_ok else '❌'}\nDiscord: {'✅' if discord_ok else '❌'}\nDatabase: ✅",
+            )
+        except Exception as exc:
+            application.record("automation.delivery_failed", {
+                "operation": "health",
+                "error_type": type(exc).__name__,
+            })
     return status
 
 

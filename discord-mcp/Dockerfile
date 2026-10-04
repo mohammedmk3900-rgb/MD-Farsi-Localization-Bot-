@@ -3,7 +3,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY server.py indexer.py bot.py run.py auth.py news.py intelligence.py ./
+COPY server.py indexer.py bot.py run.py auth.py news.py intelligence.py oauth.py ./
 VOLUME ["/app/data"]
 ENV DISCORD_DB_PATH=/app/data/discord.db
 EXPOSE 8000

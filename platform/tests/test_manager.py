@@ -8,6 +8,15 @@ from app.services.manager import ProjectManagerService
 
 
 class ManagerReadModelTests(unittest.TestCase):
+    def test_empty_database_reports_no_data(self):
+        with tempfile.TemporaryDirectory() as temp:
+            db = Database(temp + "/db.sqlite")
+            db.initialize()
+            result = ProjectManagerService(db).build()
+            self.assertEqual(result["status"], "no_data")
+            self.assertTrue(result["attention"])
+            self.assertIsNone(result["project_id"])
+
     def test_build_reports_review_gap_and_velocity(self):
         with tempfile.TemporaryDirectory() as temp:
             db = Database(temp + "/db.sqlite")

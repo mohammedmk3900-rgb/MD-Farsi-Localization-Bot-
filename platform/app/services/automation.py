@@ -100,10 +100,10 @@ class Automation:
 
         sent_progress = False
         sent_stats = False
-        if self.settings.channel_progress:
+        if getattr(self.settings, "channel_progress", ""):
             sent_progress = self._embed_if_changed(
                 "publish.progress",
-                self.settings.channel_progress,
+                getattr(self.settings, "channel_progress", ""),
                 "📈 پیشرفت ترجمه • MILLENNIUM DAWN",
                 (
                     f"ترجمه: **{progress['translation_percent']:.2f}%**\n"
@@ -113,10 +113,10 @@ class Automation:
                 ),
             )
 
-        if self.settings.channel_stats:
+        if getattr(self.settings, "channel_stats", ""):
             sent_stats = self._embed_if_changed(
                 "publish.stats",
-                self.settings.channel_stats,
+                getattr(self.settings, "channel_stats", ""),
                 "📊 آمار پروژه • PROJECT STATS",
                 (
                     f"کلمات: **{stats['words_total']:,}**\n"
@@ -131,12 +131,15 @@ class Automation:
         previous_percent = float(previous.get("translation_percent", 0) or 0)
         current_percent = float(current.get("translation_percent", 0) or 0)
         sent_achievements = 0
-        for achievement in self.achievements.crossed(previous_percent, current_percent):
+        # Publish any milestone reached but not yet persisted. This also
+        # catches up milestones when the first observed snapshot is already
+        # at or above a threshold.
+        for achievement in self.achievements.crossed(0, current_percent):
             key = f"publish.achievement.{achievement['percent']}"
-            if self.database.get_automation_state(key) or not self.settings.channel_achievements:
+            if self.database.get_automation_state(key) or not getattr(self.settings, "channel_achievements", ""):
                 continue
             self.discord.embed(
-                self.settings.channel_achievements,
+                getattr(self.settings, "channel_achievements", ""),
                 f"{achievement['icon']} {achievement['title']}",
                 achievement["description"],
             )
@@ -170,12 +173,12 @@ class Automation:
         return alerts
 
     def publish_alerts(self, alerts: list[str]) -> int:
-        if not alerts or not self.settings.channel_health:
+        if not alerts or not getattr(self.settings, "channel_health", ""):
             return 0
         body = "\n".join(f"• {item}" for item in alerts)
         return int(self._embed_if_changed(
             "publish.project_alerts",
-            self.settings.channel_health,
+            getattr(self.settings, "channel_health", ""),
             "⚠️ هشدار عملیاتی پروژه • PROJECT ALERTS",
             body,
         ))
@@ -197,10 +200,10 @@ class Automation:
         )
         qa = self._glossary_qa(normalized)
         if qa["issues"]:
-            if self.settings.channel_health:
+            if getattr(self.settings, "channel_health", ""):
                 self._embed_if_changed(
                     "publish.glossary_qa",
-                    self.settings.channel_health,
+                    getattr(self.settings, "channel_health", ""),
                     "🧪 QA واژه‌نامه • انتشار متوقف شد",
                     "\n".join(f"• {issue}" for issue in qa["issues"]),
                 )

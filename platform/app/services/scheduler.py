@@ -113,6 +113,13 @@ class Scheduler:
         except ValueError:
             return True
 
+    @staticmethod
+    def _result_status(result: object) -> str:
+        if not isinstance(result, dict):
+            return "success"
+        status = result.get("_scheduler_status") or result.get("status")
+        return status if status in {"success", "degraded", "failed"} else "success"
+
     def _finish(self, job: ScheduledJob, status: str, error_type: str | None = None) -> None:
         now = self._now()
         next_run = now + timedelta(seconds=job.retry_seconds if status == "failed" else job.interval_seconds)

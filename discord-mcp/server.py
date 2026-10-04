@@ -4,20 +4,63 @@ from __future__ import annotations
 import asyncio
 import os
 import re
+import hmac
 from typing import Any
 
 import httpx
 
-from auth import BearerAuthMiddleware, require_auth_token
 from dotenv import load_dotenv
 from mcp.server import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from indexer import MessageIndex
 from news import DiscordNewsEngine
 from intelligence import DiscordIntelligence
 
 load_dotenv()
+
+
+class BearerAuthMiddleware:
+    """Require a configured Bearer token before a request reaches MCP."""
+
+    def __init__(self, app: ASGIApp, token: str) -> None:
+        self.app = app
+        self.token = token
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        headers = {
+            key.decode("latin-1").lower(): value.decode("latin-1")
+            for key, value in scope.get("headers", [])
+        }
+        authorization = headers.get("authorization", "")
+        scheme, _, supplied = authorization.partition(" ")
+        if scheme.lower() != "bearer" or not supplied or not hmac.compare_digest(
+            supplied.strip(), self.token
+        ):
+            body = b'{"error":"unauthorized","error_description":"Bearer authentication required"}'
+            await send({
+                "type": "http.response.start",
+                "status": 401,
+                "headers": [
+                    (b"content-type", b"application/json"),
+                    (b"cache-control", b"no-store"),
+                    (b"www-authenticate", b'Bearer realm="DawnNexus"'),
+                ],
+            })
+            await send({"type": "http.response.body", "body": body})
+            return
+        await self.app(scope, receive, send)
+
+
+def require_auth_token() -> str:
+    token = os.getenv("MCP_AUTH_TOKEN", "").strip()
+    if len(token) < 32:
+        raise RuntimeError("MCP_AUTH_TOKEN is required and must contain at least 32 characters")
+    return token
 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN", "").strip()
 GUILD_ID = os.getenv("DISCORD_GUILD_ID", "").strip()

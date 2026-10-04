@@ -13,6 +13,7 @@ This service provides a permission-respecting read model of the configured Disco
 
 - `get_server_overview`
 - `get_server_snapshot(include_messages, message_limit_per_channel)`
+- `full_server_audit(include_messages, message_limit_per_channel)` — broad read-only guild audit including members, permissions, threads, resources, moderation state and indexed activity
 - `list_channels`
 - `list_roles`
 - `sync_channel_history`
@@ -23,7 +24,7 @@ This service provides a permission-respecting read model of the configured Disco
 - `get_channel_statistics`
 - `get_author_statistics`
 
-The bot never bypasses Discord permissions. Private channels unavailable to the bot are not indexed. Deleted messages are represented as local tombstones and their content is removed from the index.
+The bot never bypasses Discord permissions. Private channels unavailable to the bot are not indexed. The full audit is read-only and uses only endpoints the bot can access; unavailable optional resources are reported as empty rather than fabricated. Deleted messages are represented as local tombstones and their content is removed from the index.
 
 The Discord `message_content` privileged intent must be enabled for message content to be available. Historical backfill is limited to channels/history the bot can actually read.
 

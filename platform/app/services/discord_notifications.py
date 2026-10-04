@@ -4,11 +4,26 @@ from app.integrations.discord_app import DiscordApp
 
 
 class DiscordNotificationService:
-    """All automated Discord output goes through MD news, never Discord webhooks."""
+    """All automated Discord output goes through MD news, never Discord webhooks.
+
+    Discord credentials are required only when a Discord operation is actually
+    executed. Constructing the platform, importing the application, and running
+    offline/unit tests must not require production credentials.
+    """
 
     def __init__(self, settings):
         self.settings = settings
-        self.discord = DiscordApp(settings.discord_bot_token)
+        self._discord: DiscordApp | None = None
+
+    @property
+    def discord(self) -> DiscordApp:
+        if self._discord is None:
+            self._discord = DiscordApp(self.settings.discord_bot_token)
+        return self._discord
+
+    @discord.setter
+    def discord(self, value: DiscordApp) -> None:
+        self._discord = value
 
     def send(self, channel_id: str, content: str) -> dict:
         if not channel_id:

@@ -65,3 +65,17 @@ platform/
 ```
 
 This directory is the replacement runtime. Existing V9/V8 components remain untouched until migration validation is complete.
+
+
+## Unified runtime
+
+For a normal deployment, start the application with:
+
+```bash
+cd platform
+python run_api.py
+```
+
+This launcher enables the embedded autonomous scheduler, so FastAPI and the persistent scheduler share the same application context and SQLite state. The scheduler can still be run independently with `python run_scheduler.py` for worker-style deployments.
+
+The recurring business scheduler is owned by the application. GitHub Actions is validation/manual maintenance infrastructure, not the production business scheduler.

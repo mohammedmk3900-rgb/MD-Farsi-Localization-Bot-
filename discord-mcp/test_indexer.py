@@ -89,3 +89,16 @@ class DiscordMCPIndexTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+    def test_advanced_search_and_message_lookup(self):
+        rows = self.index.search_advanced(query="hello", channel_id="c1", limit=10)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["id"], "2")
+        self.assertEqual(self.index.get_message("2")["content"], "hello world")
+
+    def test_cursor_stats(self):
+        self.index.set_cursor("c1", newest_message_id="2", oldest_message_id="1", complete=True)
+        rows = self.index.cursor_stats()
+        self.assertEqual(rows[0]["channel_id"], "c1")
+        self.assertEqual(rows[0]["complete"], 1)

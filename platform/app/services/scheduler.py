@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 import time
-from threading import Event
+import uuid
+from threading import Event, Thread
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Callable
@@ -41,6 +42,7 @@ class Scheduler:
                     name TEXT PRIMARY KEY,
                     status TEXT NOT NULL DEFAULT 'idle',
                     lock_until TEXT,
+                    lock_owner TEXT,
                     last_run_at TEXT,
                     next_run_at TEXT,
                     last_error_type TEXT,
@@ -52,6 +54,9 @@ class Scheduler:
                     ON scheduler_jobs(next_run_at, status);
                 """
             )
+            columns = {row[1] for row in db.execute("PRAGMA table_info(scheduler_jobs)")}
+            if "lock_owner" not in columns:
+                db.execute("ALTER TABLE scheduler_jobs ADD COLUMN lock_owner TEXT")
 
     @staticmethod
     def _now() -> datetime:
@@ -75,26 +80,47 @@ class Scheduler:
                 (name, now),
             )
 
-    def _claim(self, name: str, now: datetime) -> bool:
+    def _claim(self, name: str, now: datetime) -> str | None:
         now_text = now.isoformat()
         lease_text = (now + timedelta(seconds=self.lease_seconds)).isoformat()
+        owner = uuid.uuid4().hex
         with self.database.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute("SELECT lock_until FROM scheduler_jobs WHERE name=?", (name,)).fetchone()
             if row and row["lock_until"] and str(row["lock_until"]) > now_text:
                 db.rollback()
-                return False
+                return None
             db.execute(
                 """
-                INSERT INTO scheduler_jobs(name,status,lock_until,updated_at)
-                VALUES (?, 'running', ?, ?)
+                INSERT INTO scheduler_jobs(name,status,lock_until,lock_owner,updated_at)
+                VALUES (?, 'running', ?, ?, ?)
                 ON CONFLICT(name) DO UPDATE SET
-                    status='running', lock_until=excluded.lock_until, updated_at=excluded.updated_at
+                    status='running', lock_until=excluded.lock_until,
+                    lock_owner=excluded.lock_owner, updated_at=excluded.updated_at
                 """,
-                (name, lease_text, now_text),
+                (name, lease_text, owner, now_text),
             )
             db.commit()
-        return True
+        return owner
+
+    def _renew(self, job: ScheduledJob, owner: str) -> bool:
+        now = self._now()
+        lease_text = (now + timedelta(seconds=self.lease_seconds)).isoformat()
+        with self.database.connect() as db:
+            cursor = db.execute(
+                """UPDATE scheduler_jobs
+                   SET lock_until=?, updated_at=?
+                   WHERE name=? AND lock_owner=? AND status='running'""",
+                (lease_text, now.isoformat(), job.name, owner),
+            )
+            return cursor.rowcount == 1
+
+    def _lease_heartbeat(self, job: ScheduledJob, owner: str, stop_event: Event) -> None:
+        interval = max(5, min(self.lease_seconds // 3, 60))
+        while not stop_event.wait(interval):
+            if not self._renew(job, owner):
+                LOGGER.warning("scheduler lease lost: %s", job.name)
+                return
 
     def _due(self, job: ScheduledJob, now: datetime) -> bool:
         with self.database.connect() as db:
@@ -120,7 +146,7 @@ class Scheduler:
         status = result.get("_scheduler_status") or result.get("status")
         return status if status in {"success", "degraded", "failed"} else "success"
 
-    def _finish(self, job: ScheduledJob, status: str, error_type: str | None = None) -> None:
+    def _finish(self, job: ScheduledJob, status: str, owner: str, error_type: str | None = None) -> None:
         now = self._now()
         next_run = now + timedelta(seconds=job.retry_seconds if status == "failed" else job.interval_seconds)
         with self.database.connect() as db:
@@ -130,29 +156,42 @@ class Scheduler:
                 SET status=?, lock_until=NULL, last_run_at=?, next_run_at=?,
                     last_error_type=?, run_count=run_count+1,
                     failure_count=failure_count+CASE WHEN ?='failed' THEN 1 ELSE 0 END,
-                    updated_at=?
-                WHERE name=?
+                    updated_at=?, lock_owner=NULL
+                WHERE name=? AND lock_owner=?
                 """,
-                (status, now.isoformat(), next_run.isoformat(), error_type, status, now.isoformat(), job.name),
+                (status, now.isoformat(), next_run.isoformat(), error_type, status, now.isoformat(), job.name, owner),
             )
 
     def run_job(self, job: ScheduledJob) -> dict[str, object]:
         now = self._now()
         if not self._due(job, now):
             return {"job": job.name, "status": "not_due"}
-        if not self._claim(job.name, now):
+        owner = self._claim(job.name, now)
+        if owner is None:
             return {"job": job.name, "status": "locked"}
+        heartbeat_stop = Event()
+        heartbeat = Thread(
+            target=self._lease_heartbeat,
+            args=(job, owner, heartbeat_stop),
+            name=f"scheduler-lease-{job.name}",
+            daemon=True,
+        )
+        heartbeat.start()
 
         try:
             result = job.handler()
             final_status = self._result_status(result)
         except Exception as exc:
-            self._finish(job, "failed", type(exc).__name__)
+            heartbeat_stop.set()
+            heartbeat.join(timeout=1)
+            self._finish(job, "failed", owner, type(exc).__name__)
             application.record("scheduler.job_failed", {"job": job.name, "error_type": type(exc).__name__})
             LOGGER.exception("scheduler job failed: %s", job.name)
             return {"job": job.name, "status": "failed", "error_type": type(exc).__name__}
 
-        self._finish(job, final_status)
+        heartbeat_stop.set()
+        heartbeat.join(timeout=1)
+        self._finish(job, final_status, owner)
         event_type = "scheduler.job_degraded" if final_status == "degraded" else "scheduler.job_completed"
         application.record(event_type, {"job": job.name, "status": final_status})
         return {"job": job.name, "status": final_status}
@@ -160,19 +199,32 @@ class Scheduler:
     def run_now(self, job: ScheduledJob) -> dict[str, object]:
         """Run a registered job immediately, bypassing its next_run_at gate."""
         now = self._now()
-        if not self._claim(job.name, now):
+        owner = self._claim(job.name, now)
+        if owner is None:
             return {"job": job.name, "status": "locked"}
+        heartbeat_stop = Event()
+        heartbeat = Thread(
+            target=self._lease_heartbeat,
+            args=(job, owner, heartbeat_stop),
+            name=f"scheduler-lease-{job.name}",
+            daemon=True,
+        )
+        heartbeat.start()
 
         try:
             result = job.handler()
             final_status = self._result_status(result)
         except Exception as exc:
-            self._finish(job, "failed", type(exc).__name__)
+            heartbeat_stop.set()
+            heartbeat.join(timeout=1)
+            self._finish(job, "failed", owner, type(exc).__name__)
             application.record("scheduler.job_failed", {"job": job.name, "error_type": type(exc).__name__, "manual": True})
             LOGGER.exception("manual scheduler job failed: %s", job.name)
             return {"job": job.name, "status": "failed", "error_type": type(exc).__name__}
 
-        self._finish(job, final_status)
+        heartbeat_stop.set()
+        heartbeat.join(timeout=1)
+        self._finish(job, final_status, owner)
         event_type = "scheduler.job_degraded" if final_status == "degraded" else "scheduler.job_completed"
         application.record(event_type, {"job": job.name, "status": final_status, "manual": True})
         return {"job": job.name, "status": final_status, "manual": True}

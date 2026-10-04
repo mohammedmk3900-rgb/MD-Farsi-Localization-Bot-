@@ -35,3 +35,4 @@ class Settings(BaseSettings):
     cors_origins: str = ""
     scheduler_poll_seconds: int = 30
     scheduler_lease_seconds: int = 900
+    scheduler_embedded: bool = False

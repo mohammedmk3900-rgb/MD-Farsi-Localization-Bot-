@@ -11,7 +11,7 @@ A clean-room rewrite of the Millennium Dawn Farsi Localization automation platfo
 - One canonical domain model feeds API, Discord and dashboard.
 
 ## Runtime
-- Python 3.12
+- Python 3.14
 - FastAPI + Uvicorn
 - SQLite with an event-oriented persistence layer
 - discord.py

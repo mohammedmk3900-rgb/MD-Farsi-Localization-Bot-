@@ -90,9 +90,9 @@ class DiscordAuditService:
             },
         }
 
-    def persist(self, output: str = "data/discord_audit.json") -> dict:
+    def persist(self, output: str | None = None) -> dict:
         payload = self.collect()
-        path = Path(output)
+        path = Path(output) if output else Path(self.settings.database_path).parent / "discord_audit.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return payload

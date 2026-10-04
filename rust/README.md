@@ -5,7 +5,7 @@ The Rust layer is now a real deterministic validation engine.
 ## Responsibility
 
 - Validate Paradox/HOI4 localization tokens before release.
-- Detect changed $...$, £... and §...§ token sequences.
+- Detect changed $variables, £icons, §color/control codes and [scope] token sequences.
 - Provide a fast, memory-safe CLI suitable for large batch validation.
 - Stay independent from Discord, GitHub and secrets.
 

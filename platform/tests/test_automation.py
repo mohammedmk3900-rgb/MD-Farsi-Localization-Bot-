@@ -53,6 +53,21 @@ class AutomationTests(unittest.TestCase):
             }
         }
 
+    def test_event_bus_contract_is_preserved(self):
+        from app.services.events import Event, EventBus
+
+        automation = Automation(self.application)
+        bus = EventBus()
+        automation.attach(bus)
+        bus.publish(Event("project.snapshot", {"translated": 1}))
+        bus.publish(Event("health.checked", {"status": "healthy"}))
+        bus.publish(Event("achievement.reached", {"percent": 1}))
+
+        self.assertEqual(
+            [event_type for event_type, _ in self.application.events],
+            ["automation.project_snapshot", "automation.health", "automation.achievement"],
+        )
+
     def test_discord_client_is_lazy(self):
         automation = Automation(self.application)
         self.assertIsNone(automation.discord._discord)

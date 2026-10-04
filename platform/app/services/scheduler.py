@@ -28,9 +28,11 @@ class Scheduler:
 
     def __init__(self, poll_seconds: int | None = None, lease_seconds: int | None = None):
         self.database = application.context.database
-        settings = application.context.settings
-        self.poll_seconds = max(1, int(poll_seconds if poll_seconds is not None else settings.scheduler_poll_seconds))
-        self.lease_seconds = max(30, int(lease_seconds if lease_seconds is not None else settings.scheduler_lease_seconds))
+        settings = getattr(application.context, "settings", None)
+        default_poll_seconds = getattr(settings, "scheduler_poll_seconds", 30)
+        default_lease_seconds = getattr(settings, "scheduler_lease_seconds", 900)
+        self.poll_seconds = max(1, int(poll_seconds if poll_seconds is not None else default_poll_seconds))
+        self.lease_seconds = max(30, int(lease_seconds if lease_seconds is not None else default_lease_seconds))
         self.jobs: list[ScheduledJob] = []
         self._ensure_schema()
 

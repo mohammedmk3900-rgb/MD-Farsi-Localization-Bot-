@@ -9,7 +9,7 @@ from discord import app_commands
 from app.application import application
 from app.config import PLATFORM_DIR
 from app.services.commands import CommandService
-from app.services.permissions import allowed
+from app.services.permissions import allowed, role_permissions
 
 commands = CommandService()
 intents = discord.Intents.none()
@@ -22,27 +22,58 @@ def render(data: object) -> str:
     return "json\n" + json.dumps(data, ensure_ascii=False, indent=2)[:1900]
 
 
-def member_role(interaction: discord.Interaction) -> str:
+ROLE_ALIASES = (
+    ("owner", {"owner", "مالک"}),
+    ("project_manager", {"project manager", "مدیر پروژه"}),
+    ("review_manager", {"review manager", "مدیر بازبینی"}),
+    ("reviewer", {"reviewer", "بازبین"}),
+    ("translator", {"translator", "مترجم"}),
+    ("contributor", {"contributor", "مشارکت‌کننده"}),
+)
+
+
+def permissions_for_role_names(role_names: set[str], *, is_owner: bool = False) -> set[str]:
+    if is_owner:
+        return {"*"}
+    permissions: set[str] = set()
+    normalized = {name.casefold() for name in role_names}
+    for role, aliases in ROLE_ALIASES:
+        if normalized & aliases:
+            permissions.update(role_permissions(role))
+    if not permissions:
+        permissions.update(role_permissions("contributor"))
+    return permissions
+
+
+def member_permissions(interaction: discord.Interaction) -> set[str]:
     if not isinstance(interaction.user, discord.Member):
-        return "contributor"
-    names = {role.name.casefold() for role in interaction.user.roles}
-    mapping = (
-        ("owner", {"owner", "مالک"}),
-        ("project_manager", {"project manager", "مدیر پروژه"}),
-        ("review_manager", {"review manager", "مدیر بازبینی"}),
-        ("reviewer", {"reviewer", "بازبین"}),
-        ("translator", {"translator", "مترجم"}),
-        ("contributor", {"contributor", "مشارکت‌کننده"}),
+        return permissions_for_role_names(set())
+    is_owner = bool(interaction.guild and interaction.guild.owner_id == interaction.user.id)
+    return permissions_for_role_names(
+        {role.name for role in interaction.user.roles},
+        is_owner=is_owner,
     )
-    for role, aliases in mapping:
-        if names & aliases:
+
+
+def member_role(interaction: discord.Interaction) -> str:
+    """Return the highest-recognized role for display/diagnostics only."""
+    permissions = member_permissions(interaction)
+    for role, _aliases in ROLE_ALIASES:
+        if role == "owner" and "*" in permissions:
+            return role
+        if role != "owner" and permissions & role_permissions(role):
             return role
     return "contributor"
 
 
 def require(interaction: discord.Interaction, permission: str) -> bool:
-    role = member_role(interaction)
-    return allowed(role, permission)
+    permissions = member_permissions(interaction)
+    return "*" in permissions or permission in permissions
+
+
+def require_any(interaction: discord.Interaction, *permissions: str) -> bool:
+    granted = member_permissions(interaction)
+    return "*" in granted or any(permission in granted for permission in permissions)
 
 
 async def deny(interaction: discord.Interaction) -> None:
@@ -136,7 +167,7 @@ async def report(interaction: discord.Interaction, period: str = "daily"):
 
 @project.command(name="tasks", description="صف مأموریت‌های مترجمان")
 async def tasks(interaction: discord.Interaction, status: str = "all"):
-    if not require(interaction, "tasks.self"):
+    if not require_any(interaction, "tasks.self", "tasks.review", "tasks.manage"):
         await deny(interaction)
         return
     await interaction.response.send_message(

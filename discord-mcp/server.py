@@ -691,7 +691,6 @@ async def read_channel_page(
     )
 
 
-MCP_AUTH_TOKEN = require_auth_token()
 
 _allowed_hosts = [
     item.strip()
@@ -714,10 +713,12 @@ _mcp_http_app = mcp.streamable_http_app(
 
 # Authentication is deliberately outside the MCP protocol so unauthenticated
 # traffic is rejected before JSON-RPC/session handling.
-app = BearerAuthMiddleware(_mcp_http_app, MCP_AUTH_TOKEN)
+def build_app() -> ASGIApp:
+    """Build the authenticated MCP ASGI application lazily at runtime."""
+    return BearerAuthMiddleware(_mcp_http_app, require_auth_token())
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host=HOST, port=PORT)
+    uvicorn.run(build_app(), host=HOST, port=PORT)

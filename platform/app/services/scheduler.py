@@ -135,6 +135,54 @@ class Scheduler:
         application.record("scheduler.job_completed", {"job": job.name})
         return {"job": job.name, "status": "success"}
 
+    def run_now(self, job: ScheduledJob) -> dict[str, object]:
+        """Run a registered job immediately, bypassing its next_run_at gate."""
+        now = self._now()
+        if not self._claim(job.name, now):
+            return {"job": job.name, "status": "locked"}
+
+        try:
+            job.handler()
+        except Exception as exc:
+            self._finish(job, "failed", type(exc).__name__)
+            application.record("scheduler.job_failed", {"job": job.name, "error_type": type(exc).__name__, "manual": True})
+            LOGGER.exception("manual scheduler job failed: %s", job.name)
+            return {"job": job.name, "status": "failed", "error_type": type(exc).__name__}
+
+        self._finish(job, "success")
+        application.record("scheduler.job_completed", {"job": job.name, "manual": True})
+        return {"job": job.name, "status": "success", "manual": True}
+
+    def status(self) -> list[dict[str, object]]:
+        """Return durable state for the Command Center without executing jobs."""
+        with self.database.connect() as db:
+            rows = db.execute(
+                """
+                SELECT name, status, lock_until, last_run_at, next_run_at,
+                       last_error_type, run_count, failure_count, updated_at
+                FROM scheduler_jobs
+                ORDER BY name
+                """
+            ).fetchall()
+        registered = {job.name: job for job in self.jobs}
+        return [
+            {
+                "name": row["name"],
+                "description": registered[row["name"]].description if row["name"] in registered else "",
+                "interval_seconds": registered[row["name"]].interval_seconds if row["name"] in registered else None,
+                "retry_seconds": registered[row["name"]].retry_seconds if row["name"] in registered else None,
+                "status": row["status"],
+                "lock_until": row["lock_until"],
+                "last_run_at": row["last_run_at"],
+                "next_run_at": row["next_run_at"],
+                "last_error_type": row["last_error_type"],
+                "run_count": row["run_count"],
+                "failure_count": row["failure_count"],
+                "updated_at": row["updated_at"],
+            }
+            for row in rows
+        ]
+
     def run_once(self) -> list[dict[str, object]]:
         return [self.run_job(job) for job in self.jobs]
 

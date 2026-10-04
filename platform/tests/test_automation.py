@@ -76,6 +76,21 @@ class AutomationTests(unittest.TestCase):
             automation.discord.embed("channel", "title", "description")
 
     def test_project_publication_is_idempotent(self):
+        self.db.save_snapshot("2026-09-25T00:00:00+00:00", 1, self._snapshot(10, 5, 10))
+        self.db.save_snapshot("2026-09-25T01:00:00+00:00", 1, self._snapshot(11, 6, 11))
+
+        automation = Automation(self.application)
+        fake = FakeDiscord()
+        automation.discord = fake
+
+        first = automation.publish_project()
+        second = automation.publish_project()
+
+        self.assertTrue(first["progress"])
+        self.assertTrue(first["stats"])
+        self.assertEqual(second["achievements"], 0)
+        self.assertEqual(len(fake.embeds), 3)
+        self.assertEqual(len([x for x in fake.embeds if x[0] == "progress"]), 1)
 
     def test_glossary_publication_resumes_after_partial_failure(self):
         class FailingDiscord(FakeDiscord):
@@ -108,22 +123,6 @@ class AutomationTests(unittest.TestCase):
 
         self.assertTrue(result["published"])
         self.assertEqual(len(retry.embeds), 1)
-
-        self.db.save_snapshot("2026-09-25T00:00:00+00:00", 1, self._snapshot(10, 5, 10))
-        self.db.save_snapshot("2026-09-25T01:00:00+00:00", 1, self._snapshot(11, 6, 11))
-
-        automation = Automation(self.application)
-        fake = FakeDiscord()
-        automation.discord = fake
-
-        first = automation.publish_project()
-        second = automation.publish_project()
-
-        self.assertTrue(first["progress"])
-        self.assertTrue(first["stats"])
-        self.assertEqual(second["achievements"], 0)
-        self.assertEqual(len(fake.embeds), 3)
-        self.assertEqual(len([x for x in fake.embeds if x[0] == "progress"]), 1)
 
     def test_glossary_qa_blocks_conflicts(self):
         automation = Automation(self.application)

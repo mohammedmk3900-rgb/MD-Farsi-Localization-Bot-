@@ -144,6 +144,52 @@ class MessageIndex:
                 (thread_id,max(1,min(limit,500)))).fetchall()
         return [dict(r) for r in rows]
 
+    def search_advanced(
+        self, query: str = "", channel_id: str | None = None,
+        author_id: str | None = None, before: str | None = None,
+        after: str | None = None, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        """Search indexed messages with optional filters."""
+        clauses = ["deleted=0"]
+        params: list[Any] = []
+        if query.strip():
+            clauses.append("content LIKE ? COLLATE NOCASE")
+            params.append(f"%{query.strip()}%")
+        if channel_id:
+            clauses.append("channel_id=?")
+            params.append(channel_id)
+        if author_id:
+            clauses.append("author_id=?")
+            params.append(author_id)
+        if before:
+            clauses.append("timestamp < ?")
+            params.append(before)
+        if after:
+            clauses.append("timestamp > ?")
+            params.append(after)
+        params.append(max(1, min(limit, 500)))
+        where = " AND ".join(clauses)
+        with self._connect() as db:
+            rows = db.execute(f"""SELECT id,channel_id,channel_name,author_id,author_name,content,
+                timestamp,edited_timestamp,url,reference_message_id,reference_channel_id,
+                thread_id,message_type,attachment_count,link_count FROM messages
+                WHERE {where} ORDER BY timestamp DESC LIMIT ?""", params).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_message(self, message_id: str) -> dict[str, Any] | None:
+        with self._connect() as db:
+            row = db.execute("""SELECT id,channel_id,channel_name,author_id,author_name,content,
+                timestamp,edited_timestamp,url,reference_message_id,reference_channel_id,
+                thread_id,message_type,attachment_count,link_count,deleted
+                FROM messages WHERE id=?""", (message_id,)).fetchone()
+        return dict(row) if row else None
+
+    def cursor_stats(self) -> list[dict[str, Any]]:
+        with self._connect() as db:
+            rows = db.execute("""SELECT channel_id,newest_message_id,oldest_message_id,
+                complete,updated_at FROM channel_cursors ORDER BY updated_at DESC""").fetchall()
+        return [dict(r) for r in rows]
+
     def channel_stats(self) -> list[dict[str, Any]]:
         with self._connect() as db:
             rows = db.execute("""SELECT channel_id,MAX(channel_name) AS channel_name,

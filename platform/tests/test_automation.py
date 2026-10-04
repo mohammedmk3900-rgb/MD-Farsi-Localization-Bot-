@@ -27,7 +27,7 @@ class AutomationTests(unittest.TestCase):
             channel_stats="stats",
             channel_achievements="achievements",
             channel_glossary="glossary",
-            discord_bot_token="test",
+            discord_bot_token="",
             discord_intelligence_path="data/discord_intelligence.json",
         )
         self.application = SimpleNamespace(
@@ -52,6 +52,13 @@ class AutomationTests(unittest.TestCase):
                 "review_percent": reviewed,
             }
         }
+
+    def test_discord_client_is_lazy(self):
+        automation = Automation(self.application)
+        self.assertIsNone(automation.discord._discord)
+
+        with self.assertRaisesRegex(ValueError, "DISCORD_BOT_TOKEN is required"):
+            automation.discord.embed("channel", "title", "description")
 
     def test_project_publication_is_idempotent(self):
         self.db.save_snapshot("2026-09-25T00:00:00+00:00", 1, self._snapshot(10, 5, 10))

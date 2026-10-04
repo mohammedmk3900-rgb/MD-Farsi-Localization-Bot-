@@ -31,10 +31,10 @@ def require_auth_token() -> str:
 
 
 def _issuer() -> str:
-    value = os.getenv("MCP_AUTH_ISSUER", "").strip().rstrip("/")
+    value = os.getenv("MCP_AUTH_ISSUER", "").strip()
     if not value.startswith("https://"):
         raise RuntimeError("MCP_AUTH_ISSUER must be an HTTPS issuer URL")
-    return value
+    return value if value.endswith("/") else f"{value}/"
 
 
 def _resource() -> str:
@@ -70,21 +70,18 @@ def protected_resource_metadata() -> dict[str, Any]:
 
 
 def _jwks_client() -> PyJWKClient:
-    url = os.getenv("MCP_AUTH_JWKS_URL", f"{_issuer()}/.well-known/jwks.json").strip()
+    url = os.getenv("MCP_AUTH_JWKS_URL", f"{_issuer()}.well-known/jwks.json").strip()
     return PyJWKClient(url, cache_jwk_set=True, lifespan=300)
 
 
 def _validate_oauth_token(token: str) -> dict[str, Any]:
     signing_key = _jwks_client().get_signing_key_from_jwt(token)
-    issuer = _issuer()
-    if not issuer.endswith("/"):
-        issuer += "/"
     return jwt.decode(
         token,
         signing_key.key,
         algorithms=["RS256"],
         audience=_audience(),
-        issuer=issuer,
+        issuer=_issuer(),
         options={"require": ["exp", "iat", "iss", "aud"]},
     )
 

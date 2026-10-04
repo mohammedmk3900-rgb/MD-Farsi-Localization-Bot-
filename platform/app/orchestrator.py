@@ -97,7 +97,7 @@ def execute(*, daily: bool = False, weekly: bool = False) -> dict:
         "status": status,
         "jobs": results,
     }
-    path = PLATFORM_DIR / "data" / "last_run.json"
+    path = Path.cwd() / "data" / "last_run.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return summary

@@ -5,9 +5,8 @@ import asyncio
 import os
 
 import uvicorn
-from starlette.applications import Starlette
-from starlette.responses import JSONResponse
 from starlette.routing import Route
+from starlette.responses import JSONResponse
 from mcp.server.transport_security import TransportSecuritySettings
 
 from auth import BearerAuthMiddleware, env_csv
@@ -19,7 +18,7 @@ async def health(_: object) -> JSONResponse:
     return JSONResponse({"status": "ok", "service": "DawnNexus", "mcp": "/mcp"})
 
 
-def build_app() -> Starlette:
+def build_app():
     allowed_hosts = env_csv(
         "MCP_ALLOWED_HOSTS",
         "dawnnexus.onrender.com,dawnnexus.onrender.com:*",
@@ -35,19 +34,17 @@ def build_app() -> Starlette:
         allowed_origins=allowed_origins,
     )
 
-    mcp_app = mcp.streamable_http_app(
-        streamable_http_path="/mcp",
-        transport_security=transport_security,
-        host=os.getenv("MCP_HOST", "0.0.0.0"),
+    return BearerAuthMiddleware(
+        mcp.streamable_http_app(
+            streamable_http_path="/mcp",
+            transport_security=transport_security,
+            host=os.getenv("MCP_HOST", "0.0.0.0"),
+            custom_starlette_routes=[
+                Route("/health", health, methods=["GET"]),
+            ],
+        ),
+        protected_path="/mcp",
     )
-
-    # Keep the health check public so Render can probe the service without
-    # receiving or requiring the MCP bearer secret.
-    app = Starlette(
-        routes=[Route("/health", health, methods=["GET"])],
-    )
-    app.mount("/", BearerAuthMiddleware(mcp_app, protected_path="/mcp"))
-    return app
 
 
 async def main() -> None:

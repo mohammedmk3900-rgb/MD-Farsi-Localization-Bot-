@@ -7,8 +7,11 @@ import re
 from typing import Any
 
 import httpx
+
+from auth import BearerAuthMiddleware, require_auth_token
 from dotenv import load_dotenv
 from mcp.server import MCPServer
+from mcp.server.transport_security import TransportSecuritySettings
 
 from indexer import MessageIndex
 from news import DiscordNewsEngine
@@ -645,5 +648,33 @@ async def read_channel_page(
     )
 
 
+MCP_AUTH_TOKEN = require_auth_token()
+
+_allowed_hosts = [
+    item.strip()
+    for item in os.getenv(
+        "MCP_ALLOWED_HOSTS",
+        "dawnnexus.onrender.com,dawnnexus.onrender.com:*",
+    ).split(",")
+    if item.strip()
+]
+
+transport_security = TransportSecuritySettings(
+    allowed_hosts=_allowed_hosts,
+    allowed_origins=[],
+)
+
+_mcp_http_app = mcp.streamable_http_app(
+    transport_security=transport_security,
+    host=HOST,
+)
+
+# Authentication is deliberately outside the MCP protocol so unauthenticated
+# traffic is rejected before JSON-RPC/session handling.
+app = BearerAuthMiddleware(_mcp_http_app, MCP_AUTH_TOKEN)
+
+
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http", host=HOST, port=PORT)
+    import uvicorn
+
+    uvicorn.run(app, host=HOST, port=PORT)

@@ -144,16 +144,18 @@ class Scheduler:
             return {"job": job.name, "status": "locked"}
 
         try:
-            job.handler()
+            result = job.handler()
+            final_status = self._result_status(result)
         except Exception as exc:
             self._finish(job, "failed", type(exc).__name__)
             application.record("scheduler.job_failed", {"job": job.name, "error_type": type(exc).__name__})
             LOGGER.exception("scheduler job failed: %s", job.name)
             return {"job": job.name, "status": "failed", "error_type": type(exc).__name__}
 
-        self._finish(job, "success")
-        application.record("scheduler.job_completed", {"job": job.name})
-        return {"job": job.name, "status": "success"}
+        self._finish(job, final_status)
+        event_type = "scheduler.job_degraded" if final_status == "degraded" else "scheduler.job_completed"
+        application.record(event_type, {"job": job.name, "status": final_status})
+        return {"job": job.name, "status": final_status}
 
     def run_now(self, job: ScheduledJob) -> dict[str, object]:
         """Run a registered job immediately, bypassing its next_run_at gate."""

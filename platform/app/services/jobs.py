@@ -45,7 +45,9 @@ def sync() -> dict:
             "failed_operations": len(failures),
         },
     )
-    return snapshot.model_dump(mode="json")
+    payload = snapshot.model_dump(mode="json")
+    payload["_scheduler_status"] = "degraded" if failures else "success"
+    return payload
 
 
 def report(period: str = "daily") -> dict:
@@ -88,7 +90,8 @@ def glossary_sync() -> dict:
             "error_type": type(exc).__name__,
         })
     application.record("glossary.synced", {"count": len(result), "publication": publication})
-    return {"count": len(result), "publication": publication}
+    scheduler_status = "degraded" if (publication.get("reason") == "delivery_failed" or publication.get("blocked") is True) else "success"
+    return {"count": len(result), "publication": publication, "_scheduler_status": scheduler_status}
 
 
 def health() -> dict:

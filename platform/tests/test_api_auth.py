@@ -45,3 +45,25 @@ def test_operation_metrics_handles_missing_summary(tmp_path, monkeypatch):
         response = TestClient(app).get("/api/v1/operations/metrics")
     assert response.status_code == 200
     assert response.json()["status"] == "unknown"
+
+    
+def test_scheduler_status_requires_management_token():
+    client = TestClient(app)
+    with patch("app.api.main.application.context.settings.api_token", "secret-test-token"):
+        assert client.get("/api/v1/scheduler").status_code == 403
+
+
+def test_scheduler_status_with_management_token():
+    client = TestClient(app)
+    with (
+        patch("app.api.main.application.context.settings.api_token", "secret-test-token"),
+        patch("app.api.main.build_scheduler") as build_scheduler,
+    ):
+        build_scheduler.return_value.jobs = []
+        build_scheduler.return_value.status.return_value = []
+        response = client.get(
+            "/api/v1/scheduler",
+            headers={"Authorization": "Bearer secret-test-token"},
+        )
+    assert response.status_code == 200
+    assert response.json()["jobs_total"] == 0

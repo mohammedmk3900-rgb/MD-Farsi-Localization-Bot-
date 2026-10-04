@@ -1,0 +1,4 @@
+{$MCP_DOMAIN} {
+    reverse_proxy discord-mcp:8000
+    encode zstd gzip
+}

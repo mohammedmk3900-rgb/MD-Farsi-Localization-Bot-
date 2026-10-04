@@ -16,8 +16,7 @@ class PolyglotEngine:
         if root is not None:
             self.root = root.resolve()
         else:
-            cwd = Path.cwd().resolve()
-            self.root = cwd.parent if (cwd.name == "platform" and (cwd.parent / "genesis").exists()) else cwd
+            self.root = Path(__file__).resolve().parents[3]
 
     def _run(self, command: list[str], payload: str) -> dict[str, Any]:
         result = subprocess.run(

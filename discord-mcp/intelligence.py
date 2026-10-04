@@ -82,9 +82,13 @@ class DiscordIntelligence:
                    timestamp, edited_timestamp, url, reference_message_id,
                    reference_channel_id, thread_id, message_type
             FROM messages
-            WHERE deleted=0 AND timestamp IS NOT NULL
+            WHERE deleted=0
+              AND timestamp IS NOT NULL
+              AND timestamp >= ?
+              AND timestamp <= ?
             ORDER BY timestamp ASC
-            """
+            """,
+            (start.isoformat(), end.isoformat()),
         ).fetchall()
         result: list[dict[str, Any]] = []
         for row in rows:

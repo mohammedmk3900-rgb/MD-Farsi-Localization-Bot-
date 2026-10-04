@@ -164,16 +164,18 @@ class Scheduler:
             return {"job": job.name, "status": "locked"}
 
         try:
-            job.handler()
+            result = job.handler()
+            final_status = self._result_status(result)
         except Exception as exc:
             self._finish(job, "failed", type(exc).__name__)
             application.record("scheduler.job_failed", {"job": job.name, "error_type": type(exc).__name__, "manual": True})
             LOGGER.exception("manual scheduler job failed: %s", job.name)
             return {"job": job.name, "status": "failed", "error_type": type(exc).__name__}
 
-        self._finish(job, "success")
-        application.record("scheduler.job_completed", {"job": job.name, "manual": True})
-        return {"job": job.name, "status": "success", "manual": True}
+        self._finish(job, final_status)
+        event_type = "scheduler.job_degraded" if final_status == "degraded" else "scheduler.job_completed"
+        application.record(event_type, {"job": job.name, "status": final_status, "manual": True})
+        return {"job": job.name, "status": final_status, "manual": True}
 
     def status(self) -> list[dict[str, object]]:
         """Return durable state for the Command Center without executing jobs."""

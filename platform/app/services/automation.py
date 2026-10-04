@@ -8,6 +8,7 @@ from typing import Any
 
 from app.services.achievements import AchievementService
 from app.services.discord_notifications import DiscordNotificationService
+from app.services.events import Event, EventBus
 
 
 class Automation:
@@ -23,6 +24,28 @@ class Automation:
         self.database = application.context.database
         self.discord = DiscordNotificationService(self.settings)
         self.achievements = AchievementService()
+
+    def attach(self, bus: EventBus) -> None:
+        """Preserve the platform EventBus contract for runtime/API callers."""
+        bus.subscribe("project.snapshot", self.on_project_snapshot)
+        bus.subscribe("health.checked", self.on_health)
+        bus.subscribe("achievement.reached", self.on_achievement)
+
+    def on_project_snapshot(self, event: Event) -> None:
+        self.application.record("automation.project_snapshot", event.payload)
+
+    def on_health(self, event: Event) -> None:
+        self.application.record("automation.health", event.payload)
+
+    def on_achievement(self, event: Event) -> None:
+        self.application.record("automation.achievement", event.payload)
+
+    @staticmethod
+    def _artifact_path(configured: str) -> Path:
+        path = Path(configured)
+        if path.is_absolute():
+            return path
+        return Path(__file__).resolve().parents[2] / path
 
     def _now(self) -> str:
         return datetime.now(timezone.utc).isoformat()
@@ -251,7 +274,7 @@ class Automation:
         translation = float(current.get("translation_percent", 0) or 0)
         review = float(current.get("review_percent", 0) or 0)
 
-        intelligence_path = Path(getattr(self.settings, "discord_intelligence_path", "data/discord_intelligence.json"))
+        intelligence_path = self._artifact_path(getattr(self.settings, "discord_intelligence_path", "data/discord_intelligence.json"))
         unresolved = 0
         top_categories: list[str] = []
         if intelligence_path.exists():
@@ -288,7 +311,7 @@ class Automation:
         return result
 
     def publish_intelligence(self) -> dict[str, Any]:
-        path = Path(getattr(self.settings, "discord_intelligence_path", "data/discord_intelligence.json"))
+        path = self._artifact_path(getattr(self.settings, "discord_intelligence_path", "data/discord_intelligence.json"))
         if not path.exists():
             return {"published": False, "reason": "artifact_missing"}
         try:

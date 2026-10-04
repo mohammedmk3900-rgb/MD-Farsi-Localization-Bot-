@@ -28,7 +28,7 @@ class GlossaryService:
         terms = terms[:max_entries]
         # A nonempty published glossary must never be replaced by an empty
         # response that could represent an API/authentication regression.
-        output = Path("data/glossary.json")
+        output = Path(self.client.settings.database_path).parent / "glossary.json"
         if not terms and output.exists():
             try:
                 previous = json.loads(output.read_text(encoding="utf-8"))

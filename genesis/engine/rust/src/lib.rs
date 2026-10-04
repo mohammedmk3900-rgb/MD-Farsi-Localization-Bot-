@@ -23,33 +23,15 @@ fn extract_tokens(text: &str) -> HashSet<String> {
 
     while index < chars.len() {
         let (start, marker) = chars[index];
-        if matches!(marker, '
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn detects_missing_required_tokens() {
-        assert!(validate_required_tokens("$COUNTRY has £fuel_texticon", "$COUNTRY دارد").is_err());
-    }
-
-    #[test]
-    fn accepts_matching_placeholders() {
-        assert!(validate_placeholders("$COUNTRY $NAME", "$COUNTRY $NAME").is_ok());
-    }
-
-    #[test]
-    fn detects_changed_placeholder_set() {
-        assert!(validate_placeholders("$COUNTRY $NAME", "$COUNTRY").is_err());
-    }
-}
- | '£' | '§') {
+        if matches!(marker, '$' | '£' | '§') {
             let mut end = index + 1;
             while end < chars.len()
                 && (chars[end].1.is_ascii_alphanumeric() || matches!(chars[end].1, '_' | '!'))
             {
                 end += 1;
             }
+
             if end > index + 1 {
                 let end_byte = if end < chars.len() { chars[end].0 } else { text.len() };
                 tokens.insert(text[start..end_byte].to_string());
@@ -57,9 +39,14 @@ mod tests {
             index = end;
         } else if marker == '[' {
             let mut end = index + 1;
-            while end < chars.len() && chars[end].1 != ']' && chars[end].1 != '\\n' && chars[end].1 != '\\r' {
+            while end < chars.len()
+                && chars[end].1 != ']'
+                && chars[end].1 != '\n'
+                && chars[end].1 != '\r'
+            {
                 end += 1;
             }
+
             if end < chars.len() && chars[end].1 == ']' {
                 let end_byte = chars[end].0 + chars[end].1.len_utf8();
                 tokens.insert(text[start..end_byte].to_string());
@@ -71,9 +58,9 @@ mod tests {
             index += 1;
         }
     }
+
     tokens
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -85,12 +72,29 @@ mod tests {
     }
 
     #[test]
-    fn accepts_matching_placeholders() {
-        assert!(validate_placeholders("$COUNTRY $NAME", "$COUNTRY $NAME").is_ok());
+    fn accepts_matching_placeholders_and_control_tokens() {
+        assert!(
+            validate_placeholders(
+                "$COUNTRY £fuel_texticon §Y[scope_tag]",
+                "$COUNTRY £fuel_texticon §Y[scope_tag]"
+            )
+            .is_ok()
+        );
     }
 
     #[test]
     fn detects_changed_placeholder_set() {
         assert!(validate_placeholders("$COUNTRY $NAME", "$COUNTRY").is_err());
+    }
+
+    #[test]
+    fn detects_changed_control_or_scope_tokens() {
+        assert!(
+            validate_placeholders(
+                "$COUNTRY §Y[scope_tag]",
+                "$COUNTRY §![scope_tag]"
+            )
+            .is_err()
+        );
     }
 }

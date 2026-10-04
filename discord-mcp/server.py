@@ -79,7 +79,17 @@ def validate_snowflake(value: str, field: str) -> str:
         raise ValueError(f"{field} must be a Discord snowflake")
     return value
 
-mcp = MCPServer("Millennium Dawn Farsi Localization Discord")
+mcp = MCPServer(
+    "Millennium Dawn Farsi Localization Discord",
+    auth=DawnNexusOAuthProvider(
+        DB_PATH,
+        os.getenv("MCP_PUBLIC_URL", "https://dawnnexus.onrender.com"),
+    ).auth_settings(),
+    auth_server_provider=DawnNexusOAuthProvider(
+        DB_PATH,
+        os.getenv("MCP_PUBLIC_URL", "https://dawnnexus.onrender.com"),
+    ),
+)
 index = MessageIndex(DB_PATH)
 news_engine = DiscordNewsEngine(DB_PATH)
 intelligence_engine = DiscordIntelligence(DB_PATH)
@@ -706,16 +716,14 @@ transport_security = TransportSecuritySettings(
     allowed_origins=[],
 )
 
-_mcp_http_app = mcp.streamable_http_app(
-    transport_security=transport_security,
-    host=HOST,
-)
 
-# Authentication is deliberately outside the MCP protocol so unauthenticated
-# traffic is rejected before JSON-RPC/session handling.
 def build_app() -> ASGIApp:
-    """Build the authenticated MCP ASGI application lazily at runtime."""
-    return BearerAuthMiddleware(_mcp_http_app, require_auth_token())
+    """Build the OAuth-protected MCP ASGI application."""
+    return mcp.streamable_http_app(
+        transport_security=transport_security,
+        host=HOST,
+        custom_starlette_routes=build_login_routes(oauth_provider),
+    )
 
 
 if __name__ == "__main__":

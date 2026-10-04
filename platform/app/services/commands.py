@@ -88,12 +88,25 @@ class CommandService:
         return TaskService(application.context.database).complete(task_id, reviewer)
 
     def check_translation(self, source: str, translation: str, glossary: list[dict] | None = None) -> dict:
+        glossary_error: str | None = None
         if glossary is None:
             try:
                 glossary = GlossaryService(application.context.settings).sync_all(max_entries=5000)
-            except Exception:
+            except Exception as exc:
+                # A glossary outage must never look like a clean translation check.
                 glossary = []
-        return TranslationAssistant().check(source, translation, glossary)
+                glossary_error = type(exc).__name__
+
+        result = TranslationAssistant().check(source, translation, glossary)
+        result["glossary_status"] = "available" if glossary_error is None else "unavailable"
+        if glossary_error is not None:
+            result["approved"] = False
+            result["findings"].insert(0, {
+                "kind": "glossary_unavailable",
+                "message": "واژه‌نامه رسمی در دسترس نبود؛ این بررسی نباید تأییدشده تلقی شود.",
+                "error_type": glossary_error,
+            })
+        return result
 
     def command_center(self) -> dict:
         return {

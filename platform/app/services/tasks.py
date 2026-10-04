@@ -40,16 +40,11 @@ class TaskService:
         return self.database.list_tasks(status=status, owner=owner)
 
     def claim(self, task_id: int, owner: str) -> dict[str, Any]:
-        if not owner.strip():
-            raise ValueError("owner is required")
-        task = self.database.get_task(task_id)
-        if not task:
-            raise KeyError("task not found")
-        if task["status"] not in {"available", "in_progress"}:
-            raise ValueError("task cannot be claimed")
-        if task["owner"] not in {None, "", owner}:
-            raise ValueError("task is owned by another member")
-        return self.database.update_task(task_id, status="in_progress", owner=owner)
+        return self.database.claim_task(
+            task_id,
+            owner,
+            datetime.now(timezone.utc).isoformat(),
+        )
 
     def submit(self, task_id: int, owner: str) -> dict[str, Any]:
         task = self.database.get_task(task_id)
@@ -60,6 +55,8 @@ class TaskService:
         return self.database.update_task(task_id, status="review")
 
     def complete(self, task_id: int, reviewer: str) -> dict[str, Any]:
+        if not reviewer.strip():
+            raise ValueError("reviewer is required")
         task = self.database.get_task(task_id)
         if not task:
             raise KeyError("task not found")

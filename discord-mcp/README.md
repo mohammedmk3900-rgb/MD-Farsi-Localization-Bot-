@@ -23,6 +23,8 @@ This service provides a permission-respecting read model of the configured Disco
 - `read_channel`
 - `get_channel_statistics`
 - `get_author_statistics`
+- `deep_scan_server`, `get_message`, `search_messages`
+- `read_thread`, `read_replies`, `read_channel_page`, `get_index_cursors`
 
 The bot never bypasses Discord permissions. Private channels unavailable to the bot are not indexed. The full audit is read-only and uses only endpoints the bot can access; unavailable optional resources are reported as empty rather than fabricated. Deleted messages are represented as local tombstones and their content is removed from the index.
 

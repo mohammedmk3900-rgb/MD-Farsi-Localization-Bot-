@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 from typing import Any
 
 import httpx
@@ -23,6 +24,13 @@ API = "https://discord.com/api/v10"
 
 if not TOKEN or not GUILD_ID:
     raise RuntimeError("DISCORD_BOT_TOKEN and DISCORD_GUILD_ID are required")
+
+
+def validate_snowflake(value: str, field: str) -> str:
+    value = str(value).strip()
+    if not re.fullmatch(r"\d{1,25}", value):
+        raise ValueError(f"{field} must be a Discord snowflake")
+    return value
 
 mcp = MCPServer("Millennium Dawn Farsi Localization Discord")
 index = MessageIndex(DB_PATH)
@@ -175,27 +183,31 @@ async def fetch_page(
     before: str | None = None,
     after: str | None = None,
     limit: int = 100,
+    channel: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
+    channel_id = validate_snowflake(channel_id, "channel_id")
     params: dict[str, Any] = {"limit": max(1, min(limit, 100))}
     if before:
-        params["before"] = before
+        params["before"] = validate_snowflake(before, "before")
     if after:
-        params["after"] = after
-    channel = {"id": channel_id}
+        params["after"] = validate_snowflake(after, "after")
+    channel_data = channel or {"id": channel_id}
     return [
-        normalize_message(message, channel)
+        normalize_message(message, channel_data)
         for message in await discord_get(f"/channels/{channel_id}/messages", params=params)
     ]
 
 
 @mcp.tool()
 async def read_replies(message_id: str, limit: int = 100) -> list[dict[str, Any]]:
+    message_id = validate_snowflake(message_id, "message_id")
     """Return indexed messages that explicitly reference a message."""
     return index.read_replies(message_id, limit)
 
 
 @mcp.tool()
 async def read_thread(thread_id: str, limit: int = 200) -> list[dict[str, Any]]:
+    thread_id = validate_snowflake(thread_id, "thread_id")
     """Return indexed messages belonging to one Discord thread."""
     return index.read_thread(thread_id, limit)
 
@@ -240,15 +252,24 @@ async def sync_channel_history(
 
     channel = channel_map[channel_id]
     cursor = index.get_cursor(channel_id)
-    known_newest = str(cursor["newest_message_id"]) if cursor and cursor.get("newest_message_id") else None
-    before: str | None = None
+    cursor_complete = bool(cursor and cursor.get("complete"))
+    known_newest = (
+        str(cursor["newest_message_id"])
+        if cursor_complete and cursor and cursor.get("newest_message_id")
+        else None
+    )
+    before: str | None = (
+        str(cursor["oldest_message_id"])
+        if incremental and cursor and not cursor_complete and cursor.get("oldest_message_id")
+        else None
+    )
     pages = 0
     processed = 0
     complete = False
     reached_cursor = False
 
     while True:
-        page = await fetch_page(channel_id, before)
+        page = await fetch_page(channel_id, before=before, channel=channel)
         if not page:
             complete = True
             break
@@ -265,8 +286,17 @@ async def sync_channel_history(
             complete = len(page) < 100
             break
 
-    newest_message_id = page[0]["id"] if pages and page else None
-    index.set_cursor(channel_id, newest_message_id=newest_message_id, oldest_message_id=before, complete=complete)
+    newest_message_id = (
+        str(cursor["newest_message_id"])
+        if cursor and cursor.get("newest_message_id")
+        else page[0]["id"] if pages and page else None
+    )
+    index.set_cursor(
+        channel_id,
+        newest_message_id=newest_message_id,
+        oldest_message_id=before,
+        complete=complete,
+    )
     return {
         "channel_id": channel_id,
         "channel_name": channel.get("name"),
@@ -364,7 +394,11 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
     )
     invites = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/invites", "items")
     webhooks = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/webhooks", "items")
-    stage_instances = await get_optional_guild_resource(f"/stage-instances", "items")
+    stage_instances = [
+        item
+        for item in await get_optional_guild_resource(f"/stage-instances", "items")
+        if str(item.get("guild_id") or GUILD_ID) == GUILD_ID
+    ]
     audit_log = await get_optional_guild_resource(
         f"/guilds/{GUILD_ID}/audit-logs", "audit_log_entries"
     )
@@ -558,7 +592,7 @@ async def read_channel(channel_id: str, limit: int = 50) -> list[dict[str, Any]]
 @mcp.tool()
 async def get_message(message_id: str) -> dict[str, Any] | None:
     """Return one indexed message by Discord message ID."""
-    return index.get_message(message_id)
+    return index.get_message(validate_snowflake(message_id, "message_id"))
 
 @mcp.tool()
 async def search_messages(
@@ -585,10 +619,22 @@ async def read_channel_page(
     limit: int = 100,
 ) -> list[dict[str, Any]]:
     """Read a live Discord channel page using Discord pagination cursors."""
-    visible = {str(c["id"]) for c in await get_message_channels()}
-    if channel_id not in visible:
+    channel_id = validate_snowflake(channel_id, "channel_id")
+    visible_channels = await get_message_channels()
+    channel_map = {str(c["id"]): c for c in visible_channels}
+    if channel_id not in channel_map:
         return []
-    return await fetch_page(channel_id, before=before, after=after, limit=limit)
+    if before:
+        validate_snowflake(before, "before")
+    if after:
+        validate_snowflake(after, "after")
+    return await fetch_page(
+        channel_id,
+        before=before,
+        after=after,
+        limit=limit,
+        channel=channel_map[channel_id],
+    )
 
 
 if __name__ == "__main__":

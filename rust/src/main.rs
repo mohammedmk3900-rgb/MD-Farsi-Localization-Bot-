@@ -20,10 +20,11 @@ fn main() {
     io::stdin().read_to_string(&mut raw).expect("stdin");
     let input: Input = serde_json::from_str(&raw).expect("input JSON");
 
-    let dollar = Regex::new(r"\$[^$\n]+\$").unwrap();
+    let dollar = Regex::new(r"\$[A-Za-z0-9_]+").unwrap();
     let icon = Regex::new(r"£[A-Za-z0-9_]+").unwrap();
     // HOI4 color/control codes such as §Y and §!.
-    let control = Regex::new(r"§[A-Za-z0-9!]").unwrap();
+    let control = Regex::new(r"§[A-Za-z0-9!]+").unwrap();
+    let scope = Regex::new(r"\[[^\]\\n]+\]").unwrap();
 
     let source_dollar = captures(&input.source, &dollar);
     let target_dollar = captures(&input.target, &dollar);
@@ -31,11 +32,14 @@ fn main() {
     let target_icon = captures(&input.target, &icon);
     let source_control = captures(&input.source, &control);
     let target_control = captures(&input.target, &control);
+    let source_scope = captures(&input.source, &scope);
+    let target_scope = captures(&input.target, &scope);
 
     let checks = vec![
         Check { name: "dollar_tokens", passed: source_dollar == target_dollar, detail: format!("source={} target={}", source_dollar.len(), target_dollar.len()) },
         Check { name: "icon_tokens", passed: source_icon == target_icon, detail: format!("source={} target={}", source_icon.len(), target_icon.len()) },
         Check { name: "control_codes", passed: source_control == target_control, detail: format!("source={} target={}", source_control.len(), target_control.len()) },
+        Check { name: "scopes", passed: source_scope == target_scope, detail: format!("source={} target={}", source_scope.len(), target_scope.len()) },
     ];
 
     let valid = checks.iter().all(|c| c.passed);

@@ -328,10 +328,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Runtime SQLite belongs in artifacts, not in Git history. Restore any
-          # tracked DB to HEAD before rebasing so it can never reintroduce the
-          # binary merge-conflict class this workflow is designed to avoid.
-          git restore --worktree -- data/platform.db 2>/dev/null || true
+          # Runtime SQLite belongs in workflow artifacts, not Git history.
 
           find data -maxdepth 1 -type f -name '*.json' ! -name 'discord_news.json' -print0 | xargs -0 -r git add --
 

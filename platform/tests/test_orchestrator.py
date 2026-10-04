@@ -8,6 +8,7 @@ from app.orchestrator import execute
 def test_full_run_calls_each_operation(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     with (
+        patch("app.orchestrator.application.context.settings.database_path", str(tmp_path / "data" / "platform.db")),
         patch("app.orchestrator.jobs.sync", return_value={"project": {"strings_total": 10}}) as sync,
         patch("app.orchestrator.jobs.glossary_sync", return_value={"count": 1}) as glossary,
         patch("app.orchestrator.jobs.audit", return_value={"channels": 1}) as audit,
@@ -39,6 +40,7 @@ def test_full_run_calls_each_operation(tmp_path, monkeypatch):
 def test_invalid_project_blocks_reports_but_other_jobs_continue(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     with (
+        patch("app.orchestrator.application.context.settings.database_path", str(tmp_path / "data" / "platform.db")),
         patch("app.orchestrator.jobs.sync", side_effect=ValueError("invalid API response")),
         patch("app.orchestrator.jobs.glossary_sync", return_value={"count": 1}),
         patch("app.orchestrator.jobs.audit", return_value={"channels": 1}),
@@ -64,6 +66,7 @@ def test_invalid_project_blocks_reports_but_other_jobs_continue(tmp_path, monkey
 def test_public_run_summary_excludes_discord_identifiers(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     with (
+        patch("app.orchestrator.application.context.settings.database_path", str(tmp_path / "data" / "platform.db")),
         patch("app.orchestrator.jobs.sync", return_value={"project": {"project_id": 19621}}),
         patch("app.orchestrator.jobs.glossary_sync", return_value={"count": 1}),
         patch(

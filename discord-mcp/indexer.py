@@ -47,6 +47,7 @@ class MessageIndex:
             db.execute("CREATE INDEX IF NOT EXISTS idx_messages_content ON messages(content)")
             db.execute("CREATE INDEX IF NOT EXISTS idx_messages_reference ON messages(reference_message_id)")
             db.execute("CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(thread_id)")
+            db.execute("CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp)")
             db.execute("""CREATE TABLE IF NOT EXISTS channel_cursors (
                 channel_id TEXT PRIMARY KEY, newest_message_id TEXT,
                 oldest_message_id TEXT, complete INTEGER NOT NULL DEFAULT 0,

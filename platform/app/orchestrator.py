@@ -10,6 +10,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from app.application import application
+
 from app.services import jobs
 from app.config import PLATFORM_DIR
 

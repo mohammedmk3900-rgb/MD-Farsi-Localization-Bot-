@@ -99,3 +99,37 @@ def test_health_notification_failure_does_not_break_health_result():
         and payload["operation"] == "health"
         for event_type, payload in events
     )
+
+def test_report_generation_survives_discord_delivery_failure():
+    events = []
+    database = SimpleNamespace(
+        recent_snapshots=lambda limit: [{
+            "payload": {
+                "project": {
+                    "translation_percent": 12.0,
+                    "review_percent": 3.0,
+                    "translated": 12,
+                    "strings_total": 100,
+                }
+            }
+        }]
+    )
+    settings = SimpleNamespace(channel_reports="reports")
+    application = SimpleNamespace(
+        context=SimpleNamespace(settings=settings, database=database)
+    )
+    application.record = lambda event_type, payload: events.append((event_type, payload))
+
+    with (
+        patch.object(jobs, "application", application),
+        patch.object(jobs.DiscordNotificationService, "embed", side_effect=RuntimeError("discord unavailable")),
+    ):
+        result = jobs.report("daily")
+
+    assert result["period"] == "daily"
+    assert ("report.generated", result) in events
+    assert any(
+        event_type == "automation.delivery_failed"
+        and payload["operation"] == "report.daily"
+        for event_type, payload in events
+    )

@@ -239,6 +239,7 @@ def build_scheduler(poll_seconds: int | None = None, lease_seconds: int | None =
     scheduler.register("sync", 6 * 60 * 60, jobs.sync, "Project/ParaTranz synchronization")
     scheduler.register("glossary", 6 * 60 * 60, jobs.glossary_sync, "Glossary synchronization and publication")
     scheduler.register("discord_audit", 12 * 60 * 60, jobs.audit, "Discord structure audit")
+    scheduler.register("polyglot_health", 12 * 60 * 60, jobs.polyglot_health, "Polyglot runtime health")
     scheduler.register("health", 30 * 60, jobs.health, "Platform health check")
     scheduler.register("manager", 60 * 60, jobs.manager, "Manager read model")
     scheduler.register("daily_report", 24 * 60 * 60, lambda: jobs.report("daily"), "Daily report")

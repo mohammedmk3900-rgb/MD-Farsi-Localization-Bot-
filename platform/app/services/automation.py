@@ -135,6 +135,11 @@ class Automation:
         # catches up milestones when the first observed snapshot is already
         # at or above a threshold.
         for achievement in self.achievements.crossed(0, current_percent):
+            # Include a milestone reached exactly by the previous snapshot so
+            # an unrecorded milestone can be caught up, but do not replay
+            # older milestones that predate the observed transition.
+            if achievement["percent"] < previous_percent:
+                continue
             key = f"publish.achievement.{achievement['percent']}"
             if self.database.get_automation_state(key) or not getattr(self.settings, "channel_achievements", ""):
                 continue

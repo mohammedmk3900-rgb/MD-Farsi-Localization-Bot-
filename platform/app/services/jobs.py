@@ -24,8 +24,8 @@ def build_discord_intelligence() -> dict:
     depends on a manually generated GitHub Actions artifact.
     """
     settings = application.context.settings
-    db_path = Path(settings.discord_database_path)
-    output = Path(settings.discord_intelligence_path)
+    db_path = Path(getattr(settings, "discord_database_path", PLATFORM_DIR.parent / "discord-mcp" / "discord.db"))
+    output = Path(getattr(settings, "discord_intelligence_path", PLATFORM_DIR / "data" / "discord_intelligence.json"))
     if not db_path.exists():
         application.record("discord.intelligence_unavailable", {
             "reason": "database_missing",
@@ -109,6 +109,7 @@ def report(period: str = "daily") -> dict:
                 "operation": f"report.{period}",
                 "error_type": type(exc).__name__,
             })
+            payload["_scheduler_status"] = "failed"
     application.record("report.generated", payload)
     return payload
 

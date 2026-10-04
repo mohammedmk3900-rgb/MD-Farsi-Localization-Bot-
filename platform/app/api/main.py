@@ -117,7 +117,7 @@ def architecture() -> dict:
 @app.get("/api/v1/operations/metrics")
 def operation_metrics() -> dict:
     """Return safe aggregate counters for dashboards and uptime checks."""
-    path = Path("data/last_run.json")
+    path = Path(application.context.settings.database_path).parent / "last_run.json"
     if not path.is_file():
         return {"status": "unknown", "jobs": {}}
     try:

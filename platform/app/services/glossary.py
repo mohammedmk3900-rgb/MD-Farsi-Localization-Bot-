@@ -8,6 +8,7 @@ from app.integrations.paratranz_terms import ParaTranzTerms
 
 class GlossaryService:
     def __init__(self, settings):
+        self.settings = settings
         self.client = ParaTranzTerms(settings.paratranz_project_id, settings.paratranz_token)
 
     def page(self, page: int = 1, page_size: int = 100) -> list[dict]:
@@ -28,7 +29,7 @@ class GlossaryService:
         terms = terms[:max_entries]
         # A nonempty published glossary must never be replaced by an empty
         # response that could represent an API/authentication regression.
-        output = Path(self.client.settings.database_path).parent / "glossary.json"
+        output = Path(self.settings.database_path).parent / "glossary.json"
         if not terms and output.exists():
             try:
                 previous = json.loads(output.read_text(encoding="utf-8"))

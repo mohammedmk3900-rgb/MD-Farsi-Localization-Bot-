@@ -17,25 +17,63 @@ pub fn validate_placeholders(source: &str, target: &str) -> Result<(), String> {
 }
 
 fn extract_tokens(text: &str) -> HashSet<String> {
+    let chars: Vec<(usize, char)> = text.char_indices().collect();
     let mut tokens = HashSet::new();
-    let bytes = text.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'$' {
-            let start = i;
-            i += 1;
-            while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_') {
-                i += 1;
+    let mut index = 0;
+
+    while index < chars.len() {
+        let (start, marker) = chars[index];
+        if matches!(marker, '
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn detects_missing_required_tokens() {
+        assert!(validate_required_tokens("$COUNTRY has £fuel_texticon", "$COUNTRY دارد").is_err());
+    }
+
+    #[test]
+    fn accepts_matching_placeholders() {
+        assert!(validate_placeholders("$COUNTRY $NAME", "$COUNTRY $NAME").is_ok());
+    }
+
+    #[test]
+    fn detects_changed_placeholder_set() {
+        assert!(validate_placeholders("$COUNTRY $NAME", "$COUNTRY").is_err());
+    }
+}
+ | '£' | '§') {
+            let mut end = index + 1;
+            while end < chars.len()
+                && (chars[end].1.is_ascii_alphanumeric() || matches!(chars[end].1, '_' | '!'))
+            {
+                end += 1;
             }
-            if i > start + 1 {
-                tokens.insert(text[start..i].to_string());
+            if end > index + 1 {
+                let end_byte = if end < chars.len() { chars[end].0 } else { text.len() };
+                tokens.insert(text[start..end_byte].to_string());
+            }
+            index = end;
+        } else if marker == '[' {
+            let mut end = index + 1;
+            while end < chars.len() && chars[end].1 != ']' && chars[end].1 != '\\n' && chars[end].1 != '\\r' {
+                end += 1;
+            }
+            if end < chars.len() && chars[end].1 == ']' {
+                let end_byte = chars[end].0 + chars[end].1.len_utf8();
+                tokens.insert(text[start..end_byte].to_string());
+                index = end + 1;
+            } else {
+                index += 1;
             }
         } else {
-            i += 1;
+            index += 1;
         }
     }
     tokens
 }
+
 
 #[cfg(test)]
 mod tests {

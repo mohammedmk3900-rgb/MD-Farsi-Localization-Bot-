@@ -21,7 +21,31 @@ class ProjectManagerService:
 
     def build(self) -> dict[str, Any]:
         rows = self.database.recent_snapshots(8)
-        current = self._project(rows[0] if rows else None)
+        if not rows:
+            return {
+                "schema_version": 1,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "project_id": None,
+                "status": "no_data",
+                "progress": {
+                    "translation_percent": 0.0,
+                    "review_percent": 0.0,
+                    "translated": 0,
+                    "reviewed": 0,
+                    "strings_total": 0,
+                    "review_gap": 0,
+                    "next_milestone_percent": 1,
+                },
+                "delta": {"translated": 0, "reviewed": 0},
+                "velocity": {
+                    "average_translation_per_snapshot": 0.0,
+                    "average_review_per_snapshot": 0.0,
+                    "samples": 0,
+                },
+                "attention": ["هنوز هیچ snapshot معتبری از پروژه ثبت نشده است."],
+            }
+
+        current = self._project(rows[0])
         previous = self._project(rows[1] if len(rows) > 1 else None)
 
         translated = int(current.get("translated", 0) or 0)
@@ -59,8 +83,14 @@ class ProjectManagerService:
             attention.append("در آخرین snapshot پیشرفت بازبینی ثبت نشده است.")
         if strings and translated > strings:
             attention.append("داده پروژه ناسازگار است: translated از strings_total بیشتر است.")
+        if reviewed > translated:
+            attention.append("داده پروژه ناسازگار است: reviewed از translated بیشتر است.")
+        if not 0 <= translation_pct <= 100:
+            attention.append("داده پروژه ناسازگار است: درصد ترجمه خارج از بازه ۰ تا ۱۰۰ است.")
+        if not 0 <= review_pct <= 100:
+            attention.append("داده پروژه ناسازگار است: درصد بازبینی خارج از بازه ۰ تا ۱۰۰ است.")
 
-        next_milestone = next((level for level in (1, 10, 25, 50, 75, 100) if translation_pct < level), 100)
+        next_milestone = next((level for level in (1, 10, 25, 50, 75, 100) if translation_pct < level), None)
 
         return {
             "schema_version": 1,

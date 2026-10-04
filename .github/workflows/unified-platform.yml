@@ -11,9 +11,6 @@ on:
         type: choice
         options: [all, daily, weekly, validate]
         default: all
-  schedule:
-    - cron: "0 */6 * * *"
-
 permissions:
   contents: read
 
@@ -128,8 +125,7 @@ jobs:
     needs: validate
     if: >-
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'schedule' ||
-       (github.event_name == 'workflow_dispatch' && inputs.mode != 'validate'))
+      (github.event_name == 'workflow_dispatch' && inputs.mode != 'validate')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -285,12 +281,6 @@ jobs:
               ;;
           esac
 
-          if [[ "$EVENT_NAME" == "schedule" && "$(date -u +%H)" == "18" ]]; then
-            daily=true
-            if [[ "$(date -u +%u)" == "1" ]]; then
-              weekly=true
-            fi
-          fi
 
           echo "daily=$daily" >> "$GITHUB_OUTPUT"
           echo "weekly=$weekly" >> "$GITHUB_OUTPUT"

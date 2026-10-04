@@ -287,8 +287,9 @@ async def sync_channel_history(
             break
 
     newest_message_id = (
-        page[0]["id"] if pages and page and not cursor_complete else
-        str(cursor["newest_message_id"]) if cursor and cursor.get("newest_message_id") else None
+        str(cursor["newest_message_id"])
+        if cursor and cursor.get("newest_message_id")
+        else page[0]["id"] if pages and page else None
     )
     index.set_cursor(
         channel_id,

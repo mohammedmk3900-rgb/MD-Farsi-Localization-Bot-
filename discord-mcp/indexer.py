@@ -44,6 +44,7 @@ class MessageIndex:
                 if column not in columns:
                     db.execute(statement)
             db.execute("CREATE INDEX IF NOT EXISTS idx_messages_channel_timestamp ON messages(channel_id,timestamp)")
+            db.execute("CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp)")
             db.execute("CREATE INDEX IF NOT EXISTS idx_messages_content ON messages(content)")
             db.execute("CREATE INDEX IF NOT EXISTS idx_messages_reference ON messages(reference_message_id)")
             db.execute("CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(thread_id)")

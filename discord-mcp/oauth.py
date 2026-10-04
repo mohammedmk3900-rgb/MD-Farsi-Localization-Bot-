@@ -10,6 +10,7 @@ The login page is HTTPS-only in production and the password is never stored.
 from __future__ import annotations
 
 import html
+import json
 import os
 import secrets
 import sqlite3
@@ -25,7 +26,7 @@ from mcp.server.auth.provider import (
     AuthorizationParams,
     OAuthAuthorizationServerProvider,
     RefreshToken,
-    construct_redirect_uri,
+    TokenError,
 )
 from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
 from mcp.shared.auth import OAuthClientInformationFull, OAuthToken
@@ -110,7 +111,7 @@ class DawnNexusOAuthProvider(
 
     async def register_client(self, client_info: OAuthClientInformationFull) -> None:
         if not client_info.client_id:
-            raise ValueError("client_id is required")
+            raise TokenError(error="invalid_client", error_description="client_id is required")
         with self._connect() as conn:
             conn.execute(
                 """
@@ -143,10 +144,14 @@ class DawnNexusOAuthProvider(
             resource=params.resource or self.resource_url,
         )
         request_id = secrets.token_urlsafe(32)
+        pending_payload = json.dumps(
+            {"code": json.loads(code.model_dump_json()), "state": params.state},
+            separators=(",", ":"),
+        )
         with self._connect() as conn:
             conn.execute(
                 "INSERT INTO oauth_pending(request_id, payload, expires_at) VALUES(?, ?, ?)",
-                (request_id, code.model_dump_json(), code.expires_at),
+                (request_id, pending_payload, code.expires_at),
             )
             conn.execute("DELETE FROM oauth_pending WHERE expires_at < ?", (time.time(),))
         return f"{self.public_url}/oauth/login?request_id={request_id}"
@@ -154,22 +159,20 @@ class DawnNexusOAuthProvider(
     async def approve(self, request_id: str) -> str | None:
         with self._connect() as conn:
             row = conn.execute(
-                "SELECT payload FROM oauth_pending WHERE request_id = ? AND expires_at >= ?",
+                "SELECT payload, expires_at FROM oauth_pending WHERE request_id = ? AND expires_at >= ?",
                 (request_id, time.time()),
             ).fetchone()
             if not row:
                 return None
-            code = AuthorizationCode.model_validate_json(row["payload"])
+            pending = json.loads(row["payload"])
+            code = AuthorizationCode.model_validate(pending["code"])
+            state = pending.get("state")
             conn.execute("DELETE FROM oauth_pending WHERE request_id = ?", (request_id,))
             conn.execute(
                 "INSERT INTO oauth_codes(code, payload, expires_at) VALUES(?, ?, ?)",
                 (code.code, code.model_dump_json(), code.expires_at),
             )
-        return _append_query(
-            str(code.redirect_uri),
-            code=code.code,
-            state=None,
-        )
+        return _append_query(str(code.redirect_uri), code=code.code, state=state)
 
     async def load_authorization_code(
         self, client: OAuthClientInformationFull, authorization_code: str
@@ -186,7 +189,9 @@ class DawnNexusOAuthProvider(
             return None
         return code
 
-    def _mint_access(self, code: AuthorizationCode | RefreshToken) -> tuple[AccessToken, RefreshToken]:
+    def _mint_access(
+        self, code: AuthorizationCode | RefreshToken
+    ) -> tuple[AccessToken, RefreshToken]:
         access_value = f"dn_access_{secrets.token_urlsafe(32)}"
         refresh_value = f"dn_refresh_{secrets.token_urlsafe(32)}"
         access_exp = _now() + 3600
@@ -260,8 +265,9 @@ class DawnNexusOAuthProvider(
     async def exchange_refresh_token(
         self, client: OAuthClientInformationFull, refresh_token: RefreshToken, scopes: list[str]
     ) -> OAuthToken:
-        if any(scope != "discord:read" for scope in scopes):
-            raise ValueError("Unsupported scope")
+        requested = scopes or ["discord:read"]
+        if any(scope != "discord:read" for scope in requested):
+            raise TokenError(error="invalid_scope", error_description="Unsupported scope")
         with self._connect() as conn:
             conn.execute(
                 "DELETE FROM oauth_refresh_tokens WHERE token = ?", (refresh_token.token,)
@@ -317,7 +323,8 @@ def build_login_routes(provider: DawnNexusOAuthProvider) -> list[Route]:
             ).fetchone()
         if not row or row["expires_at"] < time.time():
             return HTMLResponse("Authorization request expired.", status_code=400)
-        code = AuthorizationCode.model_validate_json(row["payload"])
+        pending = json.loads(row["payload"])
+        code = AuthorizationCode.model_validate(pending["code"])
         client = await provider.get_client(code.client_id)
         client_name = html.escape(
             str((client.client_name if client else None) or code.client_id)
@@ -349,11 +356,22 @@ Farsi Localization Discord data.</p>
         if not secrets.compare_digest(username, provider.username) or not secrets.compare_digest(
             password, provider.password
         ):
-            return HTMLResponse("Invalid credentials.", status_code=401, headers={"cache-control": "no-store"})
+            return HTMLResponse(
+                "Invalid credentials.",
+                status_code=401,
+                headers={"cache-control": "no-store"},
+            )
         redirect = await provider.approve(request_id)
         if not redirect:
-            return HTMLResponse("Authorization request expired or invalid.", status_code=400)
-        return RedirectResponse(redirect, status_code=303, headers={"cache-control": "no-store"})
+            return HTMLResponse(
+                "Authorization request expired or invalid.",
+                status_code=400,
+            )
+        return RedirectResponse(
+            redirect,
+            status_code=303,
+            headers={"cache-control": "no-store"},
+        )
 
     return [
         Route("/oauth/login", login_page, methods=["GET"]),

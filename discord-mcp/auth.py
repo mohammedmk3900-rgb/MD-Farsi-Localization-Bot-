@@ -76,7 +76,7 @@ def _jwks_client() -> PyJWKClient:
 
 def _validate_oauth_token(token: str) -> dict[str, Any]:
     signing_key = _jwks_client().get_signing_key_from_jwt(token)
-    return jwt.decode(
+    claims = jwt.decode(
         token,
         signing_key.key,
         algorithms=["RS256"],
@@ -84,6 +84,18 @@ def _validate_oauth_token(token: str) -> dict[str, Any]:
         issuer=_issuer(),
         options={"require": ["exp", "iat", "iss", "aud"]},
     )
+
+    required = set(_scopes())
+    if required:
+        granted = set(str(claims.get("scope", "")).split())
+        granted.update(str(item) for item in claims.get("permissions", []) or [])
+        missing = required - granted
+        if missing:
+            raise InvalidTokenError(
+                f"missing required scopes: {', '.join(sorted(missing))}"
+            )
+
+    return claims
 
 
 class BearerAuthMiddleware:

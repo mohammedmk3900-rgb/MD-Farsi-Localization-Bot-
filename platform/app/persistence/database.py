@@ -131,6 +131,34 @@ class Database:
         with self.connect() as db:
             return [dict(row) for row in db.execute(query, values).fetchall()]
 
+    def claim_task(self, task_id: int, owner: str, updated_at: str) -> dict[str, Any]:
+        """Atomically claim an available/in-progress task for one owner."""
+        owner = owner.strip()
+        if not owner:
+            raise ValueError("owner is required")
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT status, owner FROM tasks WHERE id = ?",
+                (task_id,),
+            ).fetchone()
+            if row is None:
+                raise KeyError("task not found")
+            if row["status"] not in {"available", "in_progress"}:
+                raise ValueError("task cannot be claimed")
+            if row["owner"] not in {None, "", owner}:
+                raise ValueError("task is owned by another member")
+            cursor = db.execute(
+                """UPDATE tasks
+                   SET owner = ?, status = 'in_progress', updated_at = ?
+                   WHERE id = ?
+                     AND status IN ('available', 'in_progress')
+                     AND (owner IS NULL OR owner = '' OR owner = ?)""",
+                (owner, updated_at, task_id, owner),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("task claim conflict")
+        return self.get_task(task_id) or {}
+
     def update_task(self, task_id: int, **changes: Any) -> dict[str, Any]:
         allowed = {"owner", "reviewer", "priority", "status", "due_at"}
         changes = {key: value for key, value in changes.items() if key in allowed}

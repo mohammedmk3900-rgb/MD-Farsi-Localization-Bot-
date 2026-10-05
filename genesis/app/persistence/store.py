@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 class Store:
@@ -35,7 +35,7 @@ class Store:
             CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, scope TEXT NOT NULL DEFAULT '', owner TEXT, reviewer TEXT, priority TEXT NOT NULL, status TEXT NOT NULL, due_at TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
             CREATE INDEX IF NOT EXISTS idx_tasks_owner ON tasks(owner);
-            CREATE TABLE IF NOT EXISTS reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, translation_key TEXT NOT NULL, actor TEXT NOT NULL, reviewer TEXT, decision TEXT, reason TEXT, status TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, translation_key TEXT NOT NULL, actor TEXT NOT NULL, reviewer TEXT, decision TEXT, reason TEXT, status TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, source TEXT NOT NULL DEFAULT '', translation TEXT NOT NULL DEFAULT '', findings TEXT NOT NULL DEFAULT '[]');
             CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status);
             CREATE TABLE IF NOT EXISTS glossary_snapshots (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, captured_at TEXT NOT NULL, term_count INTEGER NOT NULL, payload TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS idx_glossary_snapshots_project ON glossary_snapshots(project_id, captured_at);
@@ -45,6 +45,14 @@ class Store:
             CREATE TABLE IF NOT EXISTS scheduler_jobs (job_id TEXT PRIMARY KEY, status TEXT NOT NULL, next_run_at TEXT, last_run_at TEXT, lease_until TEXT, run_count INTEGER NOT NULL DEFAULT 0, failure_count INTEGER NOT NULL DEFAULT 0, last_error TEXT);
             CREATE TABLE IF NOT EXISTS health_checks (check_name TEXT PRIMARY KEY, status TEXT NOT NULL, checked_at TEXT NOT NULL, detail TEXT NOT NULL DEFAULT '');
             """)
+            for column, definition in (
+                ("source", "TEXT NOT NULL DEFAULT ''"),
+                ("translation", "TEXT NOT NULL DEFAULT ''"),
+                ("findings", "TEXT NOT NULL DEFAULT '[]'"),
+            ):
+                existing = {row["name"] for row in db.execute("PRAGMA table_info(reviews)").fetchall()}
+                if column not in existing:
+                    db.execute(f"ALTER TABLE reviews ADD COLUMN {column} {definition}")
             db.execute("""INSERT INTO schema_meta(key, value) VALUES('schema_version', ?)
                          ON CONFLICT(key) DO UPDATE SET value=excluded.value""", (str(SCHEMA_VERSION),))
 
@@ -97,11 +105,13 @@ class Store:
                        (values["owner"], values["reviewer"], values["priority"], values["status"], values["due_at"], updated_at, task_id))
 
     def create_review(self, *, translation_key: str, actor: str, status: str,
-                      created_at: str) -> int:
+                      created_at: str, source: str = "", translation: str = "",
+                      findings: list[dict[str, Any]] | None = None) -> int:
         with self._connect() as db:
-            cur = db.execute("""INSERT INTO reviews(translation_key,actor,status,created_at,updated_at)
-                                VALUES(?,?,?,?,?)""",
-                             (translation_key, actor, status, created_at, created_at))
+            cur = db.execute("""INSERT INTO reviews(translation_key,actor,status,created_at,updated_at,source,translation,findings)
+                                VALUES(?,?,?,?,?,?,?,?,?)""",
+                             (translation_key, actor, status, created_at, created_at, source, translation,
+                              json.dumps(findings or [], ensure_ascii=False, sort_keys=True)))
             return int(cur.lastrowid)
 
     def reviews(self, status: str | None = None) -> list[dict[str, Any]]:
@@ -112,7 +122,7 @@ class Store:
                 rows = db.execute("SELECT * FROM reviews WHERE status=? ORDER BY id", (status,)).fetchall()
         return [dict(r) for r in rows]
 
-    def decide_review(self, review_id: int, *, reviewer: str, decision: str, reason: str | None,
+    def decide_review(self, review_id: int, *, reviewer: str, decision: str | None, reason: str | None,
                       status: str, updated_at: str) -> None:
         with self._connect() as db:
             cur = db.execute("""UPDATE reviews SET reviewer=?,decision=?,reason=?,status=?,updated_at=? WHERE id=?""",

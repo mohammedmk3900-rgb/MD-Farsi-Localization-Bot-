@@ -355,6 +355,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          chmod +x runtime/polyglot/mdfarsi-qa runtime/polyglot/worker runtime/polyglot/md_native_probe runtime/polyglot/MDNativeBridge
           printf '{"source":"Hello $STATE$ §Y £icon","target":"سلام $STATE$ §Y £icon"}\n' | runtime/polyglot/mdfarsi-qa
           printf '{"type":"health","id":"ci-runtime-check","payload":{"ok":true}}\n' | runtime/polyglot/worker
           runtime/polyglot/md_native_probe

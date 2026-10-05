@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from app.services.translation import TranslationService
 
 
@@ -15,3 +13,16 @@ def test_translation_check_accepts_preserved_tokens():
     assert check.findings == []
     assert check.approved_for_review is True
     assert check.publish_allowed is False
+
+
+def test_translation_check_detects_empty_translation_and_format_drift():
+    check = TranslationService().check("Line 1\nLine 2", "")
+    kinds = {finding["kind"] for finding in check.findings}
+    assert "empty_translation" in kinds
+    assert "newline_mismatch" in kinds
+
+
+def test_translation_check_detects_duplicate_token():
+    check = TranslationService().check("$NAME$", "$NAME$ $NAME$")
+    finding = next(f for f in check.findings if f["kind"] == "unexpected_token")
+    assert finding["tokens"] == ["$NAME$"]

@@ -124,3 +124,39 @@ def test_translation_qa_history_is_durable(tmp_path: Path):
     history = TranslationService().history(store, "KEY")
     assert len(history) == 1
     assert history[0]["translation_key"] == "KEY"
+
+
+def test_task_stale_transition_is_rejected(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    from app.services.tasks import TaskService
+    from app.domain.models import Priority
+
+    service = TaskService(store)
+    task = service.create(title="Race", priority=Priority.NORMAL)
+    first = service.get(task.id)
+    second = service.get(task.id)
+    service.claim(first, "member-a")
+    try:
+        service.claim(second, "member-b")
+    except ValueError as exc:
+        assert "stale" in str(exc)
+    else:
+        raise AssertionError("stale task claim was accepted")
+
+
+def test_review_stale_claim_is_rejected(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    from app.services.review import ReviewQueue
+    from app.domain.models import TranslationCheck
+
+    queue = ReviewQueue(store)
+    item = queue.submit("translator", TranslationCheck("KEY", "ترجمه"))
+    queue.claim(item.id, "reviewer-a")
+    try:
+        queue.claim(item.id, "reviewer-b")
+    except ValueError as exc:
+        assert "open" in str(exc)
+    else:
+        raise AssertionError("stale review claim was accepted")

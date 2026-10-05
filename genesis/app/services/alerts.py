@@ -34,12 +34,25 @@ class AlertService:
                 )
         return alert
 
-    def active(self) -> list[dict]:
+    def active(self, severity: str | None = None, component: str | None = None) -> list[dict]:
         if not self.store:
             return []
         with self.store._connect() as db:
             rows = db.execute("SELECT * FROM alerts WHERE active=1 ORDER BY id DESC").fetchall()
-        return [dict(row) for row in rows]
+        result = [dict(row) for row in rows]
+        if severity:
+            result = [row for row in result if row["severity"] == severity]
+        if component:
+            result = [row for row in result if row["message"].startswith(f"[{component}]")]
+        return result
+
+    def summary(self) -> dict:
+        active = self.active()
+        return {
+            "active": len(active),
+            "critical": sum(row["severity"] == "critical" for row in active),
+            "warning": sum(row["severity"] == "warning" for row in active),
+        }
 
     def resolve(self, alert_id: int) -> None:
         if not self.store:

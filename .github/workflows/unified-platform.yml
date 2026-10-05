@@ -139,7 +139,13 @@ jobs:
             exit 1
           fi
           echo "Checking tracked SQLite databases..."
-          db_files="$(git ls-files | grep -E '(^|/)[^/]+\.db(-wal|-shm)?
+          db_files="$(git ls-files | grep -E '(^|/)[^/]+\\.db(-wal|-shm)?$' || true)"
+          if [[ -n "$db_files" ]]; then
+            echo "::error::Tracked SQLite database files are not allowed:"
+            printf '%s\n' "$db_files"
+            exit 1
+          fi
+          echo "Git hygiene: OK"
 
   phase-02-language:
     name: 'Phase 2 · Language validation'
@@ -635,10 +641,4 @@ jobs:
           for r in "$P0" "$P1" "$P2" "$P3" "$P4" "$P5" "$P6"; do [[ "$r" == success ]] || failed=1; done
           for r in "$P7" "$P8" "$P9" "$P10" "$P11" "$P12" "$P13" "$P14"; do [[ "$r" == success || "$r" == skipped ]] || failed=1; done
           [[ $failed -eq 0 ]] || { echo '::error::Unified platform health failed'; exit 1; }
-          echo 'MD Farsi Unified Platform: HEALTHY' || true)"
-          if [[ -n "$db_files" ]]; then
-            echo "::error::Tracked SQLite database files are not allowed:"
-            printf '%s\n' "$db_files"
-            exit 1
-          fi
-          echo "Git hygiene: OK"
+          echo 'MD Farsi Unified Platform: HEALTHY'

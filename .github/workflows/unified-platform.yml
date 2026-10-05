@@ -229,7 +229,7 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       - name: Build Rust Go C++ C#
         run: |
-          cargo build --manifest-path rust/Cargo.toml --bin mdfarsi-qa
+          cargo build --manifest-path genesis/engine/rust/Cargo.toml --bin mdfarsi-qa
           cargo build --manifest-path genesis/engine/rust/Cargo.toml
           (cd genesis/engine/go && go build -trimpath -o worker ./cmd/worker)
           cmake -S genesis/engine/cpp -B build/genesis-native -DCMAKE_BUILD_TYPE=Release

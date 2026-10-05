@@ -22,6 +22,22 @@ class ReviewStatus:
     CHANGES_REQUESTED = "changes_requested"
 
 
+REVIEW_TRANSITIONS: dict[str, frozenset[str]] = {
+    ReviewStatus.OPEN: frozenset({ReviewStatus.IN_REVIEW}),
+    ReviewStatus.IN_REVIEW: frozenset({
+        ReviewStatus.APPROVED, ReviewStatus.REJECTED, ReviewStatus.CHANGES_REQUESTED,
+    }),
+    ReviewStatus.APPROVED: frozenset(),
+    ReviewStatus.REJECTED: frozenset(),
+    ReviewStatus.CHANGES_REQUESTED: frozenset({ReviewStatus.OPEN}),
+}
+
+
+def validate_review_transition(current: str, target: str) -> None:
+    if target not in REVIEW_TRANSITIONS.get(current, frozenset()):
+        raise ValueError(f"invalid review transition: {current} -> {target}")
+
+
 @dataclass(frozen=True)
 class ReviewItem:
     id: int
@@ -65,8 +81,7 @@ class ReviewQueue:
         row = next((r for r in self.store.reviews() if r["id"] == item_id), None)
         if row is None:
             raise KeyError(item_id)
-        if row["status"] != ReviewStatus.OPEN:
-            raise ValueError("review is not open")
+        validate_review_transition(row["status"], ReviewStatus.IN_REVIEW)
         self.store.decide_review(
             item_id, reviewer=reviewer, decision=None, reason=None,
             status=ReviewStatus.IN_REVIEW, updated_at=self._now(), expected_status=ReviewStatus.OPEN
@@ -84,6 +99,7 @@ class ReviewQueue:
             ReviewDecision.REJECT: ReviewStatus.REJECTED,
             ReviewDecision.REQUEST_CHANGES: ReviewStatus.CHANGES_REQUESTED,
         }[decision]
+        validate_review_transition(row["status"], status)
         self.store.decide_review(item_id, reviewer=reviewer, decision=decision, reason=reason,
                                  status=status, updated_at=self._now(), expected_status=ReviewStatus.IN_REVIEW)
         return {"item_id": item_id, "decision": decision, "reviewer": reviewer, "status": status}

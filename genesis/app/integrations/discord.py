@@ -55,3 +55,28 @@ class DiscordCommandGateway:
     def sync(self, actor: DiscordActor, integration):
         self.authorize(actor, "sync.run")
         return self.application.sync.project(self.application, integration)
+
+
+class DiscordCommandAdapter:
+    """Thin Discord-facing adapter; business rules remain in Genesis services."""
+
+    def __init__(self, gateway: DiscordCommandGateway):
+        self.gateway = gateway
+
+    def dispatch(self, actor: DiscordActor, command: str, **kwargs):
+        handlers = {
+            "health": lambda: self.gateway.health(actor),
+            "tasks": lambda: self.gateway.tasks(actor),
+            "check": lambda: self.gateway.check_translation(actor, kwargs["source"], kwargs["translation"]),
+            "task-create": lambda: self.gateway.create_task(
+                actor, kwargs["title"], kwargs.get("scope", ""), kwargs.get("priority", "normal")
+            ),
+            "sync": lambda: self.gateway.sync(actor, kwargs["integration"]),
+        }
+        try:
+            handler = handlers[command]
+        except KeyError as exc:
+            raise DiscordCommandError(f"unknown command: {command}") from exc
+        result = handler()
+        self.gateway.application.audit("discord.command", actor.user_id, {"command": command})
+        return result

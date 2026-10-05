@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from app.domain.models import Priority, Task, TaskStatus
+from app.domain.models import Priority, Task, TaskStatus, validate_task_transition
 from app.persistence.store import Store
 
 
@@ -54,8 +54,7 @@ class TaskService:
         return {"total": len(tasks), "by_status": counts, "review_queue": counts[TaskStatus.REVIEW.value]}
 
     def claim(self, task: Task, member_id: str) -> Task:
-        if task.status not in {TaskStatus.AVAILABLE, TaskStatus.IN_PROGRESS}:
-            raise ValueError("task cannot be claimed")
+        validate_task_transition(task.status, TaskStatus.IN_PROGRESS)
         if task.owner not in {None, "", member_id}:
             raise ValueError("task is owned by another member")
         self.store.update_task(task.id, owner=member_id, status=TaskStatus.IN_PROGRESS.value,
@@ -65,15 +64,13 @@ class TaskService:
     def submit(self, task: Task, member_id: str) -> Task:
         if task.owner != member_id:
             raise ValueError("only the task owner can submit it")
-        if task.status != TaskStatus.IN_PROGRESS:
-            raise ValueError("task is not in progress")
+        validate_task_transition(task.status, TaskStatus.REVIEW)
         self.store.update_task(task.id, status=TaskStatus.REVIEW.value,
                                updated_at=self._now(), expected_status=TaskStatus.IN_PROGRESS.value, expected_owner=member_id)
         return self.get(task.id)
 
     def complete(self, task: Task, reviewer_id: str) -> Task:
-        if task.status != TaskStatus.REVIEW:
-            raise ValueError("task is not awaiting review")
+        validate_task_transition(task.status, TaskStatus.DONE)
         self.store.update_task(task.id, reviewer=reviewer_id, status=TaskStatus.DONE.value,
                                updated_at=self._now(), expected_status=TaskStatus.REVIEW.value)
         return self.get(task.id)

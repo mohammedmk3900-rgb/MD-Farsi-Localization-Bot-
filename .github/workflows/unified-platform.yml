@@ -129,9 +129,519 @@ jobs:
                       print('OK', p)
           PY
       - name: Git hygiene
+        shell: bash
         run: |
-          git diff --check
-          ! git ls-files | grep -Eq '(^|/)[^/]+\.db(-wal|-shm)?$'
+          set -euo pipefail
+          echo "Checking whitespace errors..."
+          if ! git diff --check; then
+            echo "::error::git diff --check found whitespace errors"
+            git diff --check || true
+            exit 1
+          fi
+          echo "Checking tracked SQLite databases..."
+          db_files="$(git ls-files | grep -E '(^|/)[^/]+\.db(-wal|-shm)?
+
+  phase-02-language:
+    name: 'Phase 2 · Language validation'
+    needs: phase-01-static
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, rust, go, typescript, cpp, csharp]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        if: matrix.language == 'python'
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Python platform + Discord MCP
+        if: matrix.language == 'python'
+        run: |
+          python -m pip install -e 'platform[test]'
+          python -m pytest -q platform/tests
+          python -m pip install -r discord-mcp/requirements.txt
+          python -m unittest discover -s discord-mcp -p 'test_*.py' -v
+          python -m py_compile discord-mcp/server.py discord-mcp/indexer.py discord-mcp/news.py discord-mcp/intelligence.py discord-mcp/oauth.py
+      - uses: dtolnay/rust-toolchain@stable
+        if: matrix.language == 'rust'
+        with:
+          components: rustfmt, clippy
+      - name: Rust
+        if: matrix.language == 'rust'
+        run: |
+          cargo fmt --manifest-path rust/Cargo.toml --all -- --check
+          cargo clippy --manifest-path rust/Cargo.toml --all-targets --all-features -- -D warnings
+          cargo test --manifest-path rust/Cargo.toml
+          cargo fmt --manifest-path genesis/engine/rust/Cargo.toml --all -- --check
+          cargo test --manifest-path genesis/engine/rust/Cargo.toml
+      - uses: actions/setup-go@v7
+        if: matrix.language == 'go'
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: genesis/engine/go/go.mod
+      - name: Go
+        if: matrix.language == 'go'
+        working-directory: genesis/engine/go
+        run: |
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test ./...
+      - uses: actions/setup-node@v7
+        if: matrix.language == 'typescript'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: genesis/engine/typescript/package.json
+      - name: TypeScript
+        if: matrix.language == 'typescript'
+        working-directory: genesis/engine/typescript
+        run: |
+          if [[ -f package-lock.json ]]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+          npm run typecheck
+      - name: C++
+        if: matrix.language == 'cpp'
+        run: |
+          cmake -S genesis/engine/cpp -B build/genesis-native -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/genesis-native --parallel
+      - uses: actions/setup-dotnet@v6
+        if: matrix.language == 'csharp'
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: C#
+        if: matrix.language == 'csharp'
+        working-directory: genesis/engine/csharp
+        run: dotnet build --configuration Release
+
+  phase-03-build:
+    name: 'Phase 3 · Polyglot build'
+    needs: phase-02-language
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: genesis/engine/go/go.mod
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Build Rust Go C++ C#
+        run: |
+          cargo build --manifest-path genesis/engine/rust/Cargo.toml --bin mdfarsi-qa
+          (cd genesis/engine/go && go build -trimpath -o worker ./cmd/worker)
+          cmake -S genesis/engine/cpp -B build/genesis-native -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/genesis-native --parallel
+          dotnet build genesis/engine/csharp --configuration Release
+      - name: Package and hash runtime
+        run: |
+          set -euo pipefail
+          mkdir -p dist/polyglot
+          runtimes=(
+            genesis/engine/rust/target/debug/mdfarsi-qa
+            genesis/engine/go/worker
+            build/genesis-native/md_native_probe
+            genesis/engine/csharp/bin/Release/net10.0/MDNativeBridge
+          )
+          for f in "${runtimes[@]}"; do
+            [[ -f "$f" ]] || { echo "::error::Required runtime missing: $f"; exit 1; }
+            cp "$f" dist/polyglot/
+          done
+          chmod +x dist/polyglot/*
+          (cd dist && sha256sum polyglot/* > SHA256SUMS)
+          [[ -s dist/SHA256SUMS ]]
+          printf 'commit=%s\nrun=%s\nattempt=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > dist/runtime-build-info.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: polyglot-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+          path: dist
+          if-no-files-found: error
+          retention-days: 14
+
+  phase-04-contracts:
+    name: 'Phase 4 · Contract testing'
+    needs: phase-03-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Contract tests
+        run: |
+          python -m pip install -e 'platform[test]'
+          python -m pytest -q platform/tests/test_api_auth.py platform/tests/test_database.py platform/tests/test_database_history.py platform/tests/test_paratranz_snapshot_integrity.py platform/tests/test_orchestrator.py platform/tests/test_scheduler.py
+          python -m compileall -q genesis
+      - name: Localization token scan
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          total = 0
+          for p in Path('data').rglob('*.json'):
+              s = p.read_text(encoding='utf-8', errors='ignore')
+              total += s.count('${') + s.count('§') + s.count('£')
+          print('protected-token occurrences:', total)
+          PY
+
+  phase-05-integration:
+    name: 'Phase 5 · Integration'
+    needs: phase-04-contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install services
+        run: |
+          python -m pip install -e 'platform[test]'
+          python -m pip install -r discord-mcp/requirements.txt
+      - name: Discord MCP smoke
+        working-directory: discord-mcp
+        env:
+          MCP_AUTH_TOKEN: test-test-test-test-test-test-test-test-test-test-test-test
+          DISCORD_BOT_TOKEN: test
+          DISCORD_GUILD_ID: '1'
+          DISCORD_DB_PATH: ${{ runner.temp }}/discord.db
+        run: python -c 'from server import mcp; print(type(mcp).__name__)'
+      - name: Platform suite
+        working-directory: platform
+        run: python -m pytest -q
+      - name: Genesis health
+        working-directory: genesis
+        run: python -m app.cli health
+
+  phase-06-runtime:
+    name: 'Phase 6 · Runtime verification'
+    needs: phase-05-integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: polyglot-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+          path: runtime
+      - name: Verify hashes
+        working-directory: runtime
+        run: sha256sum -c dist/SHA256SUMS
+      - name: Verify runtime inventory
+        run: |
+          set -euo pipefail
+          find runtime/dist/polyglot -maxdepth 1 -type f -print
+      - name: Execute runtime contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '{"source":"Hello $STATE$ §Y £icon","target":"سلام $STATE$ §Y £icon"}\n' | runtime/dist/polyglot/mdfarsi-qa
+          printf '{"type":"health","id":"ci-runtime-check","payload":{"ok":true}}\n' | runtime/dist/polyglot/worker
+          runtime/dist/polyglot/md_native_probe
+          runtime/dist/polyglot/MDNativeBridge
+
+  phase-07-paratranz:
+    name: 'Phase 7 · ParaTranz'
+    needs: phase-06-runtime
+    if: needs.phase-00-policy.outputs.operational == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: python -m pip install -e .
+        working-directory: platform
+      - name: Project synchronization
+        working-directory: platform
+        run: python -m app.cli sync
+      - name: Glossary synchronization
+        working-directory: platform
+        run: python -m app.cli glossary-sync
+
+  phase-08-discord:
+    name: 'Phase 8 · Discord'
+    needs: phase-07-paratranz
+    if: needs.phase-00-policy.outputs.operational == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+      DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+      DISCORD_DB_PATH: ${{ github.workspace }}/discord-mcp/data/discord.db
+      DISCORD_BACKFILL_ON_START: 'false'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Discord MCP
+        working-directory: discord-mcp
+        run: python -m pip install -r requirements.txt
+      - name: Synchronize history
+        working-directory: discord-mcp
+        run: python -c 'import asyncio; from server import sync_server_history; print(asyncio.run(sync_server_history()))'
+      - name: Generate news and intelligence
+        working-directory: discord-mcp
+        run: |
+          python news.py --db "$DISCORD_DB_PATH" --hours 24 --limit 12 --output "$GITHUB_WORKSPACE/platform/data/discord_news.json" --mark-read
+          python intelligence.py --db "$DISCORD_DB_PATH" --hours 24 --limit 12 --output "$GITHUB_WORKSPACE/platform/data/discord_intelligence.json"
+
+  phase-09-dawnnexus:
+    name: 'Phase 9 · DawnNexus'
+    needs: phase-08-discord
+    if: needs.phase-00-policy.outputs.operational == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Compile MCP OAuth stack
+        run: python -m py_compile discord-mcp/auth.py discord-mcp/oauth.py discord-mcp/server.py
+      - name: Verify OAuth resource metadata
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 2 --max-time 30 "$DAWNNEXUS_URL/.well-known/oauth-protected-resource" -o "$RUNNER_TEMP/resource.json"
+          python -c 'import json,sys; d=json.load(open(sys.argv[1])); assert isinstance(d,dict)' "$RUNNER_TEMP/resource.json"
+
+  phase-10-scheduler:
+    name: 'Phase 10 · Scheduler'
+    needs: phase-09-dawnnexus
+    if: needs.phase-00-policy.outputs.operational == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PARATRANZ_TOKEN: ${{ secrets.PARATRANZ_TOKEN }}
+      DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+      DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Scheduler manifest
+        working-directory: platform
+        run: |
+          python - <<'PY'
+          from app.services.scheduler import build_scheduler
+          s = build_scheduler()
+          required = {'sync','glossary','discord_audit','polyglot_health','health','manager','daily_report','weekly_report'}
+          actual = {j['name'] for j in s.manifest()['jobs']}
+          assert required <= actual, sorted(required - actual)
+          print(s.manifest())
+          PY
+
+  phase-11-state:
+    name: 'Phase 11 · SQLite/state'
+    needs: phase-10-scheduler
+    if: needs.phase-00-policy.outputs.operational == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: SQLite integrity
+        run: |
+          set -euo pipefail
+          for db in platform/data/platform.db discord-mcp/data/discord.db; do
+            [[ -f "$db" ]] || continue
+            python - "$db" <<'PY'
+          import sqlite3,sys
+          db=sqlite3.connect(sys.argv[1],timeout=30)
+          assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+          assert not db.execute('PRAGMA foreign_key_check').fetchall()
+          db.close()
+          PY
+          done
+      - name: Schema validation
+        run: |
+          python - <<'PY'
+          import sqlite3
+          from pathlib import Path
+          schema = Path("database/schema.sql").read_text(encoding="utf-8")
+          with sqlite3.connect(":memory:") as db:
+              db.executescript(schema)
+              assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+          print("SQLite schema: OK")
+          PY
+      - name: State hash
+        run: |
+          mkdir -p platform/data
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          files={}
+          for p in (Path('platform/data/platform.db'),Path('discord-mcp/data/discord.db')):
+              if p.exists(): files[str(p)]={'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
+          Path('platform/data/state-manifest.json').write_text(json.dumps({'schema':1,'verified':True,'commit':os.getenv('GITHUB_SHA'),'files':files},indent=2)+'\n',encoding='utf-8')
+          PY
+
+  phase-12-snapshot:
+    name: 'Phase 12 · Snapshot'
+    needs: phase-11-state
+    if: needs.phase-00-policy.outputs.operational == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Build public snapshot manifest
+        run: |
+          mkdir -p platform/data
+          find platform/data -maxdepth 1 -type f -name '*.json' ! -name 'discord_news.json' ! -name 'discord_intelligence.json' ! -name 'state-manifest.json' ! -name 'runtime-manifest.json' -printf '%f\n' | sort > platform/data/.public-snapshot-manifest
+      - name: Build runtime manifest and public staging area
+        run: |
+          python - <<'PY'
+          import json, os, shutil
+          from pathlib import Path
+          root = Path("platform/data")
+          public = sorted(p.name for p in root.glob("*.json") if p.name not in {"discord_news.json", "discord_intelligence.json", "state-manifest.json", "runtime-manifest.json"})
+          manifest = root / ".public-snapshot-manifest"
+          staging = Path("public-snapshots")
+          staging.mkdir(parents=True, exist_ok=True)
+          manifest.write_text("\n".join(public) + ("\n" if public else ""), encoding="utf-8")
+          for name in public:
+              shutil.copy2(root / name, staging / name)
+          (root / "runtime-manifest.json").write_text(json.dumps({"schema": 1, "state_verified": True, "commit": os.getenv("GITHUB_SHA"), "public_json": public}, indent=2) + "\n", encoding="utf-8")
+          (staging / ".public-snapshot-manifest").write_text(manifest.read_text(encoding="utf-8"), encoding="utf-8")
+          PY
+
+  phase-13-artifact:
+    name: 'Phase 13 · Artifact'
+    needs: phase-12-snapshot
+    if: needs.phase-00-policy.outputs.operational == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: polyglot-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+          path: runtime
+      - uses: actions/upload-artifact@v7
+        with:
+          name: md-farsi-platform-state-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            platform/data
+            discord-mcp/data
+            runtime/dist
+          if-no-files-found: warn
+          retention-days: 30
+      - uses: actions/upload-artifact@v7
+        with:
+          name: md-farsi-public-snapshots-${{ github.run_id }}-${{ github.run_attempt }}
+          path: public-snapshots
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 30
+
+  phase-14-publication:
+    name: 'Phase 14 · Publication'
+    needs: [phase-00-policy, phase-13-artifact]
+    if: needs.phase-00-policy.outputs.operational == 'true' && needs.phase-00-policy.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        with:
+          name: md-farsi-public-snapshots-${{ github.run_id }}-${{ github.run_attempt }}
+          path: snapshots
+      - name: Publish public snapshots
+        run: |
+          set -euo pipefail
+          manifest=snapshots/.public-snapshot-manifest
+          [[ -s "$manifest" ]] || exit 1
+          mkdir -p platform/data
+          while IFS= read -r f; do
+            [[ -n "$f" ]] || continue
+            [[ "$f" != */* ]] || { echo "::error::Invalid snapshot filename: $f"; exit 1; }
+            cp "snapshots/$f" "platform/data/$f"
+          done < "$manifest"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add platform/data
+          git diff --cached --check
+          git diff --cached --quiet && exit 0
+          git commit -m 'chore: refresh MD Farsi public snapshots'
+          for attempt in 1 2 3; do
+            git fetch origin main
+            if git rebase origin/main && git push origin HEAD:main; then exit 0; fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((attempt * 3))
+          done
+          echo '::error::publication failed'; exit 1
+
+  phase-15-health:
+    name: 'Phase 15 · Final health'
+    needs: [phase-00-policy, phase-01-static, phase-02-language, phase-03-build, phase-04-contracts, phase-05-integration, phase-06-runtime, phase-07-paratranz, phase-08-discord, phase-09-dawnnexus, phase-10-scheduler, phase-11-state, phase-12-snapshot, phase-13-artifact, phase-14-publication]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Final health matrix
+        env:
+          P0: ${{ needs.phase-00-policy.result }}
+          P1: ${{ needs.phase-01-static.result }}
+          P2: ${{ needs.phase-02-language.result }}
+          P3: ${{ needs.phase-03-build.result }}
+          P4: ${{ needs.phase-04-contracts.result }}
+          P5: ${{ needs.phase-05-integration.result }}
+          P6: ${{ needs.phase-06-runtime.result }}
+          P7: ${{ needs.phase-07-paratranz.result }}
+          P8: ${{ needs.phase-08-discord.result }}
+          P9: ${{ needs.phase-09-dawnnexus.result }}
+          P10: ${{ needs.phase-10-scheduler.result }}
+          P11: ${{ needs.phase-11-state.result }}
+          P12: ${{ needs.phase-12-snapshot.result }}
+          P13: ${{ needs.phase-13-artifact.result }}
+          P14: ${{ needs.phase-14-publication.result }}
+        run: |
+          set -euo pipefail
+          printf '# MD Farsi Unified Platform — Final Health\n\n' >> "$GITHUB_STEP_SUMMARY"
+          for n in P0 P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 P11 P12 P13 P14; do printf '%s=%s\n' "$n" "${!n}" >> "$GITHUB_STEP_SUMMARY"; done
+          failed=0
+          for r in "$P0" "$P1" "$P2" "$P3" "$P4" "$P5" "$P6"; do [[ "$r" == success ]] || failed=1; done
+          for r in "$P7" "$P8" "$P9" "$P10" "$P11" "$P12" "$P13" "$P14"; do [[ "$r" == success || "$r" == skipped ]] || failed=1; done
+          [[ $failed -eq 0 ]] || { echo '::error::Unified platform health failed'; exit 1; }
+          echo 'MD Farsi Unified Platform: HEALTHY' || true)"
+          if [[ -n "$db_files" ]]; then
+            echo "::error::Tracked SQLite database files are not allowed:"
+            printf '%s\n' "$db_files"
+            exit 1
+          fi
+          echo "Git hygiene: OK"
 
   phase-02-language:
     name: 'Phase 2 · Language validation'

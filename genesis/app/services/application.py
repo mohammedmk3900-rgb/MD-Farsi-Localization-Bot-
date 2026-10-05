@@ -31,7 +31,7 @@ class GenesisApplication:
         self.achievements = AchievementService()
         self.alerts = AlertService(store)
         self.health = HealthService()
-        self.progress = ProgressService()
+        self.progress = ProgressService(store)
         self.reminders = ReminderService()
         self.scheduler = Scheduler(store)
         self.sync = SyncService()

@@ -82,9 +82,9 @@ class ReviewQueue:
         if row is None:
             raise KeyError(item_id)
         validate_review_transition(row["status"], ReviewStatus.IN_REVIEW)
-        self.store.decide_review(
-            item_id, reviewer=reviewer, decision=None, reason=None,
-            status=ReviewStatus.IN_REVIEW, updated_at=self._now(), expected_status=ReviewStatus.OPEN
+        self.store.transition_review(
+            item_id, target_status=ReviewStatus.IN_REVIEW, updated_at=self._now(),
+            allowed_from=(ReviewStatus.OPEN,), reviewer=reviewer
         )
         return ReviewItem(item_id, row["actor"],
                           TranslationCheck(row.get("source", row["translation_key"]), row.get("translation", ""),
@@ -100,6 +100,9 @@ class ReviewQueue:
             ReviewDecision.REQUEST_CHANGES: ReviewStatus.CHANGES_REQUESTED,
         }[decision]
         validate_review_transition(row["status"], status)
-        self.store.decide_review(item_id, reviewer=reviewer, decision=decision, reason=reason,
-                                 status=status, updated_at=self._now(), expected_status=ReviewStatus.IN_REVIEW)
+        self.store.transition_review(
+            item_id, target_status=status, updated_at=self._now(),
+            allowed_from=(ReviewStatus.IN_REVIEW,), reviewer=reviewer,
+            decision=decision, reason=reason
+        )
         return {"item_id": item_id, "decision": decision, "reviewer": reviewer, "status": status}

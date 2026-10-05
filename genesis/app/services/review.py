@@ -47,8 +47,25 @@ class ReviewQueue:
         return ReviewItem(review_id, actor, check, self._now(), ReviewStatus.OPEN)
 
     def pending(self) -> list[ReviewItem]:
-        return [ReviewItem(r["id"], r["actor"], TranslationCheck(r["translation_key"], ""),
-                           r["created_at"], r["status"]) for r in self.store.reviews(ReviewStatus.OPEN)]
+        rows = self.store.reviews()
+        return [
+            ReviewItem(r["id"], r["actor"], TranslationCheck(r["translation_key"], ""),
+                       r["created_at"], r["status"])
+            for r in rows if r["status"] in {ReviewStatus.OPEN, ReviewStatus.IN_REVIEW}
+        ]
+
+    def claim(self, item_id: int, reviewer: str) -> ReviewItem:
+        row = next((r for r in self.store.reviews() if r["id"] == item_id), None)
+        if row is None:
+            raise KeyError(item_id)
+        if row["status"] != ReviewStatus.OPEN:
+            raise ValueError("review is not open")
+        self.store.decide_review(
+            item_id, reviewer=reviewer, decision=None, reason=None,
+            status=ReviewStatus.IN_REVIEW, updated_at=self._now()
+        )
+        return ReviewItem(item_id, row["actor"], TranslationCheck(row["translation_key"], ""),
+                          row["created_at"], ReviewStatus.IN_REVIEW)
 
     def decide(self, item_id: int, decision: str, reviewer: str, reason: str | None = None) -> dict:
         if decision not in {ReviewDecision.APPROVE, ReviewDecision.REJECT, ReviewDecision.REQUEST_CHANGES}:

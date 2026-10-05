@@ -98,3 +98,29 @@ def test_review_payload_survives_restart(tmp_path: Path):
     assert restored.check.source == "KEY $X$"
     assert restored.check.translation == "ترجمه $X$"
     assert restored.check.findings[0]["kind"] == "demo"
+
+
+def test_progress_and_achievement_state_is_durable(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    from app.services.progress import ProgressService
+    from app.services.achievements import AchievementService
+
+    progress = ProgressService(store).member("m1", completed=10, review=2, active=1)
+    assert progress.total == 13
+    restored = ProgressService(Store(tmp_path / "genesis.db")).member("m1")
+    assert restored.completed == 10
+    achievements = AchievementService(store).earned(10, member_id="m1")
+    assert {a.key for a in achievements} == {"first_task", "ten_tasks"}
+    assert len(AchievementService(Store(tmp_path / "genesis.db")).persisted("m1")) == 2
+
+
+def test_translation_qa_history_is_durable(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    from app.services.translation import TranslationService
+
+    TranslationService().check_and_record(store, "KEY", "Hello $X$", "سلام $X$")
+    history = TranslationService().history(store, "KEY")
+    assert len(history) == 1
+    assert history[0]["translation_key"] == "KEY"

@@ -7,7 +7,7 @@ class CommandCenterService:
         self.application = application
 
     def status(self) -> dict[str, Any]:
-        db_ok = self.application.store.path.exists()
+        db_ok = self.application.health.database(self.application.store)
         health = self.application.health.evaluate({"database": "ok" if db_ok else "degraded", "translation": "ok", "glossary": "ok"})
         return {"service": "v11-genesis", "interface": "discord", "dashboard": False, "health": {"status": health.status, "checks": health.checks}, "tasks": self.application.tasks.summary(), "reviews": len(self.application.reviews.pending()), "glossary_terms": len(self.application.glossary.all()), "persistence": self.application.store.counts()}
 

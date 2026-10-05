@@ -3,16 +3,29 @@ use serde::{Deserialize, Serialize};
 use std::io::{self, Read};
 
 #[derive(Debug, Deserialize)]
-struct Input { source: String, target: String }
+struct Input {
+    source: String,
+    target: String,
+}
 
 #[derive(Debug, Serialize)]
-struct Report { valid: bool, checks: Vec<Check> }
+struct Report {
+    valid: bool,
+    checks: Vec<Check>,
+}
 
 #[derive(Debug, Serialize)]
-struct Check { name: &'static str, passed: bool, detail: String }
+struct Check {
+    name: &'static str,
+    passed: bool,
+    detail: String,
+}
 
 fn captures(text: &str, pattern: &Regex) -> Vec<String> {
-    pattern.captures_iter(text).map(|c| c.get(0).unwrap().as_str().to_string()).collect()
+    pattern
+        .captures_iter(text)
+        .map(|c| c.get(0).unwrap().as_str().to_string())
+        .collect()
 }
 
 fn main() {
@@ -33,12 +46,37 @@ fn main() {
     let target_control = captures(&input.target, &control);
 
     let checks = vec![
-        Check { name: "dollar_tokens", passed: source_dollar == target_dollar, detail: format!("source={} target={}", source_dollar.len(), target_dollar.len()) },
-        Check { name: "icon_tokens", passed: source_icon == target_icon, detail: format!("source={} target={}", source_icon.len(), target_icon.len()) },
-        Check { name: "control_codes", passed: source_control == target_control, detail: format!("source={} target={}", source_control.len(), target_control.len()) },
+        Check {
+            name: "dollar_tokens",
+            passed: source_dollar == target_dollar,
+            detail: format!(
+                "source={} target={}",
+                source_dollar.len(),
+                target_dollar.len()
+            ),
+        },
+        Check {
+            name: "icon_tokens",
+            passed: source_icon == target_icon,
+            detail: format!("source={} target={}", source_icon.len(), target_icon.len()),
+        },
+        Check {
+            name: "control_codes",
+            passed: source_control == target_control,
+            detail: format!(
+                "source={} target={}",
+                source_control.len(),
+                target_control.len()
+            ),
+        },
     ];
 
     let valid = checks.iter().all(|c| c.passed);
-    println!("{}", serde_json::to_string(&Report { valid, checks }).unwrap());
-    if !valid { std::process::exit(2); }
+    println!(
+        "{}",
+        serde_json::to_string(&Report { valid, checks }).unwrap()
+    );
+    if !valid {
+        std::process::exit(2);
+    }
 }

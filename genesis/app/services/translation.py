@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import re
+from uuid import uuid4
+from datetime import datetime, timezone
+
 from collections import Counter
 
 from app.domain.models import GlossaryTerm, TranslationCheck
@@ -91,3 +94,15 @@ class TranslationService:
                 })
 
         return TranslationCheck(source=source, translation=translation, findings=findings)
+
+    def check_and_record(self, store, translation_key: str, source: str, translation: str,
+                         glossary: list[GlossaryTerm] | None = None) -> TranslationCheck:
+        check = self.check(source, translation, glossary)
+        store.record_qa_run(
+            str(uuid4()), translation_key, source, translation, check.findings,
+            datetime.now(timezone.utc).isoformat(),
+        )
+        return check
+
+    def history(self, store, translation_key: str | None = None, limit: int = 20) -> list[dict]:
+        return store.qa_runs(translation_key, limit)

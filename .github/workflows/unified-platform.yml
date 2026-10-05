@@ -456,7 +456,15 @@ jobs:
           done
       - name: Schema validation
         run: |
-          sqlite3 :memory: < database/schema.sql
+          python - <<'PY'
+          import sqlite3
+          from pathlib import Path
+          schema = Path('database/schema.sql').read_text(encoding='utf-8')
+          with sqlite3.connect(':memory:') as db:
+              db.executescript(schema)
+              assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+          print('SQLite schema: OK')
+          PY
       - name: State hash
         run: |
           mkdir -p platform/data

@@ -160,3 +160,39 @@ def test_review_stale_claim_is_rejected(tmp_path: Path):
         assert "open" in str(exc)
     else:
         raise AssertionError("stale review claim was accepted")
+
+
+def test_task_state_machine_rejects_terminal_transition(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    from app.services.tasks import TaskService
+    from app.domain.models import Priority, TaskStatus
+
+    service = TaskService(store)
+    task = service.create(title="State machine", priority=Priority.NORMAL)
+    store.update_task(task.id, status=TaskStatus.DONE.value, updated_at="2026-10-05T00:00:00+00:00")
+    done = service.get(task.id)
+    try:
+        service.claim(done, "member-a")
+    except ValueError as exc:
+        assert "invalid task transition" in str(exc)
+    else:
+        raise AssertionError("DONE task was allowed to transition")
+
+
+def test_review_state_machine_rejects_terminal_reopen(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    from app.services.review import ReviewQueue, ReviewDecision
+    from app.domain.models import TranslationCheck
+
+    queue = ReviewQueue(store)
+    item = queue.submit("translator", TranslationCheck("KEY", "ترجمه"))
+    queue.claim(item.id, "reviewer")
+    queue.decide(item.id, ReviewDecision.APPROVE, "reviewer")
+    try:
+        queue.claim(item.id, "reviewer-2")
+    except ValueError as exc:
+        assert "invalid review transition" in str(exc)
+    else:
+        raise AssertionError("APPROVED review was allowed to reopen")

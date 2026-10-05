@@ -47,6 +47,15 @@ mcp = MCPServer(
     auth=oauth_provider.auth_settings(),
     auth_server_provider=oauth_provider,
 )
+
+# MCP SDK 2.2 registers custom HTTP routes on the MCPServer itself.
+# Passing custom_starlette_routes to streamable_http_app() is not supported
+# by the pinned SDK version.
+for _route in build_login_routes(oauth_provider):
+    mcp.custom_route(
+        _route.path,
+        methods=list(_route.methods or ["GET"]),
+    )(_route.endpoint)
 index = MessageIndex(DB_PATH)
 news_engine = DiscordNewsEngine(DB_PATH)
 intelligence_engine = DiscordIntelligence(DB_PATH)
@@ -679,7 +688,6 @@ def build_app() -> ASGIApp:
     return mcp.streamable_http_app(
         transport_security=transport_security,
         host=HOST,
-        custom_starlette_routes=build_login_routes(oauth_provider),
     )
 
 

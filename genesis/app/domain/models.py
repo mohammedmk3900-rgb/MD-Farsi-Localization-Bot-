@@ -12,6 +12,20 @@ class TaskStatus(StrEnum):
     CANCELLED = "cancelled"
 
 
+TASK_TRANSITIONS: dict[TaskStatus, frozenset[TaskStatus]] = {
+    TaskStatus.AVAILABLE: frozenset({TaskStatus.IN_PROGRESS, TaskStatus.CANCELLED}),
+    TaskStatus.IN_PROGRESS: frozenset({TaskStatus.REVIEW, TaskStatus.CANCELLED}),
+    TaskStatus.REVIEW: frozenset({TaskStatus.DONE, TaskStatus.IN_PROGRESS}),
+    TaskStatus.DONE: frozenset(),
+    TaskStatus.CANCELLED: frozenset(),
+}
+
+
+def validate_task_transition(current: TaskStatus, target: TaskStatus) -> None:
+    if target not in TASK_TRANSITIONS[current]:
+        raise ValueError(f"invalid task transition: {current.value} -> {target.value}")
+
+
 class Priority(StrEnum):
     LOW = "low"
     NORMAL = "normal"

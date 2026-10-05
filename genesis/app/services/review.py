@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from app.domain.models import TranslationCheck
+from app.persistence.store import Store
 
 
 class ReviewDecision:
@@ -12,42 +13,51 @@ class ReviewDecision:
     REQUEST_CHANGES = "request_changes"
 
 
+class ReviewStatus:
+    OPEN = "open"
+    IN_REVIEW = "in_review"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    CHANGES_REQUESTED = "changes_requested"
+
+
 @dataclass(frozen=True)
 class ReviewItem:
     id: int
     actor: str
     check: TranslationCheck
     created_at: str
+    status: str = ReviewStatus.OPEN
 
 
 class ReviewQueue:
-    def __init__(self) -> None:
-        self._items: list[ReviewItem] = []
-        self._next_id = 1
+    """Durable human-in-the-loop review queue; no decision is automated."""
 
-    def submit(self, actor: str, check: TranslationCheck) -> ReviewItem:
-        item = ReviewItem(
-            id=self._next_id,
-            actor=actor,
-            check=check,
-            created_at=datetime.now(timezone.utc).isoformat(),
-        )
-        self._next_id += 1
-        self._items.append(item)
-        return item
+    def __init__(self, store: Store):
+        self.store = store
+
+    @staticmethod
+    def _now() -> str:
+        return datetime.now(timezone.utc).isoformat()
+
+    def submit(self, actor: str, check: TranslationCheck, translation_key: str | None = None) -> ReviewItem:
+        key = translation_key or check.source
+        review_id = self.store.create_review(translation_key=key, actor=actor,
+                                              status=ReviewStatus.OPEN, created_at=self._now())
+        return ReviewItem(review_id, actor, check, self._now(), ReviewStatus.OPEN)
 
     def pending(self) -> list[ReviewItem]:
-        return list(self._items)
+        return [ReviewItem(r["id"], r["actor"], TranslationCheck(r["translation_key"], ""),
+                           r["created_at"], r["status"]) for r in self.store.reviews(ReviewStatus.OPEN)]
 
-    def decide(self, item_id: int, decision: str, reviewer: str) -> dict:
-        if decision not in {
-            ReviewDecision.APPROVE,
-            ReviewDecision.REJECT,
-            ReviewDecision.REQUEST_CHANGES,
-        }:
+    def decide(self, item_id: int, decision: str, reviewer: str, reason: str | None = None) -> dict:
+        if decision not in {ReviewDecision.APPROVE, ReviewDecision.REJECT, ReviewDecision.REQUEST_CHANGES}:
             raise ValueError("invalid review decision")
-        item = next((x for x in self._items if x.id == item_id), None)
-        if item is None:
-            raise KeyError(item_id)
-        self._items.remove(item)
-        return {"item_id": item_id, "decision": decision, "reviewer": reviewer}
+        status = {
+            ReviewDecision.APPROVE: ReviewStatus.APPROVED,
+            ReviewDecision.REJECT: ReviewStatus.REJECTED,
+            ReviewDecision.REQUEST_CHANGES: ReviewStatus.CHANGES_REQUESTED,
+        }[decision]
+        self.store.decide_review(item_id, reviewer=reviewer, decision=decision, reason=reason,
+                                 status=status, updated_at=self._now())
+        return {"item_id": item_id, "decision": decision, "reviewer": reviewer, "status": status}

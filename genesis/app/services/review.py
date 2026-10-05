@@ -94,7 +94,10 @@ class ReviewQueue:
     def decide(self, item_id: int, decision: str, reviewer: str, reason: str | None = None) -> dict:
         if decision not in {ReviewDecision.APPROVE, ReviewDecision.REJECT, ReviewDecision.REQUEST_CHANGES}:
             raise ValueError("invalid review decision")
-        status = {
+        row = next((r for r in self.store.reviews() if r["id"] == item_id), None)
+        if row is None:
+            raise KeyError(item_id)
+                status = {
             ReviewDecision.APPROVE: ReviewStatus.APPROVED,
             ReviewDecision.REJECT: ReviewStatus.REJECTED,
             ReviewDecision.REQUEST_CHANGES: ReviewStatus.CHANGES_REQUESTED,

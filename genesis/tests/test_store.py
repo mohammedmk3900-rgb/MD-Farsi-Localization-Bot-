@@ -82,3 +82,19 @@ def test_alerts_are_persistent(tmp_path: Path):
     alerts = AlertService(store)
     alerts.service_failure("sync", "upstream unavailable", "SYNC_DOWN")
     assert alerts.active()[0]["code"] == "SYNC_DOWN"
+
+
+def test_review_payload_survives_restart(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    from app.services.review import ReviewQueue
+    from app.domain.models import TranslationCheck
+
+    check = TranslationCheck("KEY $X$", "ترجمه $X$", [{"kind": "demo", "severity": "warning"}])
+    item = ReviewQueue(store).submit("translator-1", check)
+
+    restored = ReviewQueue(Store(tmp_path / "genesis.db")).pending()[0]
+    assert restored.id == item.id
+    assert restored.check.source == "KEY $X$"
+    assert restored.check.translation == "ترجمه $X$"
+    assert restored.check.findings[0]["kind"] == "demo"

@@ -51,6 +51,8 @@ def test_review_state_is_durable(tmp_path: Path):
 
     queue = ReviewQueue(store)
     item = queue.submit("translator-1", TranslationCheck("KEY", "ترجمه"))
+    claimed = queue.claim(item.id, "reviewer-1")
+    assert claimed.status == ReviewStatus.IN_REVIEW
     result = queue.decide(item.id, ReviewDecision.APPROVE, "reviewer-1")
     assert result["status"] == ReviewStatus.APPROVED
     assert queue.pending() == []

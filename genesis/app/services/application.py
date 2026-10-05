@@ -28,7 +28,7 @@ class GenesisApplication:
         self.tasks = TaskService(store)
         self.missions = MissionService()
         self.reviews = ReviewQueue(store)
-        self.achievements = AchievementService()
+        self.achievements = AchievementService(store)
         self.alerts = AlertService(store)
         self.health = HealthService()
         self.progress = ProgressService(store)

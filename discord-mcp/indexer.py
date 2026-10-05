@@ -4,7 +4,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-DB_PATH = Path(__file__).with_name("discord.db")
+DB_PATH = Path(__file__).with_name("data") / "discord.db"
 
 class MessageIndex:
     def __init__(self, path: str | Path = DB_PATH) -> None:

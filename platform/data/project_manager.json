@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-04T18:13:55.583191+00:00",
+  "generated_at": "2026-10-05T15:04:25.096534+00:00",
   "project_id": 19621,
   "status": "attention",
   "progress": {
@@ -19,7 +19,7 @@
   "velocity": {
     "average_translation_per_snapshot": 0.0,
     "average_review_per_snapshot": 0.0,
-    "samples": 7
+    "samples": 4
   },
   "attention": [
     "در آخرین snapshot پیشرفت ترجمه‌ای ثبت نشده است."

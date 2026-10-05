@@ -92,7 +92,8 @@ class Store:
 
     def update_task(self, task_id: int, *, owner: str | None = None, reviewer: str | None = None,
                     priority: str | None = None, status: str | None = None, due_at: str | None = None,
-                    updated_at: str) -> None:
+                    updated_at: str, expected_status: str | None = None,
+                    expected_owner: str | None = None) -> None:
         current = self.task(task_id)
         if current is None:
             raise KeyError(f"task #{task_id} not found")
@@ -104,8 +105,17 @@ class Store:
             "due_at": current["due_at"] if due_at is None else due_at,
         }
         with self._connect() as db:
-            db.execute("""UPDATE tasks SET owner=?,reviewer=?,priority=?,status=?,due_at=?,updated_at=? WHERE id=?""",
-                       (values["owner"], values["reviewer"], values["priority"], values["status"], values["due_at"], updated_at, task_id))
+            where = "id=?"
+            params = [values["owner"], values["reviewer"], values["priority"], values["status"], values["due_at"], updated_at, task_id]
+            if expected_status is not None:
+                where += " AND status=?"
+                params.append(expected_status)
+            if expected_owner is not None:
+                where += " AND (owner=? OR owner IS NULL)"
+                params.append(expected_owner)
+            cur = db.execute(f"""UPDATE tasks SET owner=?,reviewer=?,priority=?,status=?,due_at=?,updated_at=? WHERE {where}""", params)
+            if cur.rowcount != 1:
+                raise ValueError("stale task state")
 
     def create_review(self, *, translation_key: str, actor: str, status: str,
                       created_at: str, source: str = "", translation: str = "",
@@ -126,12 +136,16 @@ class Store:
         return [dict(r) for r in rows]
 
     def decide_review(self, review_id: int, *, reviewer: str, decision: str | None, reason: str | None,
-                      status: str, updated_at: str) -> None:
+                      status: str, updated_at: str, expected_status: str | None = None) -> None:
         with self._connect() as db:
-            cur = db.execute("""UPDATE reviews SET reviewer=?,decision=?,reason=?,status=?,updated_at=? WHERE id=?""",
-                             (reviewer, decision, reason, status, updated_at, review_id))
+            where = "id=?"
+            params = [reviewer, decision, reason, status, updated_at, review_id]
+            if expected_status is not None:
+                where += " AND status=?"
+                params.append(expected_status)
+            cur = db.execute(f"""UPDATE reviews SET reviewer=?,decision=?,reason=?,status=?,updated_at=? WHERE {where}""", params)
             if cur.rowcount != 1:
-                raise KeyError(review_id)
+                raise ValueError("stale review state")
 
     def save_glossary_snapshot(self, project_id: int, captured_at: str, terms: list[dict[str, Any]]) -> None:
         with self._connect() as db:

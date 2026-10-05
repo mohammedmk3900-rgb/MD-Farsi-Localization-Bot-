@@ -69,7 +69,7 @@ class ReviewQueue:
             raise ValueError("review is not open")
         self.store.decide_review(
             item_id, reviewer=reviewer, decision=None, reason=None,
-            status=ReviewStatus.IN_REVIEW, updated_at=self._now()
+            status=ReviewStatus.IN_REVIEW, updated_at=self._now(), expected_status=ReviewStatus.OPEN
         )
         return ReviewItem(item_id, row["actor"],
                           TranslationCheck(row.get("source", row["translation_key"]), row.get("translation", ""),
@@ -85,5 +85,5 @@ class ReviewQueue:
             ReviewDecision.REQUEST_CHANGES: ReviewStatus.CHANGES_REQUESTED,
         }[decision]
         self.store.decide_review(item_id, reviewer=reviewer, decision=decision, reason=reason,
-                                 status=status, updated_at=self._now())
+                                 status=status, updated_at=self._now(), expected_status=ReviewStatus.IN_REVIEW)
         return {"item_id": item_id, "decision": decision, "reviewer": reviewer, "status": status}

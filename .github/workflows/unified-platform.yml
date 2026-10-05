@@ -512,14 +512,21 @@ jobs:
         run: |
           mkdir -p platform/data
           find platform/data -maxdepth 1 -type f -name '*.json' ! -name 'discord_news.json' ! -name 'discord_intelligence.json' ! -name 'state-manifest.json' ! -name 'runtime-manifest.json' -printf '%f\n' | sort > platform/data/.public-snapshot-manifest
-      - name: Build runtime manifest
+      - name: Build runtime manifest and public staging area
         run: |
           python - <<'PY'
-          import json,os
+          import json, os, shutil
           from pathlib import Path
-          root=Path('platform/data')
-          public=sorted(p.name for p in root.glob('*.json') if p.name not in {'discord_news.json','discord_intelligence.json','state-manifest.json','runtime-manifest.json'})
-          (root/'runtime-manifest.json').write_text(json.dumps({'schema':1,'state_verified':True,'commit':os.getenv('GITHUB_SHA'),'public_json':public},indent=2)+'\n',encoding='utf-8')
+          root = Path("platform/data")
+          public = sorted(p.name for p in root.glob("*.json") if p.name not in {"discord_news.json", "discord_intelligence.json", "state-manifest.json", "runtime-manifest.json"})
+          manifest = root / ".public-snapshot-manifest"
+          staging = Path("public-snapshots")
+          staging.mkdir(parents=True, exist_ok=True)
+          manifest.write_text("\n".join(public) + ("\n" if public else ""), encoding="utf-8")
+          for name in public:
+              shutil.copy2(root / name, staging / name)
+          (root / "runtime-manifest.json").write_text(json.dumps({"schema": 1, "state_verified": True, "commit": os.getenv("GITHUB_SHA"), "public_json": public}, indent=2) + "\n", encoding="utf-8")
+          (staging / ".public-snapshot-manifest").write_text(manifest.read_text(encoding="utf-8"), encoding="utf-8")
           PY
 
   phase-13-artifact:
@@ -548,9 +555,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: md-farsi-public-snapshots-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            platform/data/*.json
-            platform/data/.public-snapshot-manifest
+          path: public-snapshots
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 30
@@ -576,9 +581,14 @@ jobs:
       - name: Publish public snapshots
         run: |
           set -euo pipefail
-          manifest=snapshots/platform/data/.public-snapshot-manifest
+          manifest=snapshots/.public-snapshot-manifest
           [[ -s "$manifest" ]] || exit 1
-          while IFS= read -r f; do [[ -n "$f" ]] && cp "snapshots/platform/data/$f" "platform/data/$f"; done < "$manifest"
+          mkdir -p platform/data
+          while IFS= read -r f; do
+            [[ -n "$f" ]] || continue
+            [[ "$f" != */* ]] || { echo "::error::Invalid snapshot filename: $f"; exit 1; }
+            cp "snapshots/$f" "platform/data/$f"
+          done < "$manifest"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add platform/data

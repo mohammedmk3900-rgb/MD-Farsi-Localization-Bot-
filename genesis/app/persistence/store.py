@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 
 class Store:
@@ -44,6 +44,9 @@ class Store:
             CREATE INDEX IF NOT EXISTS idx_alerts_active ON alerts(active);
             CREATE TABLE IF NOT EXISTS scheduler_jobs (job_id TEXT PRIMARY KEY, status TEXT NOT NULL, next_run_at TEXT, last_run_at TEXT, lease_until TEXT, run_count INTEGER NOT NULL DEFAULT 0, failure_count INTEGER NOT NULL DEFAULT 0, last_error TEXT);
             CREATE TABLE IF NOT EXISTS health_checks (check_name TEXT PRIMARY KEY, status TEXT NOT NULL, checked_at TEXT NOT NULL, detail TEXT NOT NULL DEFAULT '');
+            CREATE TABLE IF NOT EXISTS member_progress (member_id TEXT PRIMARY KEY, completed INTEGER NOT NULL DEFAULT 0, review INTEGER NOT NULL DEFAULT 0, active INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS achievements (member_id TEXT NOT NULL, achievement_key TEXT NOT NULL, earned_at TEXT NOT NULL, PRIMARY KEY(member_id, achievement_key));
+            CREATE TABLE IF NOT EXISTS qa_runs (id TEXT PRIMARY KEY, translation_key TEXT NOT NULL, source TEXT NOT NULL, translation TEXT NOT NULL, findings TEXT NOT NULL, created_at TEXT NOT NULL);
             """)
             for column, definition in (
                 ("source", "TEXT NOT NULL DEFAULT ''"),
@@ -176,7 +179,48 @@ class Store:
             row = db.execute("SELECT * FROM scheduler_jobs WHERE job_id=?", (job_id,)).fetchone()
         return None if row is None else dict(row)
 
+    def upsert_member_progress(self, member_id: str, completed: int, review: int, active: int, updated_at: str) -> None:
+        with self._connect() as db:
+            db.execute("""INSERT INTO member_progress(member_id,completed,review,active,updated_at)
+                         VALUES(?,?,?,?,?) ON CONFLICT(member_id) DO UPDATE SET completed=excluded.completed,
+                         review=excluded.review,active=excluded.active,updated_at=excluded.updated_at""",
+                       (member_id, max(0, completed), max(0, review), max(0, active), updated_at))
+
+    def member_progress(self, member_id: str) -> dict[str, Any] | None:
+        with self._connect() as db:
+            row = db.execute("SELECT * FROM member_progress WHERE member_id=?", (member_id,)).fetchone()
+        return None if row is None else dict(row)
+
+    def award_achievement(self, member_id: str, achievement_key: str, earned_at: str) -> bool:
+        with self._connect() as db:
+            cur = db.execute("INSERT OR IGNORE INTO achievements(member_id,achievement_key,earned_at) VALUES(?,?,?)",
+                             (member_id, achievement_key, earned_at))
+            return cur.rowcount == 1
+
+    def achievements(self, member_id: str | None = None) -> list[dict[str, Any]]:
+        with self._connect() as db:
+            rows = db.execute("SELECT * FROM achievements" + (" WHERE member_id=?" if member_id else "") +
+                              " ORDER BY earned_at", ((member_id,) if member_id else ())).fetchall()
+        return [dict(row) for row in rows]
+
+    def record_qa_run(self, run_id: str, translation_key: str, source: str, translation: str,
+                      findings: list[dict[str, Any]], created_at: str) -> None:
+        with self._connect() as db:
+            db.execute("INSERT INTO qa_runs(id,translation_key,source,translation,findings,created_at) VALUES(?,?,?,?,?,?)",
+                       (run_id, translation_key, source, translation,
+                        json.dumps(findings, ensure_ascii=False, sort_keys=True), created_at))
+
+    def qa_runs(self, translation_key: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        limit = max(1, min(int(limit), 1000))
+        with self._connect() as db:
+            if translation_key:
+                rows = db.execute("SELECT * FROM qa_runs WHERE translation_key=? ORDER BY created_at DESC LIMIT ?",
+                                  (translation_key, limit)).fetchall()
+            else:
+                rows = db.execute("SELECT * FROM qa_runs ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        return [dict(row) | {"findings": json.loads(row["findings"])} for row in rows]
+
     def counts(self) -> dict[str, int]:
-        tables = ("events", "tasks", "reviews", "glossary_snapshots", "sync_runs", "alerts", "scheduler_jobs")
+        tables = ("events", "tasks", "reviews", "glossary_snapshots", "sync_runs", "alerts", "scheduler_jobs", "member_progress", "achievements", "qa_runs")
         with self._connect() as db:
             return {table: int(db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]) for table in tables}

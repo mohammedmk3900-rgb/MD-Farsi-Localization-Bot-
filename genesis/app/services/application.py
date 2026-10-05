@@ -39,7 +39,7 @@ class GenesisApplication:
 
     def initialize(self) -> None:
         self.store.initialize()
-        self.audit("genesis.initialized", None, {"schema": 3})
+        self.audit("genesis.initialized", None, {"schema": 5})
 
     def audit(self, event_type: str, actor: str | None, payload: dict[str, Any]) -> None:
         self.store.record_event(event_type, actor, datetime.now(timezone.utc).isoformat(), payload)

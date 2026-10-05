@@ -5,10 +5,12 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
+
 
 class Store:
     """Durable SQLite boundary for operational state, snapshots and audit history."""
+
     def __init__(self, path: str | Path, *, busy_timeout_ms: int = 5000):
         self.path = Path(path)
         self.busy_timeout_ms = max(100, int(busy_timeout_ms))
@@ -43,11 +45,13 @@ class Store:
             CREATE TABLE IF NOT EXISTS scheduler_jobs (job_id TEXT PRIMARY KEY, status TEXT NOT NULL, next_run_at TEXT, last_run_at TEXT, lease_until TEXT, run_count INTEGER NOT NULL DEFAULT 0, failure_count INTEGER NOT NULL DEFAULT 0, last_error TEXT);
             CREATE TABLE IF NOT EXISTS health_checks (check_name TEXT PRIMARY KEY, status TEXT NOT NULL, checked_at TEXT NOT NULL, detail TEXT NOT NULL DEFAULT '');
             """)
-            db.execute("""INSERT INTO schema_meta(key, value) VALUES('schema_version', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value""", (str(SCHEMA_VERSION),))
+            db.execute("""INSERT INTO schema_meta(key, value) VALUES('schema_version', ?)
+                         ON CONFLICT(key) DO UPDATE SET value=excluded.value""", (str(SCHEMA_VERSION),))
 
     def record_event(self, event_type: str, actor: str | None, created_at: str, payload: dict[str, Any]) -> None:
         with self._connect() as db:
-            db.execute("INSERT INTO events(event_type, actor, created_at, payload) VALUES (?, ?, ?, ?)", (event_type, actor, created_at, json.dumps(payload, ensure_ascii=False, sort_keys=True)))
+            db.execute("INSERT INTO events(event_type, actor, created_at, payload) VALUES (?, ?, ?, ?)",
+                       (event_type, actor, created_at, json.dumps(payload, ensure_ascii=False, sort_keys=True)))
 
     def events(self, limit: int = 100) -> list[dict[str, Any]]:
         limit = max(1, min(int(limit), 1000))
@@ -55,18 +59,112 @@ class Store:
             rows = db.execute("SELECT id,event_type,actor,created_at,payload FROM events ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
         return [{"id": r["id"], "event_type": r["event_type"], "actor": r["actor"], "created_at": r["created_at"], "payload": json.loads(r["payload"])} for r in rows]
 
+    def create_task(self, *, title: str, scope: str, priority: str, due_at: str | None, created_at: str) -> int:
+        with self._connect() as db:
+            cur = db.execute("""INSERT INTO tasks(title,scope,priority,status,due_at,created_at,updated_at)
+                                VALUES(?,?,?,?,?,?,?)""",
+                             (title, scope, priority, "available", due_at, created_at, created_at))
+            return int(cur.lastrowid)
+
+    def task(self, task_id: int) -> dict[str, Any] | None:
+        with self._connect() as db:
+            row = db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
+        return None if row is None else dict(row)
+
+    def tasks(self, status: str | None = None) -> list[dict[str, Any]]:
+        with self._connect() as db:
+            if status is None:
+                rows = db.execute("SELECT * FROM tasks ORDER BY id").fetchall()
+            else:
+                rows = db.execute("SELECT * FROM tasks WHERE status=? ORDER BY id", (status,)).fetchall()
+        return [dict(r) for r in rows]
+
+    def update_task(self, task_id: int, *, owner: str | None = None, reviewer: str | None = None,
+                    priority: str | None = None, status: str | None = None, due_at: str | None = None,
+                    updated_at: str) -> None:
+        current = self.task(task_id)
+        if current is None:
+            raise KeyError(f"task #{task_id} not found")
+        values = {
+            "owner": current["owner"] if owner is None else owner,
+            "reviewer": current["reviewer"] if reviewer is None else reviewer,
+            "priority": current["priority"] if priority is None else priority,
+            "status": current["status"] if status is None else status,
+            "due_at": current["due_at"] if due_at is None else due_at,
+        }
+        with self._connect() as db:
+            db.execute("""UPDATE tasks SET owner=?,reviewer=?,priority=?,status=?,due_at=?,updated_at=? WHERE id=?""",
+                       (values["owner"], values["reviewer"], values["priority"], values["status"], values["due_at"], updated_at, task_id))
+
+    def create_review(self, *, translation_key: str, actor: str, status: str,
+                      created_at: str) -> int:
+        with self._connect() as db:
+            cur = db.execute("""INSERT INTO reviews(translation_key,actor,status,created_at,updated_at)
+                                VALUES(?,?,?,?,?)""",
+                             (translation_key, actor, status, created_at, created_at))
+            return int(cur.lastrowid)
+
+    def reviews(self, status: str | None = None) -> list[dict[str, Any]]:
+        with self._connect() as db:
+            if status is None:
+                rows = db.execute("SELECT * FROM reviews ORDER BY id").fetchall()
+            else:
+                rows = db.execute("SELECT * FROM reviews WHERE status=? ORDER BY id", (status,)).fetchall()
+        return [dict(r) for r in rows]
+
+    def decide_review(self, review_id: int, *, reviewer: str, decision: str, reason: str | None,
+                      status: str, updated_at: str) -> None:
+        with self._connect() as db:
+            cur = db.execute("""UPDATE reviews SET reviewer=?,decision=?,reason=?,status=?,updated_at=? WHERE id=?""",
+                             (reviewer, decision, reason, status, updated_at, review_id))
+            if cur.rowcount != 1:
+                raise KeyError(review_id)
+
     def save_glossary_snapshot(self, project_id: int, captured_at: str, terms: list[dict[str, Any]]) -> None:
         with self._connect() as db:
-            db.execute("INSERT INTO glossary_snapshots(project_id,captured_at,term_count,payload) VALUES(?,?,?,?)", (project_id, captured_at, len(terms), json.dumps(terms, ensure_ascii=False, sort_keys=True)))
+            db.execute("INSERT INTO glossary_snapshots(project_id,captured_at,term_count,payload) VALUES(?,?,?,?)",
+                       (project_id, captured_at, len(terms), json.dumps(terms, ensure_ascii=False, sort_keys=True)))
 
     def latest_glossary_snapshot(self, project_id: int) -> list[dict[str, Any]] | None:
         with self._connect() as db:
             row = db.execute("SELECT payload FROM glossary_snapshots WHERE project_id=? ORDER BY id DESC LIMIT 1", (project_id,)).fetchone()
         return None if row is None else json.loads(row["payload"])
 
-    def record_sync_run(self, run_id: str, project_id: int, started_at: str, status: str, payload: dict[str, Any], finished_at: str | None = None) -> None:
+    def record_sync_run(self, run_id: str, project_id: int, started_at: str, status: str,
+                        payload: dict[str, Any], finished_at: str | None = None) -> None:
         with self._connect() as db:
-            db.execute("INSERT INTO sync_runs(id,project_id,started_at,finished_at,status,payload) VALUES(?,?,?,?,?,?)", (run_id, project_id, started_at, finished_at, status, json.dumps(payload, ensure_ascii=False, sort_keys=True)))
+            db.execute("INSERT INTO sync_runs(id,project_id,started_at,finished_at,status,payload) VALUES(?,?,?,?,?,?)",
+                       (run_id, project_id, started_at, finished_at, status, json.dumps(payload, ensure_ascii=False, sort_keys=True)))
+
+    def upsert_scheduler_job(self, job_id: str, *, status: str = "pending", next_run_at: str | None = None) -> None:
+        with self._connect() as db:
+            db.execute("""INSERT INTO scheduler_jobs(job_id,status,next_run_at) VALUES(?,?,?)
+                         ON CONFLICT(job_id) DO UPDATE SET next_run_at=excluded.next_run_at""",
+                       (job_id, status, next_run_at))
+
+    def claim_scheduler_job(self, job_id: str, *, now_iso: str, lease_until: str) -> bool:
+        with self._connect() as db:
+            cur = db.execute("""UPDATE scheduler_jobs
+                                SET status='running', lease_until=?, last_run_at=?, run_count=run_count+1
+                                WHERE job_id=? AND status!='running' AND (lease_until IS NULL OR lease_until < ?)""",
+                             (lease_until, now_iso, job_id, now_iso))
+            return cur.rowcount == 1
+
+    def finish_scheduler_job(self, job_id: str, *, next_run_at: str | None) -> None:
+        with self._connect() as db:
+            db.execute("""UPDATE scheduler_jobs SET status='pending',next_run_at=?,lease_until=NULL,last_error=NULL
+                          WHERE job_id=?""", (next_run_at, job_id))
+
+    def fail_scheduler_job(self, job_id: str, *, error: str, next_run_at: str | None) -> None:
+        with self._connect() as db:
+            db.execute("""UPDATE scheduler_jobs SET status='pending',next_run_at=?,lease_until=NULL,
+                          failure_count=failure_count+1,last_error=? WHERE job_id=?""",
+                       (next_run_at, error[:2000], job_id))
+
+    def scheduler_job(self, job_id: str) -> dict[str, Any] | None:
+        with self._connect() as db:
+            row = db.execute("SELECT * FROM scheduler_jobs WHERE job_id=?", (job_id,)).fetchone()
+        return None if row is None else dict(row)
 
     def counts(self) -> dict[str, int]:
         tables = ("events", "tasks", "reviews", "glossary_snapshots", "sync_runs", "alerts", "scheduler_jobs")

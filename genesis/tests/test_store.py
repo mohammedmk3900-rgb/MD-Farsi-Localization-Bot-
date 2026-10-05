@@ -196,3 +196,43 @@ def test_review_state_machine_rejects_terminal_reopen(tmp_path: Path):
         assert "invalid review transition" in str(exc)
     else:
         raise AssertionError("APPROVED review was allowed to reopen")
+
+
+def test_atomic_task_transition_rejects_stale_status(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    from app.domain.models import Priority
+
+    task_id = store.create_task(title="atomic", scope="", priority=Priority.NORMAL.value,
+                                due_at=None, created_at="2026-10-05T00:00:00+00:00")
+    store.transition_task(task_id, target_status="in_progress",
+                          updated_at="2026-10-05T00:01:00+00:00",
+                          allowed_from=("available",), owner="member-a")
+    try:
+        store.transition_task(task_id, target_status="review",
+                              updated_at="2026-10-05T00:02:00+00:00",
+                              allowed_from=("available",), owner="member-b")
+    except ValueError as exc:
+        assert "stale" in str(exc)
+    else:
+        raise AssertionError("stale atomic task transition was accepted")
+
+
+def test_atomic_review_transition_rejects_stale_status(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    review_id = store.create_review(
+        translation_key="KEY", actor="translator", status="open",
+        created_at="2026-10-05T00:00:00+00:00"
+    )
+    store.transition_review(review_id, target_status="in_review",
+                            updated_at="2026-10-05T00:01:00+00:00",
+                            allowed_from=("open",), reviewer="reviewer-a")
+    try:
+        store.transition_review(review_id, target_status="approved",
+                                updated_at="2026-10-05T00:02:00+00:00",
+                                allowed_from=("open",), reviewer="reviewer-b")
+    except ValueError as exc:
+        assert "stale" in str(exc)
+    else:
+        raise AssertionError("stale atomic review transition was accepted")

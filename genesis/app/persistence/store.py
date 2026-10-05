@@ -117,6 +117,33 @@ class Store:
             if cur.rowcount != 1:
                 raise ValueError("stale task state")
 
+    def transition_task(self, task_id: int, *, target_status: str, updated_at: str,
+                       allowed_from: tuple[str, ...], owner: str | None = None,
+                       reviewer: str | None = None, expected_owner: str | None = None) -> None:
+        if not allowed_from:
+            raise ValueError("allowed_from is required")
+        assignments = ["status=?", "updated_at=?"]
+        params: list[Any] = [target_status, updated_at]
+        if owner is not None:
+            assignments.append("owner=?")
+            params.append(owner)
+        if reviewer is not None:
+            assignments.append("reviewer=?")
+            params.append(reviewer)
+        placeholders = ",".join("?" for _ in allowed_from)
+        where = f"id=? AND status IN ({placeholders})"
+        params.append(task_id)
+        params.extend(allowed_from)
+        if expected_owner is not None:
+            where += " AND (owner=? OR owner IS NULL)"
+            params.append(expected_owner)
+        with self._connect() as db:
+            cur = db.execute(
+                f"UPDATE tasks SET {','.join(assignments)} WHERE {where}", params
+            )
+            if cur.rowcount != 1:
+                raise ValueError("stale task state")
+
     def create_review(self, *, translation_key: str, actor: str, status: str,
                       created_at: str, source: str = "", translation: str = "",
                       findings: list[dict[str, Any]] | None = None) -> int:
@@ -144,6 +171,33 @@ class Store:
                 where += " AND status=?"
                 params.append(expected_status)
             cur = db.execute(f"""UPDATE reviews SET reviewer=?,decision=?,reason=?,status=?,updated_at=? WHERE {where}""", params)
+            if cur.rowcount != 1:
+                raise ValueError("stale review state")
+
+    def transition_review(self, review_id: int, *, target_status: str, updated_at: str,
+                         allowed_from: tuple[str, ...], reviewer: str | None = None,
+                         decision: str | None = None, reason: str | None = None) -> None:
+        if not allowed_from:
+            raise ValueError("allowed_from is required")
+        assignments = ["status=?", "updated_at=?"]
+        params: list[Any] = [target_status, updated_at]
+        if reviewer is not None:
+            assignments.append("reviewer=?")
+            params.append(reviewer)
+        if decision is not None:
+            assignments.append("decision=?")
+            params.append(decision)
+        if reason is not None:
+            assignments.append("reason=?")
+            params.append(reason)
+        placeholders = ",".join("?" for _ in allowed_from)
+        params.append(review_id)
+        params.extend(allowed_from)
+        with self._connect() as db:
+            cur = db.execute(
+                f"UPDATE reviews SET {','.join(assignments)} WHERE id=? AND status IN ({placeholders})",
+                params,
+            )
             if cur.rowcount != 1:
                 raise ValueError("stale review state")
 

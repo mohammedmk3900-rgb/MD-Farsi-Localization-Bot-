@@ -455,7 +455,8 @@ jobs:
           PY
           done
       - name: Schema validation
-        run: sqlite3 :memory: < database/schema.sql
+        run: |
+          sqlite3 :memory: < database/schema.sql
       - name: State hash
         run: |
           mkdir -p platform/data

@@ -58,7 +58,8 @@ class TaskService:
             raise ValueError("task cannot be claimed")
         if task.owner not in {None, "", member_id}:
             raise ValueError("task is owned by another member")
-        self.store.update_task(task.id, owner=member_id, status=TaskStatus.IN_PROGRESS.value, updated_at=self._now())
+        self.store.update_task(task.id, owner=member_id, status=TaskStatus.IN_PROGRESS.value,
+                               updated_at=self._now(), expected_status=task.status.value, expected_owner=member_id)
         return self.get(task.id)
 
     def submit(self, task: Task, member_id: str) -> Task:
@@ -66,11 +67,13 @@ class TaskService:
             raise ValueError("only the task owner can submit it")
         if task.status != TaskStatus.IN_PROGRESS:
             raise ValueError("task is not in progress")
-        self.store.update_task(task.id, status=TaskStatus.REVIEW.value, updated_at=self._now())
+        self.store.update_task(task.id, status=TaskStatus.REVIEW.value,
+                               updated_at=self._now(), expected_status=TaskStatus.IN_PROGRESS.value, expected_owner=member_id)
         return self.get(task.id)
 
     def complete(self, task: Task, reviewer_id: str) -> Task:
         if task.status != TaskStatus.REVIEW:
             raise ValueError("task is not awaiting review")
-        self.store.update_task(task.id, reviewer=reviewer_id, status=TaskStatus.DONE.value, updated_at=self._now())
+        self.store.update_task(task.id, reviewer=reviewer_id, status=TaskStatus.DONE.value,
+                               updated_at=self._now(), expected_status=TaskStatus.REVIEW.value)
         return self.get(task.id)

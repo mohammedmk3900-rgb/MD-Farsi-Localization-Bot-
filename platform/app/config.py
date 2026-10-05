@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     channel_reports: str = ""
     channel_glossary: str = ""
 
-    discord_database_path: str = str(PLATFORM_DIR.parent / "discord-mcp" / "discord.db")
+    discord_database_path: str = str(PLATFORM_DIR.parent / "discord-mcp" / "data" / "discord.db")
     discord_intelligence_path: str = str(PLATFORM_DIR / "data" / "discord_intelligence.json")
 
     database_path: str = str(PLATFORM_DIR / "data" / "platform.db")

@@ -15,6 +15,9 @@ fn main() {
         Ok(()) => println!(
             "{{\"schema_version\":1,\"operation\":\"qa\",\"status\":\"ok\",\"valid\":true}}"
         ),
-        Err(error) => println!("{{\"schema_version\":1,\"operation\":\"qa\",\"status\":\"failed\",\"valid\":false,\"error\":\"{}\"}}", error.replace('"', "\\\"")),
+        Err(error) => println!(
+            "{{\"schema_version\":1,\"operation\":\"qa\",\"status\":\"failed\",\"valid\":false,\"error\":\"{}\"}}",
+            error.replace('"', "\\\"")
+        ),
     }
 }

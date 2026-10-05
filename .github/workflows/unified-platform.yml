@@ -131,7 +131,7 @@ jobs:
       - name: Git hygiene
         run: |
           git diff --check
-          ! git ls-files | grep -Eq '(^|/)[^/]+\.db(-wal|-shm)?$'
+          test -z "$(git ls-files -- '*.db' '*.db-wal' '*.db-shm')"
 
   phase-02-language:
     name: 'Phase 2 · Language validation'

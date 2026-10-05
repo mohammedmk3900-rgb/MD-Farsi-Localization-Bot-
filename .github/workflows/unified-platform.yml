@@ -349,10 +349,8 @@ jobs:
         run: |
           set -euo pipefail
           find runtime/polyglot -maxdepth 1 -type f -print
-          [[ -x runtime/polyglot/mdfarsi-qa ]] || chmod +x runtime/polyglot/mdfarsi-qa
-          [[ -x runtime/polyglot/worker ]] || chmod +x runtime/polyglot/worker
-          [[ -x runtime/polyglot/md_native_probe ]] || chmod +x runtime/polyglot/md_native_probe
-          [[ -x runtime/polyglot/MDNativeBridge ]] || chmod +x runtime/polyglot/MDNativeBridge
+          chmod 755 runtime/polyglot/mdfarsi-qa runtime/polyglot/worker runtime/polyglot/md_native_probe runtime/polyglot/MDNativeBridge
+          ls -l runtime/polyglot
       - name: Execute runtime contracts
         shell: bash
         run: |

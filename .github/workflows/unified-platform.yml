@@ -345,10 +345,14 @@ jobs:
       - name: Verify hashes
         working-directory: runtime
         run: sha256sum -c SHA256SUMS
-      - name: Verify runtime inventory
+      - name: Verify runtime inventory and permissions
         run: |
           set -euo pipefail
           find runtime/polyglot -maxdepth 1 -type f -print
+          [[ -x runtime/polyglot/mdfarsi-qa ]] || chmod +x runtime/polyglot/mdfarsi-qa
+          [[ -x runtime/polyglot/worker ]] || chmod +x runtime/polyglot/worker
+          [[ -x runtime/polyglot/md_native_probe ]] || chmod +x runtime/polyglot/md_native_probe
+          [[ -x runtime/polyglot/MDNativeBridge ]] || chmod +x runtime/polyglot/MDNativeBridge
       - name: Execute runtime contracts
         shell: bash
         run: |

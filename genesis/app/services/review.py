@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import json
 
 from app.domain.models import TranslationCheck
 from app.persistence.store import Store
@@ -42,14 +43,20 @@ class ReviewQueue:
 
     def submit(self, actor: str, check: TranslationCheck, translation_key: str | None = None) -> ReviewItem:
         key = translation_key or check.source
-        review_id = self.store.create_review(translation_key=key, actor=actor,
-                                              status=ReviewStatus.OPEN, created_at=self._now())
-        return ReviewItem(review_id, actor, check, self._now(), ReviewStatus.OPEN)
+        created_at = self._now()
+        review_id = self.store.create_review(
+            translation_key=key, actor=actor, status=ReviewStatus.OPEN,
+            created_at=created_at, source=check.source, translation=check.translation,
+            findings=check.findings,
+        )
+        return ReviewItem(review_id, actor, check, created_at, ReviewStatus.OPEN)
 
     def pending(self) -> list[ReviewItem]:
         rows = self.store.reviews()
         return [
-            ReviewItem(r["id"], r["actor"], TranslationCheck(r["translation_key"], ""),
+            ReviewItem(r["id"], r["actor"],
+                       TranslationCheck(r.get("source", r["translation_key"]), r.get("translation", ""),
+                                        json.loads(r.get("findings", "[]"))),
                        r["created_at"], r["status"])
             for r in rows if r["status"] in {ReviewStatus.OPEN, ReviewStatus.IN_REVIEW}
         ]
@@ -64,7 +71,9 @@ class ReviewQueue:
             item_id, reviewer=reviewer, decision=None, reason=None,
             status=ReviewStatus.IN_REVIEW, updated_at=self._now()
         )
-        return ReviewItem(item_id, row["actor"], TranslationCheck(row["translation_key"], ""),
+        return ReviewItem(item_id, row["actor"],
+                          TranslationCheck(row.get("source", row["translation_key"]), row.get("translation", ""),
+                                           json.loads(row.get("findings", "[]"))),
                           row["created_at"], ReviewStatus.IN_REVIEW)
 
     def decide(self, item_id: int, decision: str, reviewer: str, reason: str | None = None) -> dict:

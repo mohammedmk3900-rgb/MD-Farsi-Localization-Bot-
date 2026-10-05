@@ -344,19 +344,19 @@ jobs:
           path: runtime
       - name: Verify hashes
         working-directory: runtime
-        run: sha256sum -c dist/SHA256SUMS
+        run: sha256sum -c SHA256SUMS
       - name: Verify runtime inventory
         run: |
           set -euo pipefail
-          find runtime/dist/polyglot -maxdepth 1 -type f -print
+          find runtime/polyglot -maxdepth 1 -type f -print
       - name: Execute runtime contracts
         shell: bash
         run: |
           set -euo pipefail
-          printf '{"source":"Hello $STATE$ §Y £icon","target":"سلام $STATE$ §Y £icon"}\n' | runtime/dist/polyglot/mdfarsi-qa
-          printf '{"type":"health","id":"ci-runtime-check","payload":{"ok":true}}\n' | runtime/dist/polyglot/worker
-          runtime/dist/polyglot/md_native_probe
-          runtime/dist/polyglot/MDNativeBridge
+          printf '{"source":"Hello $STATE$ §Y £icon","target":"سلام $STATE$ §Y £icon"}\n' | runtime/polyglot/mdfarsi-qa
+          printf '{"type":"health","id":"ci-runtime-check","payload":{"ok":true}}\n' | runtime/polyglot/worker
+          runtime/polyglot/md_native_probe
+          runtime/polyglot/MDNativeBridge
 
   phase-07-paratranz:
     name: 'Phase 7 · ParaTranz'
@@ -555,7 +555,7 @@ jobs:
           path: |
             platform/data
             discord-mcp/data
-            runtime/dist
+            runtime
           if-no-files-found: warn
           retention-days: 30
       - uses: actions/upload-artifact@v7

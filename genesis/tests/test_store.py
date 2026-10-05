@@ -57,3 +57,28 @@ def test_review_state_is_durable(tmp_path: Path):
     assert result["status"] == ReviewStatus.APPROVED
     assert queue.pending() == []
     assert store.reviews()[0]["reviewer"] == "reviewer-1"
+
+
+def test_scheduler_failure_is_recorded(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    from app.services.scheduling import Scheduler
+
+    scheduler = Scheduler(store, retry_seconds=7)
+    scheduler.register("paratranz-sync")
+    assert scheduler.claim("paratranz-sync")
+    scheduler.fail("paratranz-sync", "temporary upstream failure")
+    job = store.scheduler_job("paratranz-sync")
+    assert job["status"] == "pending"
+    assert job["failure_count"] == 1
+    assert job["last_error"] == "temporary upstream failure"
+
+
+def test_alerts_are_persistent(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    from app.services.alerts import AlertService
+
+    alerts = AlertService(store)
+    alerts.service_failure("sync", "upstream unavailable", "SYNC_DOWN")
+    assert alerts.active()[0]["code"] == "SYNC_DOWN"

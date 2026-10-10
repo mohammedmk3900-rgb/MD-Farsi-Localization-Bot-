@@ -131,3 +131,22 @@ def test_empty_upstream_glossary_preserves_previous_snapshot(tmp_path):
         app.sync.project(app, FakeSyncSource(terms=[]))
     assert app.store.latest_glossary_snapshot(19621) == before
     assert app.glossary.find("Stability")[0].target == "ثبات"
+
+
+from app.integrations.discord import DiscordActor, DiscordCommandAdapter, DiscordCommandError, DiscordCommandGateway
+
+
+def test_discord_adapter_runs_sync_and_audits_command(tmp_path):
+    app = _make_app(tmp_path)
+    adapter = DiscordCommandAdapter(DiscordCommandGateway(app))
+    result = adapter.dispatch(DiscordActor("manager-1", ("project_manager",)), "sync", integration=FakeSyncSource())
+    assert result["glossary_terms"] == 1
+    assert any(event["event_type"] == "discord.command" for event in app.store.events())
+
+
+def test_discord_adapter_denies_sync_to_translator(tmp_path):
+    app = _make_app(tmp_path)
+    adapter = DiscordCommandAdapter(DiscordCommandGateway(app))
+    with pytest.raises(DiscordCommandError, match="permission denied"):
+        adapter.dispatch(DiscordActor("translator-1", ("translator",)), "sync", integration=FakeSyncSource())
+    assert app.store.counts()["sync_runs"] == 0

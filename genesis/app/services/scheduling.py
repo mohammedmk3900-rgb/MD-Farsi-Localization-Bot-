@@ -50,3 +50,37 @@ class Scheduler:
             job_id, error=str(error),
             next_run_at=(now + timedelta(seconds=self.retry_seconds)).isoformat(),
         )
+
+
+class ScheduledSyncRunner:
+    """Runs one durable ParaTranz sync job; safe to call from a periodic process."""
+
+    JOB_ID = "paratranz-sync"
+
+    def __init__(self, application, integration=None):
+        from app.integrations.paratranz import ParaTranzIntegration
+        self.application = application
+        self.integration = integration or ParaTranzIntegration()
+
+    def register(self, first_run_at: str | None = None) -> None:
+        self.application.scheduler.register(self.JOB_ID, first_run_at)
+
+    def run_once(self, now: datetime | None = None) -> dict | None:
+        """Return None when not due/already leased; otherwise return a durable result."""
+        now = now or datetime.now(timezone.utc)
+        if not self.application.scheduler.claim(self.JOB_ID, now):
+            return None
+        try:
+            result = self.application.sync.project(self.application, self.integration)
+            self.application.scheduler.succeed(self.JOB_ID)
+            self.application.audit("scheduler.job.succeeded", None, {"job_id": self.JOB_ID, "run_id": result["run_id"]})
+            return result
+        except Exception as exc:
+            self.application.scheduler.fail(self.JOB_ID, exc)
+            try:
+                self.application.audit("scheduler.job.failed", None, {
+                    "job_id": self.JOB_ID, "error_type": type(exc).__name__, "error": str(exc)
+                })
+            except Exception:
+                pass
+            raise

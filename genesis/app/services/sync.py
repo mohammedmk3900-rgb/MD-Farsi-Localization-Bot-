@@ -37,6 +37,12 @@ class SyncService:
             app.audit("paratranz.sync", None, {"run_id": run_id, **payload})
             return {"run_id": run_id, **payload}
         except Exception as exc:
-            app.store.record_sync_run(run_id, project_id, started, "failed", {"error_type": type(exc).__name__, "error": str(exc)}, datetime.now(timezone.utc).isoformat())
+            failed_at = datetime.now(timezone.utc).isoformat()
+            app.store.record_sync_run(run_id, project_id, started, "failed", {"error_type": type(exc).__name__, "error": str(exc)}, failed_at)
             app.audit("paratranz.sync.failed", None, {"run_id": run_id, "error_type": type(exc).__name__, "error": str(exc)})
+            try:
+                app.alerts.service_failure("paratranz", str(exc), "PARATRANZ_SYNC_FAILED")
+            except Exception:
+                # Preserve the original integration failure if alert persistence is also unavailable.
+                pass
             raise

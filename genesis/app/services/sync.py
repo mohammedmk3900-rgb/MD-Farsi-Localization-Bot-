@@ -29,12 +29,10 @@ class SyncService:
                 raise StaleUpstreamError("ParaTranz glossary contained no valid terms")
             if not raw_terms and app.store.latest_glossary_snapshot(project_id):
                 raise StaleUpstreamError("ParaTranz glossary is empty; existing snapshot was preserved")
-            app.glossary.replace(terms)
             now = datetime.now(timezone.utc).isoformat()
-            app.store.save_glossary_snapshot(project_id, now, raw_terms)
             payload = {"project_id": project_id, "translated": stats.translated, "reviewed": stats.reviewed, "files": stats.files, "members": stats.members, "glossary_terms": len(terms)}
-            app.store.record_sync_run(run_id, project_id, started, "success", payload, now)
-            app.audit("paratranz.sync", None, {"run_id": run_id, **payload})
+            app.store.record_sync_success(run_id, project_id, started, now, payload, raw_terms, payload)
+            app.glossary.replace(terms)
             return {"run_id": run_id, **payload}
         except Exception as exc:
             failed_at = datetime.now(timezone.utc).isoformat()

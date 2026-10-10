@@ -150,3 +150,21 @@ def test_discord_adapter_denies_sync_to_translator(tmp_path):
     with pytest.raises(DiscordCommandError, match="permission denied"):
         adapter.dispatch(DiscordActor("translator-1", ("translator",)), "sync", integration=FakeSyncSource())
     assert app.store.counts()["sync_runs"] == 0
+
+
+def test_failed_atomic_sync_does_not_replace_glossary_or_snapshot(tmp_path, monkeypatch):
+    app = _make_app(tmp_path)
+    source = FakeSyncSource()
+
+    def fail_commit(*args, **kwargs):
+        raise RuntimeError("database commit failed")
+
+    monkeypatch.setattr(app.store, "record_sync_success", fail_commit)
+    with pytest.raises(RuntimeError, match="database commit failed"):
+        app.sync.project(app, source)
+
+    assert app.store.latest_glossary_snapshot(19621) is None
+    assert app.glossary.all() == []
+    runs = app.store.counts()["sync_runs"]
+    assert runs == 1
+    assert app.store.events()[0]["event_type"] == "paratranz.sync.failed"

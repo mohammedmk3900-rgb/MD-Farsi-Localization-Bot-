@@ -75,7 +75,7 @@ class ScheduledSyncRunner:
             return None
         try:
             result = self.application.sync.project(self.application, self.integration)
-            next_run = (datetime.now(timezone.utc) + timedelta(seconds=self.interval_seconds)).isoformat()
+            next_run = (now + timedelta(seconds=self.interval_seconds)).isoformat()
             self.application.scheduler.succeed(self.JOB_ID, next_run_at=next_run)
             self.application.audit("scheduler.job.succeeded", None, {"job_id": self.JOB_ID, "run_id": result["run_id"]})
             return result

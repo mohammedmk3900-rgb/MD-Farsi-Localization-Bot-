@@ -201,6 +201,26 @@ class Store:
             if cur.rowcount != 1:
                 raise ValueError("stale review state")
 
+    def record_sync_success(self, run_id: str, project_id: int, started_at: str, finished_at: str,
+                            payload: dict[str, Any], terms: list[dict[str, Any]],
+                            event_payload: dict[str, Any]) -> None:
+        """Atomically commit the glossary snapshot, successful run and success audit event."""
+        with self._connect() as db:
+            db.execute(
+                "INSERT INTO glossary_snapshots(project_id,captured_at,term_count,payload) VALUES(?,?,?,?)",
+                (project_id, finished_at, len(terms), json.dumps(terms, ensure_ascii=False, sort_keys=True)),
+            )
+            db.execute(
+                "INSERT INTO sync_runs(id,project_id,started_at,finished_at,status,payload) VALUES(?,?,?,?,?,?)",
+                (run_id, project_id, started_at, finished_at, "success",
+                 json.dumps(payload, ensure_ascii=False, sort_keys=True)),
+            )
+            db.execute(
+                "INSERT INTO events(event_type,actor,created_at,payload) VALUES(?,?,?,?)",
+                ("paratranz.sync", None, finished_at,
+                 json.dumps({"run_id": run_id, **event_payload}, ensure_ascii=False, sort_keys=True)),
+            )
+
     def save_glossary_snapshot(self, project_id: int, captured_at: str, terms: list[dict[str, Any]]) -> None:
         with self._connect() as db:
             db.execute("INSERT INTO glossary_snapshots(project_id,captured_at,term_count,payload) VALUES(?,?,?,?)",

@@ -3,7 +3,9 @@ name = "md-news-genesis"
 version = "11.0.0a2"
 description = "MD Farsi Localization V11 Genesis production core"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "discord.py>=2.4,<3",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

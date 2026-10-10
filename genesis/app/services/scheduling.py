@@ -57,12 +57,15 @@ class ScheduledSyncRunner:
 
     JOB_ID = "paratranz-sync"
 
-    def __init__(self, application, integration=None):
+    def __init__(self, application, integration=None, *, interval_seconds: int = 3600):
         from app.integrations.paratranz import ParaTranzIntegration
         self.application = application
         self.integration = integration or ParaTranzIntegration()
+        self.interval_seconds = max(60, int(interval_seconds))
 
     def register(self, first_run_at: str | None = None) -> None:
+        if first_run_at is None:
+            first_run_at = datetime.now(timezone.utc).isoformat()
         self.application.scheduler.register(self.JOB_ID, first_run_at)
 
     def run_once(self, now: datetime | None = None) -> dict | None:
@@ -72,7 +75,8 @@ class ScheduledSyncRunner:
             return None
         try:
             result = self.application.sync.project(self.application, self.integration)
-            self.application.scheduler.succeed(self.JOB_ID)
+            next_run = (datetime.now(timezone.utc) + timedelta(seconds=self.interval_seconds)).isoformat()
+            self.application.scheduler.succeed(self.JOB_ID, next_run_at=next_run)
             self.application.audit("scheduler.job.succeeded", None, {"job_id": self.JOB_ID, "run_id": result["run_id"]})
             return result
         except Exception as exc:

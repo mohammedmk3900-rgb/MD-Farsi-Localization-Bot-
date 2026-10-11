@@ -236,3 +236,21 @@ def test_atomic_review_transition_rejects_stale_status(tmp_path: Path):
         assert "stale" in str(exc)
     else:
         raise AssertionError("stale atomic review transition was accepted")
+
+
+def test_scheduler_reclaims_expired_running_lease(tmp_path: Path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    store.upsert_scheduler_job("stuck", status="running")
+    with store._connect() as db:
+        db.execute(
+            "UPDATE scheduler_jobs SET lease_until=? WHERE job_id=?",
+            ("2026-10-04T00:00:00+00:00", "stuck"),
+        )
+
+    assert store.claim_scheduler_job(
+        "stuck",
+        now_iso="2026-10-05T00:00:00+00:00",
+        lease_until="2026-10-05T00:05:00+00:00",
+    )
+    assert store.scheduler_job("stuck")["status"] == "running"

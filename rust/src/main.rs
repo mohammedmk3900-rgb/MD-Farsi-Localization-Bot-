@@ -22,10 +22,12 @@ struct Check {
 }
 
 fn captures(text: &str, pattern: &Regex) -> Vec<String> {
-    pattern
+    let mut values: Vec<String> = pattern
         .captures_iter(text)
         .map(|c| c.get(0).unwrap().as_str().to_string())
-        .collect()
+        .collect();
+    values.sort();
+    values
 }
 
 fn main() {
@@ -35,13 +37,16 @@ fn main() {
 
     let dollar = Regex::new(r"\$[^$\n]+\$").unwrap();
     let icon = Regex::new(r"£[A-Za-z0-9_]+").unwrap();
+    let scope = Regex::new(r"\[[^\]\n]+\]").unwrap();
     // HOI4 color/control codes such as §Y and §!.
-    let control = Regex::new(r"§[A-Za-z0-9!]").unwrap();
+    let control = Regex::new(r"§[A-Za-z0-9_!]+").unwrap();
 
     let source_dollar = captures(&input.source, &dollar);
     let target_dollar = captures(&input.target, &dollar);
     let source_icon = captures(&input.source, &icon);
     let target_icon = captures(&input.target, &icon);
+    let source_scope = captures(&input.source, &scope);
+    let target_scope = captures(&input.target, &scope);
     let source_control = captures(&input.source, &control);
     let target_control = captures(&input.target, &control);
 
@@ -61,6 +66,15 @@ fn main() {
             detail: format!("source={} target={}", source_icon.len(), target_icon.len()),
         },
         Check {
+            name: "scope_tokens",
+            passed: source_scope == target_scope,
+            detail: format!(
+                "source={} target={}",
+                source_scope.len(),
+                target_scope.len()
+            ),
+        },
+        Check {
             name: "control_codes",
             passed: source_control == target_control,
             detail: format!(
@@ -78,5 +92,27 @@ fn main() {
     );
     if !valid {
         std::process::exit(2);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn placeholder_order_is_not_significant_but_duplicates_are() {
+        let pattern = Regex::new(r"\$[^$\n]+\$").unwrap();
+        assert_eq!(captures("$A$ $B$", &pattern), captures("$B$ $A$", &pattern));
+        assert_ne!(captures("$A$", &pattern), captures("$A$ $A$", &pattern));
+    }
+
+    #[test]
+    fn captures_complete_hoi4_tokens() {
+        let dollar = Regex::new(r"\$[^$\n]+\$").unwrap();
+        let scope = Regex::new(r"\[[^\]\n]+\]").unwrap();
+        let control = Regex::new(r"§[A-Za-z0-9_!]+").unwrap();
+        assert_eq!(captures("$NAME|H$", &dollar), vec!["$NAME|H$"]);
+        assert_eq!(captures("[ROOT.GetName]", &scope), vec!["[ROOT.GetName]"]);
+        assert_eq!(captures("§Y §!", &control), vec!["§!", "§Y"]);
     }
 }

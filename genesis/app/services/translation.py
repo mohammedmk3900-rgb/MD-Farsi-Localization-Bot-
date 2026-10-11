@@ -9,9 +9,9 @@ from collections import Counter
 from app.domain.models import GlossaryTerm, TranslationCheck
 
 TOKEN_PATTERNS = (
-    re.compile(r"\$[^\s$]+"),
+    re.compile(r"\$[^$\s]+\$"),
     re.compile(r"\[[^\]]+\]"),
-    re.compile(r"§[A-Za-z0-9_]+"),
+    re.compile(r"§[A-Za-z0-9_!]+"),
     re.compile(r"£[A-Za-z0-9_]+"),
 )
 

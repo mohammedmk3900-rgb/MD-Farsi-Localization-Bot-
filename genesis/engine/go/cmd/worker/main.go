@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"time"
 )
@@ -40,10 +42,37 @@ func run(job Job) Result {
 	}
 }
 
-func main() {
-	var job Job
-	if err := json.NewDecoder(os.Stdin).Decode(&job); err != nil {
-		job = Job{}
+func decodeJob(reader io.Reader) (Job, error) {
+	var raw json.RawMessage
+	decoder := json.NewDecoder(reader)
+	if err := decoder.Decode(&raw); err != nil {
+		return Job{}, err
 	}
-	_ = json.NewEncoder(os.Stdout).Encode(run(job))
+	if len(raw) == 0 || raw[0] != '{' {
+		return Job{}, errors.New("worker input must be a JSON object")
+	}
+	var job Job
+	if err := json.Unmarshal(raw, &job); err != nil {
+		return Job{}, err
+	}
+	var trailing any
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		if err == nil {
+			return Job{}, errors.New("multiple JSON values in worker input")
+		}
+		return Job{}, err
+	}
+	return job, nil
+}
+
+func main() {
+	job, err := decodeJob(os.Stdin)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "invalid worker input:", err)
+		os.Exit(2)
+	}
+	if err := json.NewEncoder(os.Stdout).Encode(run(job)); err != nil {
+		fmt.Fprintln(os.Stderr, "failed to encode worker result:", err)
+		os.Exit(2)
+	}
 }

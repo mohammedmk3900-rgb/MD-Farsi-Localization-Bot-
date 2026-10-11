@@ -42,7 +42,10 @@ class PolyglotEngine:
             binary
             or str(self.root / "genesis/engine/rust/target/debug/mdfarsi-qa")
         ]
-        payload = self._run(command, f"{source}\n{target}")
+        payload = self._run(
+            command,
+            json.dumps({"source": source, "target": target}, ensure_ascii=False, separators=(",", ":")),
+        )
         if payload.get("schema_version") != 1 or payload.get("operation") != "qa":
             raise ValueError("invalid Rust QA contract")
         return payload

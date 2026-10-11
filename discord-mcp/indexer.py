@@ -88,7 +88,11 @@ class MessageIndex:
     def get_cursor(self, channel_id: str) -> dict[str, Any] | None:
         with self._connect() as db:
             row = db.execute("SELECT channel_id,newest_message_id,oldest_message_id,complete,updated_at FROM channel_cursors WHERE channel_id=?", (channel_id,)).fetchone()
-        return dict(row) if row else None
+        if row is None:
+            return None
+        cursor = dict(row)
+        cursor["complete"] = bool(cursor["complete"])
+        return cursor
 
     def set_cursor(self, channel_id: str, newest_message_id: str | None = None,
                    oldest_message_id: str | None = None, complete: bool = False) -> None:

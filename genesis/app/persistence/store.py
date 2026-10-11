@@ -149,7 +149,7 @@ class Store:
                       findings: list[dict[str, Any]] | None = None) -> int:
         with self._connect() as db:
             cur = db.execute("""INSERT INTO reviews(translation_key,actor,status,created_at,updated_at,source,translation,findings)
-                                VALUES(?,?,?,?,?,?,?,?,?)""",
+                                VALUES(?,?,?,?,?,?,?,?)""",
                              (translation_key, actor, status, created_at, created_at, source, translation,
                               json.dumps(findings or [], ensure_ascii=False, sort_keys=True)))
             return int(cur.lastrowid)
@@ -247,7 +247,7 @@ class Store:
         with self._connect() as db:
             cur = db.execute("""UPDATE scheduler_jobs
                                 SET status='running', lease_until=?, last_run_at=?, run_count=run_count+1
-                                WHERE job_id=? AND status!='running' AND (next_run_at IS NULL OR next_run_at <= ?) AND (lease_until IS NULL OR lease_until < ?)""",
+                                WHERE job_id=? AND (status!='running' OR lease_until IS NULL OR lease_until < ?) AND (next_run_at IS NULL OR next_run_at <= ?)""",
                              (lease_until, now_iso, job_id, now_iso, now_iso))
             return cur.rowcount == 1
 

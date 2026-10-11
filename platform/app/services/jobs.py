@@ -187,8 +187,8 @@ def audit() -> dict:
 def polyglot_health() -> dict:
     engine = PolyglotEngine()
     qa = engine.run_rust_qa(
-        "$COUNTRY has £fuel_texticon",
-        "$COUNTRY دارای £fuel_texticon است",
+        "$COUNTRY$ has £fuel_texticon [ROOT.GetName] §Y §!",
+        "$COUNTRY$ دارای £fuel_texticon [ROOT.GetName] §Y §!",
     )
     worker = engine.run_worker({
         "type": "platform_health",

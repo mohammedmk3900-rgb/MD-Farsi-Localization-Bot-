@@ -68,7 +68,11 @@ fn main() {
         Check {
             name: "scope_tokens",
             passed: source_scope == target_scope,
-            detail: format!("source={} target={}", source_scope.len(), target_scope.len()),
+            detail: format!(
+                "source={} target={}",
+                source_scope.len(),
+                target_scope.len()
+            ),
         },
         Check {
             name: "control_codes",

@@ -4,6 +4,7 @@ from app.services.glossary import GlossaryService
 from app.services.missions import MissionService
 from app.services.review import ReviewDecision, ReviewQueue
 from app.services.translation import TranslationService
+from app.persistence.store import Store
 
 
 def test_glossary_source_of_truth_lookup():
@@ -16,9 +17,12 @@ def test_missions_are_bounded():
     assert len(missions) == 2
 
 
-def test_review_is_human_decision():
-    queue = ReviewQueue()
+def test_review_is_human_decision(tmp_path):
+    store = Store(tmp_path / "genesis.db")
+    store.initialize()
+    queue = ReviewQueue(store)
     item = queue.submit("translator", TranslationService().check("hello", "سلام"))
+    queue.claim(item.id, "reviewer")
     result = queue.decide(item.id, ReviewDecision.APPROVE, "reviewer")
     assert result["reviewer"] == "reviewer"
 

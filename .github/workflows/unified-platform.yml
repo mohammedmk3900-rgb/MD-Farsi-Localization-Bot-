@@ -330,6 +330,8 @@ jobs:
           DISCORD_GUILD_ID: '1'
           DISCORD_DB_PATH: ${{ runner.temp }}/discord.db
         run: python -c 'from server import mcp; print(type(mcp).__name__)'
+      - name: Discord MCP unit tests
+        run: python -m pytest -q discord-mcp/test_*.py
       - name: Platform suite
         working-directory: platform
         run: python -m pytest -q

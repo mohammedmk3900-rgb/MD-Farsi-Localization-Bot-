@@ -54,7 +54,13 @@ class ParaTranzIntegration:
         raise ParaTranzError("Unexpected ParaTranz response payload")
 
     def project(self) -> dict:
-        return self._payload(self._get(f"projects/{self.config.project_id}"))
+        try:
+            payload = self._get(f"projects/{self.config.project_id}")
+        except ParaTranzError:
+            raise
+        except Exception as exc:
+            raise ParaTranzError(f"ParaTranz project request failed: {exc}") from exc
+        return self._payload(payload)
 
     def stats(self) -> ProjectStats:
         data = self.project()
@@ -71,7 +77,13 @@ class ParaTranzIntegration:
 
     def glossary(self) -> list[dict]:
         # ParaTranz Terms is the project's glossary source of truth.
-        data = self._payload(self._get(f"projects/{self.config.project_id}/terms"))
+        try:
+            payload = self._get(f"projects/{self.config.project_id}/terms")
+        except ParaTranzError:
+            raise
+        except Exception as exc:
+            raise ParaTranzError(f"ParaTranz glossary request failed: {exc}") from exc
+        data = self._payload(payload)
         if isinstance(data, list):
             return data
         if isinstance(data, dict):

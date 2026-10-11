@@ -79,3 +79,29 @@ def test_completed_incremental_sync_advances_newest_cursor(tmp_path, monkeypatch
 
 async def _async_value(value):
     return value
+
+
+def test_optional_resource_reports_permission_denied(monkeypatch):
+    import httpx
+
+    response = httpx.Response(403, request=httpx.Request("GET", "https://discord.com/api/v10/test"))
+
+    async def forbidden(path):
+        raise httpx.HTTPStatusError("forbidden", request=response.request, response=response)
+
+    monkeypatch.setattr(server, "discord_get", forbidden)
+    items, status = asyncio.run(server.get_optional_guild_resource_with_status("/test", "items"))
+
+    assert items == []
+    assert status == {"status": "permission_denied", "http_status": 403}
+
+
+def test_optional_empty_resource_is_not_marked_as_failed(monkeypatch):
+    async def empty(path):
+        return {"items": []}
+
+    monkeypatch.setattr(server, "discord_get", empty)
+    items, status = asyncio.run(server.get_optional_guild_resource_with_status("/test", "items"))
+
+    assert items == []
+    assert status == {"status": "available", "count": 0}

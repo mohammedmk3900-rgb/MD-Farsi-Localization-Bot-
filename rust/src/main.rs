@@ -37,6 +37,7 @@ fn main() {
 
     let dollar = Regex::new(r"\$[^$\n]+\$").unwrap();
     let icon = Regex::new(r"£[A-Za-z0-9_]+").unwrap();
+    let scope = Regex::new(r"\[[^\]\n]+\]").unwrap();
     // HOI4 color/control codes such as §Y and §!.
     let control = Regex::new(r"§[A-Za-z0-9_!]+").unwrap();
 
@@ -44,6 +45,8 @@ fn main() {
     let target_dollar = captures(&input.target, &dollar);
     let source_icon = captures(&input.source, &icon);
     let target_icon = captures(&input.target, &icon);
+    let source_scope = captures(&input.source, &scope);
+    let target_scope = captures(&input.target, &scope);
     let source_control = captures(&input.source, &control);
     let target_control = captures(&input.target, &control);
 
@@ -61,6 +64,11 @@ fn main() {
             name: "icon_tokens",
             passed: source_icon == target_icon,
             detail: format!("source={} target={}", source_icon.len(), target_icon.len()),
+        },
+        Check {
+            name: "scope_tokens",
+            passed: source_scope == target_scope,
+            detail: format!("source={} target={}", source_scope.len(), target_scope.len()),
         },
         Check {
             name: "control_codes",
@@ -97,8 +105,10 @@ mod tests {
     #[test]
     fn captures_complete_hoi4_tokens() {
         let dollar = Regex::new(r"\$[^$\n]+\$").unwrap();
+        let scope = Regex::new(r"\[[^\]\n]+\]").unwrap();
         let control = Regex::new(r"§[A-Za-z0-9_!]+").unwrap();
         assert_eq!(captures("$NAME|H$", &dollar), vec!["$NAME|H$"]);
+        assert_eq!(captures("[ROOT.GetName]", &scope), vec!["[ROOT.GetName]"]);
         assert_eq!(captures("§Y §!", &control), vec!["§!", "§Y"]);
     }
 }

@@ -237,17 +237,42 @@ async def read_thread(thread_id: str, limit: int = 200) -> list[dict[str, Any]]:
 
 
 async def fetch_archived_threads(parent_channel_id: str) -> list[dict[str, Any]]:
-    """Best-effort discovery of public and private archived threads."""
+    """Discover archived public/private threads page by page where the bot has access."""
     threads: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
     for endpoint in (
         f"/channels/{parent_channel_id}/threads/archived/public",
         f"/channels/{parent_channel_id}/threads/archived/private",
     ):
-        try:
-            payload = await discord_get(endpoint, params={"limit": 100})
-            threads.extend(payload.get("threads", []))
-        except httpx.HTTPStatusError:
-            continue
+        before: str | None = None
+        # A high safety bound prevents a malformed or non-advancing cursor from
+        # causing an unbounded scan; Discord's API rate limits are handled by
+        # discord_get().
+        for _ in range(1000):
+            params: dict[str, Any] = {"limit": 100}
+            if before:
+                params["before"] = before
+            try:
+                payload = await discord_get(endpoint, params=params)
+            except httpx.HTTPStatusError:
+                break
+
+            page = payload.get("threads", [])
+            if not page:
+                break
+            for thread in page:
+                thread_id = str(thread.get("id") or "")
+                if thread_id and thread_id not in seen_ids:
+                    seen_ids.add(thread_id)
+                    threads.append(thread)
+
+            if not payload.get("has_more"):
+                break
+            metadata = page[-1].get("thread_metadata") or {}
+            next_before = metadata.get("archive_timestamp")
+            if not next_before or next_before == before:
+                break
+            before = str(next_before)
     return threads
 
 

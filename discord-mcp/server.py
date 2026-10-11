@@ -291,12 +291,15 @@ async def sync_channel_history(
     processed = 0
     complete = False
     reached_cursor = False
+    first_page_newest: str | None = None
 
     while True:
         page = await fetch_page(channel_id, before=before, channel=channel)
         if not page:
             complete = True
             break
+        if pages == 0:
+            first_page_newest = str(page[0]["id"])
         for item in page:
             item["channel_name"] = channel.get("name")
         processed += index.upsert_messages(page)
@@ -310,11 +313,16 @@ async def sync_channel_history(
             complete = len(page) < 100
             break
 
-    newest_message_id = (
-        str(cursor["newest_message_id"])
-        if cursor and cursor.get("newest_message_id")
-        else page[0]["id"] if pages and page else None
-    )
+    if incremental and cursor and not cursor_complete and cursor.get("newest_message_id"):
+        # During a multi-run historical backfill, keep the newest cursor from
+        # the first page; later pages are progressively older messages.
+        newest_message_id = str(cursor["newest_message_id"])
+    else:
+        # For completed incremental syncs, advance to the newest ID seen in
+        # this run, not the previous cursor value.
+        newest_message_id = first_page_newest or (
+            str(cursor["newest_message_id"]) if cursor and cursor.get("newest_message_id") else None
+        )
     index.set_cursor(
         channel_id,
         newest_message_id=newest_message_id,
@@ -418,11 +426,14 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
     )
     invites = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/invites", "items")
     webhooks = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/webhooks", "items")
-    stage_instances = [
-        item
-        for item in await get_optional_guild_resource(f"/stage-instances", "items")
-        if str(item.get("guild_id") or GUILD_ID) == GUILD_ID
-    ]
+    stage_instances = []
+    for channel in channels:
+        # Discord exposes a single stage instance by its channel ID; there is
+        # no guild-wide GET /stage-instances collection endpoint.
+        if channel.get("type") == 13 and channel.get("id"):
+            stage = await get_optional_single_resource(f"/stage-instances/{channel['id']}")
+            if stage and str(stage.get("guild_id") or GUILD_ID) == GUILD_ID:
+                stage_instances.append(stage)
     audit_log = await get_optional_guild_resource(
         f"/guilds/{GUILD_ID}/audit-logs", "audit_log_entries"
     )

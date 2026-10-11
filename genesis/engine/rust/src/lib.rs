@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 pub fn validate_required_tokens(source: &str, target: &str) -> Result<(), String> {
     for token in ["$COUNTRY", "$NAME", "£fuel_texticon"] {
         if source.contains(token) && !target.contains(token) {

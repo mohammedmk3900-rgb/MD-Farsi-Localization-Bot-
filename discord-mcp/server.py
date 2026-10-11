@@ -393,12 +393,41 @@ async def get_all_guild_members() -> list[dict[str, Any]]:
     return members
 
 
+def _resource_error_status(exc: httpx.HTTPStatusError) -> str:
+    if exc.response.status_code == 403:
+        return "permission_denied"
+    if exc.response.status_code == 404:
+        return "not_found_or_unsupported"
+    return "failed"
+
+
 async def get_optional_guild_resource(path: str, key: str) -> list[dict[str, Any]]:
+    """Best-effort compatibility helper for optional Discord resources."""
     try:
         payload = await discord_get(path)
         return payload if isinstance(payload, list) else payload.get(key, [])
     except httpx.HTTPStatusError:
         return []
+
+
+async def get_optional_guild_resource_with_status(
+    path: str, key: str
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Fetch an optional resource without confusing an API failure with an empty collection."""
+    try:
+        payload = await discord_get(path)
+    except httpx.HTTPStatusError as exc:
+        return [], {
+            "status": _resource_error_status(exc),
+            "http_status": exc.response.status_code,
+        }
+    except httpx.HTTPError as exc:
+        return [], {"status": "failed", "error": type(exc).__name__}
+
+    items = payload if isinstance(payload, list) else payload.get(key, [])
+    if not isinstance(items, list):
+        return [], {"status": "failed", "error": "unexpected_response_shape"}
+    return items, {"status": "available", "count": len(items)}
 
 
 async def get_optional_single_resource(path: str) -> Any:
@@ -416,16 +445,33 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
     members = await get_all_guild_members()
     active_threads = await discord_get(f"/guilds/{GUILD_ID}/threads/active")
 
-    emojis = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/emojis", "items")
-    stickers = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/stickers", "items")
-    events = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/scheduled-events", "items")
-    bans = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/bans", "items")
-    integrations = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/integrations", "items")
-    auto_moderation_rules = await get_optional_guild_resource(
-        f"/guilds/{GUILD_ID}/auto-moderation/rules", "items"
+    resource_status: dict[str, dict[str, Any]] = {}
+    emojis, resource_status["emojis"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/emojis", "items"
     )
-    invites = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/invites", "items")
-    webhooks = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/webhooks", "items")
+    stickers, resource_status["stickers"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/stickers", "items"
+    )
+    events, resource_status["scheduled_events"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/scheduled-events", "items"
+    )
+    bans, resource_status["bans"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/bans", "items"
+    )
+    integrations, resource_status["integrations"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/integrations", "items"
+    )
+    auto_moderation_rules, resource_status["auto_moderation_rules"] = (
+        await get_optional_guild_resource_with_status(
+            f"/guilds/{GUILD_ID}/auto-moderation/rules", "items"
+        )
+    )
+    invites, resource_status["invites"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/invites", "items"
+    )
+    webhooks, resource_status["webhooks"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/webhooks", "items"
+    )
     stage_instances = []
     for channel in channels:
         # Discord exposes a single stage instance by its channel ID; there is
@@ -434,8 +480,10 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
             stage = await get_optional_single_resource(f"/stage-instances/{channel['id']}")
             if stage and str(stage.get("guild_id") or GUILD_ID) == GUILD_ID:
                 stage_instances.append(stage)
-    audit_log = await get_optional_guild_resource(
-        f"/guilds/{GUILD_ID}/audit-logs", "audit_log_entries"
+    audit_log, resource_status["audit_log_entries"] = (
+        await get_optional_guild_resource_with_status(
+            f"/guilds/{GUILD_ID}/audit-logs", "audit_log_entries"
+        )
     )
 
     # Never expose webhook tokens or other credential-like fields through the MCP.
@@ -508,6 +556,9 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
         "webhooks": webhooks,
         "stage_instances": stage_instances,
         "audit_log_entries": audit_log,
+        # Empty data and unavailable data are different outcomes. Consumers can
+        # inspect this map before interpreting an empty collection as evidence.
+        "resource_status": resource_status,
         "indexed_activity": {
             "messages": index.count(),
             "channels": index.channel_count(),

@@ -424,7 +424,12 @@ async def get_optional_guild_resource_with_status(
     except httpx.HTTPError as exc:
         return [], {"status": "failed", "error": type(exc).__name__}
 
-    items = payload if isinstance(payload, list) else payload.get(key, [])
+    if isinstance(payload, list):
+        items = payload
+    elif isinstance(payload, dict):
+        items = payload.get(key, [])
+    else:
+        return [], {"status": "failed", "error": "unexpected_response_shape"}
     if not isinstance(items, list):
         return [], {"status": "failed", "error": "unexpected_response_shape"}
     return items, {"status": "available", "count": len(items)}
@@ -739,9 +744,18 @@ _allowed_hosts = [
     if item.strip()
 ]
 
+_allowed_origins = [
+    item.strip()
+    for item in os.getenv(
+        "MCP_ALLOWED_ORIGINS",
+        "https://chatgpt.com,https://chat.openai.com",
+    ).split(",")
+    if item.strip()
+]
+
 transport_security = TransportSecuritySettings(
     allowed_hosts=_allowed_hosts,
-    allowed_origins=[],
+    allowed_origins=_allowed_origins,
 )
 
 

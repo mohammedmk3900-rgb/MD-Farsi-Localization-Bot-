@@ -1,111 +1,61 @@
 # DawnNexus MCP OAuth Setup
 
-DawnNexus uses the MCP OAuth 2.1 resource-server contract for ChatGPT.
+DawnNexus currently runs its own OAuth 2.1 authorization server. The runtime does **not** use the Auth0/JWT middleware described by older deployment notes. Keep this guide aligned with the provider implemented in `oauth.py`.
 
-## 1. Create an authorization server
+## 1. Configure Render
 
-Auth0 is the recommended provider for this deployment. OpenAI recommends using an established identity provider rather than implementing an authorization server from scratch.
+Set these environment variables on the DawnNexus service:
 
-Create an Auth0 API for DawnNexus:
-
-- Identifier / API audience: choose a stable HTTPS identifier, for example `https://dawnnexus.onrender.com`
-- Signing algorithm: RS256
-- Add the permission `discord:read`
-- Enable RBAC/permissions so the access token contains the granted permission.
-
-For Auth0 MCP support, enable:
-
-- Resource Parameter Compatibility Profile
-- CIMD or Dynamic Client Registration, according to the tenant's MCP setup
-
-The Auth0 issuer must be the exact issuer URL, including the trailing slash, for example:
-
-`https://YOUR_TENANT.eu.auth0.com/`
-
-## 2. Configure Render
-
-Set these environment variables on the DawnNexus Render service:
-
-```
-MCP_AUTH_MODE=oauth
-MCP_RESOURCE_URL=https://dawnnexus.onrender.com
-MCP_AUTH_ISSUER=https://YOUR_TENANT.eu.auth0.com/
-MCP_AUTH_AUDIENCE=https://dawnnexus.onrender.com
-MCP_AUTH_SCOPES=discord:read
+```dotenv
+MCP_PUBLIC_URL=https://dawnnexus.onrender.com
+MCP_OAUTH_USERNAME=admin
+MCP_OAUTH_PASSWORD=<unique-secret-at-least-16-characters>
+MCP_ALLOWED_HOSTS=dawnnexus.onrender.com,dawnnexus.onrender.com:*
+MCP_ALLOWED_ORIGINS=https://chatgpt.com,https://chat.openai.com
 ```
 
-Optional:
+Use a unique password with at least 16 characters. The username defaults to `admin` if `MCP_OAUTH_USERNAME` is omitted. Do not put the password, Discord bot token, OAuth tokens, or database contents in Git.
 
-```
-MCP_AUTH_JWKS_URL=https://YOUR_TENANT.eu.auth0.com/.well-known/jwks.json
-```
+The Discord bot still needs `DISCORD_BOT_TOKEN` and `DISCORD_GUILD_ID`. Keep the bot token server-side.
 
-Do not put an Auth0 client secret, access token, or other credential in the repository.
+## 2. Verify the deployment
 
-The old `MCP_AUTH_TOKEN` is retained only for local/legacy static-bearer deployments. It is not the credential ChatGPT should use for the OAuth connector.
+After the service redeploys, open:
 
-## 3. Verify discovery before creating the ChatGPT app
+- `https://dawnnexus.onrender.com/.well-known/oauth-protected-resource`
+- `https://dawnnexus.onrender.com/.well-known/oauth-authorization-server`
 
-After Render redeploys, this endpoint must return HTTP 200:
-
-```
-GET https://dawnnexus.onrender.com/.well-known/oauth-protected-resource
-```
-
-Expected shape:
-
-```json
-{
-  "resource": "https://dawnnexus.onrender.com",
-  "authorization_servers": [
-    "https://YOUR_TENANT.eu.auth0.com/"
-  ],
-  "scopes_supported": ["discord:read"]
-}
-```
-
-The MCP endpoint remains:
+The first endpoint should advertise the MCP resource and the authorization server. The second should advertise the built-in OAuth endpoints. The MCP endpoint is:
 
 ```
 https://dawnnexus.onrender.com/mcp
 ```
 
-An unauthenticated request to `/mcp` should return HTTP 401 with a `WWW-Authenticate` challenge pointing to the protected-resource metadata.
+If discovery fails, inspect the Render logs before configuring the ChatGPT connector. The login page should be served at `/oauth/login` when an OAuth authorization request is initiated.
 
-## 4. Create the ChatGPT custom app
+## 3. Connect ChatGPT
 
-In the Custom MCP/App form:
+In the ChatGPT custom app / MCP connection settings:
 
-- Name: `DawnNexus`
-- Description: `Millennium Dawn Farsi Localization Discord intelligence and project operations MCP.`
-- Connection: `MCP Server URL`
-- MCP Server URL: `https://dawnnexus.onrender.com/mcp`
-- Authentication: `OAuth`
+- **Name:** DawnNexus
+- **Connection:** MCP Server URL
+- **MCP Server URL:** `https://dawnnexus.onrender.com/mcp`
+- **Authentication:** OAuth
 
-Then use **Scan Tools**.
+Then scan the available tools and complete the authorization flow. The login screen requests the configured DawnNexus username and password and grants only the `discord:read` scope.
 
-ChatGPT should discover the protected-resource metadata, follow the Auth0 authorization-server metadata, run OAuth 2.1 Authorization Code + PKCE, and attach the resulting access token to MCP requests.
+## 4. Security model and limitations
 
-## 5. Security model
+- Access tokens expire after one hour; refresh tokens expire after 30 days.
+- Only `discord:read` is granted by the current provider.
+- The provider stores client registrations, pending authorization requests, authorization codes, and token records in the configured SQLite database.
+- The login password is not stored in SQLite.
+- This is a small, single-owner, self-hosted authorization server. It is not Auth0 and should not be described or configured as an Auth0/JWT deployment.
+- Discord permissions still limit what the bot can read. A successful MCP connection does not imply access to channels, archived threads, or administrative resources that the bot itself cannot access.
 
-DawnNexus validates:
+## 5. Troubleshooting
 
-- JWT signature using the authorization server's JWKS
-- RS256 signing algorithm
-- issuer
-- audience/resource
-- expiration and issued-at claims
-- required `discord:read` scope/permission
-
-The Discord bot token remains server-side and is never exposed to ChatGPT.
-
-## 6. Important deployment rule
-
-Do not switch Render to `MCP_AUTH_MODE=oauth` until the Auth0 API and MCP authorization configuration are ready. Otherwise DawnNexus will correctly reject MCP calls because no valid OAuth issuer/audience configuration exists.
-
-The static mode remains available for local testing:
-
-```
-MCP_AUTH_MODE=static
-MCP_AUTH_TOKEN=<32+ character secret>
-```
+- **Login returns 503:** set `MCP_OAUTH_PASSWORD` to a value of at least 16 characters and redeploy.
+- **Login returns 401:** check `MCP_OAUTH_USERNAME` and `MCP_OAUTH_PASSWORD`.
+- **ChatGPT cannot discover tools:** verify both OAuth metadata endpoints and `/mcp` are reachable over HTTPS, then inspect Render logs.
+- **Missing messages:** run `deep_scan_server` or `sync_server_history`; check the sync cursors and bot permissions. OAuth only authenticates the connector; it does not fill the local message index.

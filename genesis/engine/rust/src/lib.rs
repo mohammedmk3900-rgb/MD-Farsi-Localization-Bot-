@@ -101,7 +101,11 @@ mod tests {
 
     #[test]
     fn detects_missing_required_tokens() {
-        assert!(validate_required_tokens("$COUNTRY$ has £fuel_texticon", "$COUNTRY$ دارد").is_err());
+        assert!(validate_required_tokens(
+            "$COUNTRY$ has £fuel_texticon",
+            "$COUNTRY$ دارد",
+        )
+        .is_err());
     }
 
     #[test]

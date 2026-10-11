@@ -149,7 +149,7 @@ class Store:
                       findings: list[dict[str, Any]] | None = None) -> int:
         with self._connect() as db:
             cur = db.execute("""INSERT INTO reviews(translation_key,actor,status,created_at,updated_at,source,translation,findings)
-                                VALUES(?,?,?,?,?,?,?,?,?)""",
+                                VALUES(?,?,?,?,?,?,?,?)""",
                              (translation_key, actor, status, created_at, created_at, source, translation,
                               json.dumps(findings or [], ensure_ascii=False, sort_keys=True)))
             return int(cur.lastrowid)

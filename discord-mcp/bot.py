@@ -32,16 +32,28 @@ index = MessageIndex(DB_PATH)
 
 
 def serialize(message: discord.Message) -> dict[str, Any]:
+    """Normalize Gateway events to the same relationship metadata as REST sync."""
+    channel = message.channel
+    is_thread = isinstance(channel, discord.Thread)
+    reference = message.reference
+    content = message.content or ""
+    attachments = getattr(message, "attachments", ()) or ()
     return {
         "id": str(message.id),
-        "channel_id": str(message.channel.id),
-        "channel_name": getattr(message.channel, "name", None),
+        "channel_id": str(channel.id),
+        "channel_name": getattr(channel, "name", None),
         "author_id": str(message.author.id) if message.author else None,
         "author_name": getattr(message.author, "global_name", None) or getattr(message.author, "name", None),
-        "content": message.content or "",
+        "content": content,
         "timestamp": message.created_at.isoformat(),
         "edited_timestamp": message.edited_at.isoformat() if message.edited_at else None,
         "url": message.jump_url,
+        "reference_message_id": str(reference.message_id) if reference and reference.message_id else None,
+        "reference_channel_id": str(reference.channel_id) if reference and reference.channel_id else None,
+        "thread_id": str(channel.id) if is_thread else None,
+        "message_type": int(message.type) if getattr(message, "type", None) is not None else None,
+        "attachment_count": len(attachments),
+        "link_count": content.lower().count("http://") + content.lower().count("https://"),
     }
 
 
@@ -72,8 +84,16 @@ class IndexerBot(discord.Client):
             asyncio.create_task(self.backfill_guild(guild))
 
     async def backfill_guild(self, guild: discord.Guild) -> None:
-        channels = [channel for channel in guild.channels if is_indexable(channel)]
-        log.info("Starting automatic backfill: %d channels", len(channels))
+        # guild.channels contains parent channels but not every active thread.
+        # Include cached active threads explicitly; deep_scan_server discovers
+        # archived threads through the REST API.
+        channels_by_id = {
+            str(channel.id): channel
+            for channel in (*guild.channels, *guild.threads)
+            if is_indexable(channel)
+        }
+        channels = list(channels_by_id.values())
+        log.info("Starting automatic backfill: %d channels/active threads", len(channels))
         sem = asyncio.Semaphore(BACKFILL_CONCURRENCY)
 
         async def one(channel: object) -> None:

@@ -6,8 +6,8 @@ from app.persistence.store import Store
 
 
 def test_tokens_preserve_hoi4_contract():
-    text = "$NAME|H$ [ROOT.GetName] §Y £fuel_texticon"
-    assert tokens(text) == {"$NAME|H$", "[ROOT.GetName]", "§Y", "£fuel_texticon"}
+    text = "$NAME|H$ [ROOT.GetName] §Y §! £fuel_texticon"
+    assert tokens(text) == {"$NAME|H$", "[ROOT.GetName]", "§Y", "§!", "£fuel_texticon"}
 
 
 def test_translation_detects_missing_and_extra_tokens():

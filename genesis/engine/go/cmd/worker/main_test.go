@@ -33,3 +33,9 @@ func TestDecodeJobAcceptsOneJob(t *testing.T) {
 		t.Fatalf("unexpected decoded job: %+v", job)
 	}
 }
+
+func TestDecodeJobRejectsJSONNull(t *testing.T) {
+	if _, err := decodeJob(strings.NewReader("null")); err == nil {
+		t.Fatal("null must not be accepted as a valid worker job")
+	}
+}

@@ -1,5 +1,5 @@
 pub fn validate_required_tokens(source: &str, target: &str) -> Result<(), String> {
-    for token in ["$COUNTRY", "$NAME", "£fuel_texticon"] {
+    for token in ["$COUNTRY$", "$NAME$", "£fuel_texticon"] {
         if source.contains(token) && !target.contains(token) {
             return Err(format!("missing required token: {token}"));
         }
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn detects_missing_required_tokens() {
-        assert!(validate_required_tokens("$COUNTRY has £fuel_texticon", "$COUNTRY دارد").is_err());
+        assert!(validate_required_tokens("$COUNTRY$ has £fuel_texticon", "$COUNTRY$ دارد").is_err());
     }
 
     #[test]

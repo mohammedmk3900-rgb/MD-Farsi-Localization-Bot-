@@ -82,7 +82,9 @@ class ReviewQueue:
         if row is None:
             raise KeyError(item_id)
         if row["status"] != ReviewStatus.OPEN:
-            raise ValueError(f"review must be open to claim; current status is {row['status']}")
+            raise ValueError(
+                f"invalid review transition: cannot claim review in {row['status']} state"
+            )
         validate_review_transition(row["status"], ReviewStatus.IN_REVIEW)
         self.store.transition_review(
             item_id, target_status=ReviewStatus.IN_REVIEW, updated_at=self._now(),

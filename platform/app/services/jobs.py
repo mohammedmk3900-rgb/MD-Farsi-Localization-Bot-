@@ -46,7 +46,7 @@ def build_discord_intelligence() -> dict:
         limit=12,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     application.record("discord.intelligence_built", {
         "generated_at": result.get("generated_at"),
         "events": len(result.get("events", [])),

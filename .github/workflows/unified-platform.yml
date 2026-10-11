@@ -366,7 +366,7 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x runtime/polyglot/mdfarsi-qa runtime/polyglot/worker runtime/polyglot/md_native_probe runtime/polyglot/MDNativeBridge
-          qa_output="$(printf '$COUNTRY has £fuel_texticon\n$COUNTRY دارد £fuel_texticon\n' | runtime/polyglot/mdfarsi-qa)"
+          qa_output="$(python -c 'import json; print(json.dumps({"source":"$COUNTRY has £fuel_texticon","target":"$COUNTRY دارد £fuel_texticon"}, ensure_ascii=False))' | runtime/polyglot/mdfarsi-qa)"
           printf '%s\n' "$qa_output"
           python -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("status") == "ok" and d.get("valid") is True, d' "$qa_output"
           worker_output="$(printf '{"type":"health","id":"ci-runtime-check","payload":{"ok":true}}\n' | runtime/polyglot/worker)"

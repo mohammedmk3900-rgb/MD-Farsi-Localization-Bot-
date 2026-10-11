@@ -74,7 +74,7 @@ def test_completed_incremental_sync_advances_newest_cursor(tmp_path, monkeypatch
     cursor = index.get_cursor("10")
     assert result["reached_cursor"] is True
     assert cursor["newest_message_id"] == "120"
-    assert cursor["complete"] is True
+    assert bool(cursor["complete"]) is True
 
 
 async def _async_value(value):

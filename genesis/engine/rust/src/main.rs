@@ -15,9 +15,18 @@ fn main() {
         Ok(()) => println!(
             "{{\"schema_version\":1,\"operation\":\"qa\",\"status\":\"ok\",\"valid\":true}}"
         ),
-        Err(error) => println!(
-            "{{\"schema_version\":1,\"operation\":\"qa\",\"status\":\"failed\",\"valid\":false,\"error\":\"{}\"}}",
-            error.replace('"', "\\\"")
-        ),
+        Err(error) => {
+            let escaped = error
+                .replace('\\', "\\\\")
+                .replace('"', "\\\"")
+                .replace('\n', "\\n")
+                .replace('\r', "\\r")
+                .replace('\t', "\\t");
+            println!(
+                "{{\"schema_version\":1,\"operation\":\"qa\",\"status\":\"failed\",\"valid\":false,\"error\":\"{}\"}}",
+                escaped
+            );
+            std::process::exit(2);
+        },
     }
 }

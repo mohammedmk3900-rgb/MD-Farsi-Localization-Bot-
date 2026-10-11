@@ -247,7 +247,7 @@ jobs:
           (cd genesis/engine/go && go build -trimpath -o worker ./cmd/worker)
           cmake -S genesis/engine/cpp -B build/genesis-native -DCMAKE_BUILD_TYPE=Release
           cmake --build build/genesis-native --parallel
-          dotnet build genesis/engine/csharp --configuration Release
+          dotnet publish genesis/engine/csharp --configuration Release --runtime linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o genesis/engine/csharp/publish
       - name: Package and hash runtime
         run: |
           set -euo pipefail
@@ -256,7 +256,7 @@ jobs:
             genesis/engine/rust/target/debug/mdfarsi-qa
             genesis/engine/go/worker
             build/genesis-native/md_native_probe
-            genesis/engine/csharp/bin/Release/net10.0/MDNativeBridge
+            genesis/engine/csharp/publish/MDNativeBridge
           )
           for f in "${runtimes[@]}"; do
             [[ -f "$f" ]] || { echo "::error::Required runtime missing: $f"; exit 1; }
@@ -356,8 +356,12 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x runtime/polyglot/mdfarsi-qa runtime/polyglot/worker runtime/polyglot/md_native_probe runtime/polyglot/MDNativeBridge
-          printf '{"source":"Hello $STATE$ §Y £icon","target":"سلام $STATE$ §Y £icon"}\n' | runtime/polyglot/mdfarsi-qa
-          printf '{"type":"health","id":"ci-runtime-check","payload":{"ok":true}}\n' | runtime/polyglot/worker
+          qa_output="$(printf '$COUNTRY has £fuel_texticon\n$COUNTRY دارد £fuel_texticon\n' | runtime/polyglot/mdfarsi-qa)"
+          printf '%s\n' "$qa_output"
+          python -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("status") == "ok" and d.get("valid") is True, d' "$qa_output"
+          worker_output="$(printf '{"type":"health","id":"ci-runtime-check","payload":{"ok":true}}\n' | runtime/polyglot/worker)"
+          printf '%s\n' "$worker_output"
+          python -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("status") == "ok" and d.get("job_id") == "ci-runtime-check", d' "$worker_output"
           runtime/polyglot/md_native_probe
           runtime/polyglot/MDNativeBridge
 

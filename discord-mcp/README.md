@@ -5,9 +5,10 @@ This service provides a permission-respecting read model of the configured Disco
 ## Data flow
 
 1. The Gateway bot receives authorized guild events.
-2. On startup it backfills accessible text, forum and thread history.
-3. Message create/edit/delete events keep SQLite current.
-4. The MCP server exposes structure, indexed history, search and aggregate analytics.
+2. On startup it backfills accessible text channels and cached active threads.
+3. Message create/edit/delete events keep SQLite current, including reply references, thread IDs, attachment counts, and link counts.
+4. The MCP server can discover active threads and best-effort archived threads through Discord REST endpoints.
+5. `deep_scan_server` combines history synchronization with a server snapshot; `full_server_audit` returns the broadest read-only audit currently available to the bot.
 
 ## MCP tools
 
@@ -22,6 +23,11 @@ This service provides a permission-respecting read model of the configured Disco
 - `read_channel`
 - `get_channel_statistics`
 - `get_author_statistics`
+- `read_thread`, `read_replies`, `read_channel_page`, `get_message`, `search_messages`
+- `deep_scan_server`, `full_server_audit`, `get_server_snapshot(full=true)`
+- `get_index_cursors`, `get_project_intelligence`, `get_news_digest`
+
+For a first comprehensive pass, call `deep_scan_server` and inspect its per-channel results and `complete` flags. A limited scan (`max_pages_per_channel > 0`) is intentionally partial. Re-run it until historical backfill is complete, and use `get_index_cursors` to see per-channel progress.
 
 The bot never bypasses Discord permissions. Private channels unavailable to the bot are not indexed. Deleted messages are represented as local tombstones and their content is removed from the index.
 

@@ -97,7 +97,7 @@ class ReviewQueue:
         row = next((r for r in self.store.reviews() if r["id"] == item_id), None)
         if row is None:
             raise KeyError(item_id)
-                status = {
+        status = {
             ReviewDecision.APPROVE: ReviewStatus.APPROVED,
             ReviewDecision.REJECT: ReviewStatus.REJECTED,
             ReviewDecision.REQUEST_CHANGES: ReviewStatus.CHANGES_REQUESTED,

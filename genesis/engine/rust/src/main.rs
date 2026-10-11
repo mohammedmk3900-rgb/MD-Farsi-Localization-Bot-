@@ -27,6 +27,6 @@ fn main() {
                 escaped
             );
             std::process::exit(2);
-        },
+        }
     }
 }

@@ -109,6 +109,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Repository contract
         run: |
           set -euo pipefail
@@ -130,16 +131,19 @@ jobs:
           PY
       - name: Git hygiene
         shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
           echo "Checking whitespace errors..."
-          if ! git diff --check; then
-            echo "::error::git diff --check found whitespace errors"
-            git diff --check || true
+          if ! git diff --check "$BASE_SHA...$HEAD_SHA"; then
+            echo "::error::git diff --check found whitespace errors in the PR/commit diff"
+            git diff --check "$BASE_SHA...$HEAD_SHA" || true
             exit 1
           fi
           echo "Checking tracked SQLite databases..."
-          db_files="$(git ls-files | grep -E '(^|/)[^/]+\\.db(-wal|-shm)?$' || true)"
+          db_files="$(git ls-files | grep -E '(^|/)[^/]+[.]db(-wal|-shm)?$' || true)"
           if [[ -n "$db_files" ]]; then
             echo "::error::Tracked SQLite database files are not allowed:"
             printf '%s\n' "$db_files"

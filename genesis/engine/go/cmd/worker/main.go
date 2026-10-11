@@ -43,9 +43,16 @@ func run(job Job) Result {
 }
 
 func decodeJob(reader io.Reader) (Job, error) {
-	var job Job
+	var raw json.RawMessage
 	decoder := json.NewDecoder(reader)
-	if err := decoder.Decode(&job); err != nil {
+	if err := decoder.Decode(&raw); err != nil {
+		return Job{}, err
+	}
+	if len(raw) == 0 || raw[0] != '{' {
+		return Job{}, errors.New("worker input must be a JSON object")
+	}
+	var job Job
+	if err := json.Unmarshal(raw, &job); err != nil {
 		return Job{}, err
 	}
 	var trailing any

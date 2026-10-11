@@ -117,7 +117,7 @@ async def get_channels() -> list[dict[str, Any]]:
 async def get_message_channels() -> list[dict[str, Any]]:
     """Return message-bearing channels plus currently active thread channels."""
     channels = await get_channels()
-    result = [c for c in channels if c.get("type") in {0, 5, 10, 11, 12, 15}]
+    result = [c for c in channels if c.get("type") in {0, 5, 10, 11, 12, 15, 16}]
     try:
         active = await discord_get(f"/guilds/{GUILD_ID}/threads/active")
         known = {str(c.get("id")) for c in result}
@@ -347,7 +347,7 @@ async def sync_server_history(max_pages_per_channel: int = 0, incremental: bool 
     known = {str(channel["id"]) for channel in channels}
     archived: list[dict[str, Any]] = []
     for channel in list(channels):
-        if channel.get("type") in {0, 5, 15}:
+        if channel.get("type") in {0, 5, 15, 16}:
             for thread in await fetch_archived_threads(str(channel["id"])):
                 if str(thread.get("id")) not in known:
                     archived.append(thread)
@@ -511,7 +511,7 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
             "permissions": channel.get("permission_overwrites", []),
             "thread_metadata": channel.get("thread_metadata"),
         }
-        if include_messages and channel.get("type") in {0, 5, 10, 11, 12, 15}:
+        if include_messages and channel.get("type") in {0, 5, 10, 11, 12, 15, 16}:
             row["messages"] = index.read_channel(str(channel["id"]), message_limit_per_channel)
         channel_rows.append(row)
 
@@ -607,7 +607,7 @@ async def get_server_snapshot(
         payload["messages"] = {
             str(channel["id"]): index.read_channel(str(channel["id"]), message_limit_per_channel)
             for channel in channels
-            if channel.get("type") in {0, 5, 10, 11, 12, 15}
+            if channel.get("type") in {0, 5, 10, 11, 12, 15, 16}
         }
     return payload
 

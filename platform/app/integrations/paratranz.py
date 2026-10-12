@@ -148,10 +148,15 @@ class ParaTranzAPI:
     def get_json(self, path: str, *, params: dict[str, Any] | None = None) -> Any:
         if not self.token:
             raise ParaTranzAPIError("PARATRANZ_TOKEN is not configured")
-        if not path or path.startswith(("http://", "https://", "//")):
+        if not path or path.startswith(("http://", "https://", "//")) or "\\" in path:
             raise ValueError("ParaTranz path must be a relative API path")
+        path_only = path.split("?", 1)[0]
+        if any(segment in {".", ".."} for segment in path_only.split("/")):
+            raise ValueError("ParaTranz path cannot contain traversal segments")
 
         url = urljoin(self.base_url + "/", path.lstrip("/"))
+        if urlsplit(url).netloc != urlsplit(self.base_url).netloc:
+            raise ValueError("ParaTranz URL escaped the configured API host")
         headers = {
             "Authorization": self.token,
             "Accept": "application/json",

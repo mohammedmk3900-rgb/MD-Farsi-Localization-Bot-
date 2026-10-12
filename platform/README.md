@@ -79,3 +79,18 @@ python run_api.py
 This launcher enables the embedded autonomous scheduler, so FastAPI and the persistent scheduler share the same application context and SQLite state. The scheduler can still be run independently with `python run_scheduler.py` for worker-style deployments.
 
 The recurring business scheduler is owned by the application. GitHub Actions is validation/manual maintenance infrastructure, not the production business scheduler.
+
+## ParaTranz API client
+
+The read-only ParaTranz adapter uses the documented `Authorization` header format (the raw API token, without a `Bearer ` prefix). A pasted Bearer-prefixed value is normalized before sending. Keep `PARATRANZ_TOKEN` in the deployment secret store and never log it.
+
+The project snapshot is built from `GET /projects/{projectId}`, `GET /projects/{projectId}/files`, and—when the project response does not contain a member count—`GET /projects/{projectId}/members`. Translation counters are aggregated from each file's documented `total`, `translated`, `reviewed`, and `words` fields; the client does not assume undocumented aggregate fields exist on the project object.
+
+Transport settings:
+- `PARATRANZ_BASE_URL`: API base URL, default `https://paratranz.cn/api`
+- `PARATRANZ_TIMEOUT_SECONDS`: request timeout, default 20 seconds
+- `PARATRANZ_MAX_RETRIES`: bounded retries for rate limits and transient upstream failures, default 3
+- `PARATRANZ_PAGE_SIZE`: glossary/member page size, default 100
+- `PARATRANZ_MAX_PAGES`: pagination safety limit, default 100
+
+Successful responses with an unknown or incomplete shape are treated as errors, not empty collections. Empty/inconsistent project snapshots are rejected to prevent a broken upstream response from overwriting known-good project state. Glossary sync also de-duplicates repeated pages and protects a previously populated glossary from an empty response.

@@ -183,3 +183,50 @@ def test_unknown_successful_list_shape_is_not_mistaken_for_empty_list():
     with patch("app.integrations.paratranz.httpx.Client", FakeHttpClient):
         with pytest.raises(ParaTranzDataError, match="recognized collection"):
             ParaTranzTerms(19621, "token").list()
+
+
+def test_read_only_resource_helpers_cover_project_api():
+    configure_project()
+    base = "https://paratranz.cn/api/projects/19621"
+    FakeHttpClient.responses[f"{base}/files/421"] = FakeResponse({"id": 421, "name": "localisation.yml"})
+    FakeHttpClient.responses[f"{base}/files/421/translation"] = FakeResponse([{"id": 1, "text": "Hello"}])
+    FakeHttpClient.responses[f"{base}/terms/8"] = FakeResponse({"id": 8, "term": "Faction", "translation": "اتحاد"})
+    FakeHttpClient.responses[f"{base}/strings/99"] = FakeResponse({"id": 99, "original": "Hello"})
+
+    with patch("app.integrations.paratranz.httpx.Client", FakeHttpClient):
+        client = ParaTranzClient(settings())
+        assert client.file(421)["name"] == "localisation.yml"
+        assert client.file_translation(421)[0]["text"] == "Hello"
+        assert client.term(8)["translation"] == "اتحاد"
+        assert client.string(99)["original"] == "Hello"
+
+
+def test_read_only_collection_allowlist_and_id_validation():
+    client = ParaTranzClient(settings())
+    with pytest.raises(ValueError, match="Unsupported read-only"):
+        client.list_project_resource("delete")
+    with pytest.raises(ValueError, match="file_id"):
+        client.file("../8")
+    with pytest.raises(ValueError, match="term_id"):
+        client.term(0)
+
+
+def test_api_rejects_path_traversal_before_network_call():
+    api = ParaTranzAPI("test-token")
+    with pytest.raises(ValueError, match="traversal"):
+        api.get_json("../users")
+    with pytest.raises(ValueError, match="relative"):
+        api.get_json("https://example.com/steal")
+
+
+def test_list_project_resource_forwards_filters_and_pagination():
+    base = "https://paratranz.cn/api/projects/19621/strings"
+    FakeHttpClient.responses[base] = FakeResponse({"results": [{"id": 4}], "pageCount": 1})
+    with patch("app.integrations.paratranz.httpx.Client", FakeHttpClient):
+        rows, metadata = ParaTranzClient(settings()).list_project_resource(
+            "strings", page=1, page_size=25, params={"file": 421, "type": "translated"}
+        )
+    assert rows == [{"id": 4}]
+    assert metadata["pageCount"] == 1
+    request = FakeHttpClient.requests[0]["get"][0]
+    assert request["params"] == {"file": 421, "type": "translated", "page": 1, "pageSize": 25}

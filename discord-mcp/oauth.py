@@ -93,8 +93,56 @@ class DawnNexusOAuthProvider(
                     payload TEXT NOT NULL,
                     expires_at INTEGER
                 );
+                CREATE TABLE IF NOT EXISTS oauth_login_attempts (
+                    client_ip TEXT PRIMARY KEY,
+                    window_started INTEGER NOT NULL,
+                    failures INTEGER NOT NULL
+                );
                 """
             )
+
+    def login_attempts_remaining(self, client_ip: str) -> int:
+        """Return attempts left in the current 15-minute window for this IP."""
+        now = _now()
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT window_started, failures FROM oauth_login_attempts WHERE client_ip = ?",
+                (client_ip,),
+            ).fetchone()
+            if not row or now - row["window_started"] >= 900:
+                conn.execute(
+                    "INSERT INTO oauth_login_attempts(client_ip, window_started, failures) VALUES(?, ?, 0) "
+                    "ON CONFLICT(client_ip) DO UPDATE SET window_started=excluded.window_started, failures=0",
+                    (client_ip, now),
+                )
+                return 5
+            return max(0, 5 - int(row["failures"]))
+
+    def record_login_failure(self, client_ip: str) -> int:
+        """Atomically record a failed login and return attempts remaining."""
+        now = _now()
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT window_started, failures FROM oauth_login_attempts WHERE client_ip = ?",
+                (client_ip,),
+            ).fetchone()
+            if not row or now - row["window_started"] >= 900:
+                conn.execute(
+                    "INSERT INTO oauth_login_attempts(client_ip, window_started, failures) VALUES(?, ?, 1) "
+                    "ON CONFLICT(client_ip) DO UPDATE SET window_started=excluded.window_started, failures=1",
+                    (client_ip, now),
+                )
+                return 4
+            failures = int(row["failures"]) + 1
+            conn.execute(
+                "UPDATE oauth_login_attempts SET failures = ? WHERE client_ip = ?",
+                (failures, client_ip),
+            )
+            return max(0, 5 - failures)
+
+    def clear_login_failures(self, client_ip: str) -> None:
+        with self._connect() as conn:
+            conn.execute("DELETE FROM oauth_login_attempts WHERE client_ip = ?", (client_ip,))
 
     async def get_client(self, client_id: str) -> OAuthClientInformationFull | None:
         with self._connect() as conn:
@@ -341,38 +389,71 @@ Farsi Localization Discord data.</p>
 <button type="submit">Authorize DawnNexus</button>
 </form>
 </body></html>"""
-        return HTMLResponse(body, headers={"cache-control": "no-store"})
+        return HTMLResponse(
+            body,
+            headers={
+                "cache-control": "no-store",
+                "pragma": "no-cache",
+                "x-content-type-options": "nosniff",
+                "x-frame-options": "DENY",
+                "referrer-policy": "no-referrer",
+                "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+            },
+        )
 
     async def login_submit(request: Request) -> Response:
-        raw = (await request.body()).decode("utf-8")
+        content_length = request.headers.get("content-length", "")
+        if content_length.isdigit() and int(content_length) > 8192:
+            return HTMLResponse("Request too large.", status_code=413, headers={"cache-control": "no-store"})
+        body_bytes = await request.body()
+        if len(body_bytes) > 8192:
+            return HTMLResponse("Request too large.", status_code=413, headers={"cache-control": "no-store"})
+        try:
+            raw = body_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            return HTMLResponse("Invalid form encoding.", status_code=400, headers={"cache-control": "no-store"})
         fields = {k: values[0] for k, values in parse_qs(raw).items() if values}
         request_id = fields.get("request_id", "")
         username = fields.get("username", "")
         password = fields.get("password", "")
+        # Use the direct ASGI peer address, not X-Forwarded-For, which can be spoofed.
+        client_ip = request.client.host if request.client else "unknown"
+        if provider.login_attempts_remaining(client_ip) <= 0:
+            return HTMLResponse(
+                "Too many login attempts. Try again in 15 minutes.",
+                status_code=429,
+                headers={"cache-control": "no-store", "retry-after": "900"},
+            )
         if len(provider.password) < 16:
             return HTMLResponse(
                 "DawnNexus OAuth is not configured. Set MCP_OAUTH_PASSWORD on the server.",
                 status_code=503,
                 headers={"cache-control": "no-store"},
             )
-        if not secrets.compare_digest(username, provider.username) or not secrets.compare_digest(
-            password, provider.password
-        ):
+        username_ok = secrets.compare_digest(username, provider.username)
+        password_ok = secrets.compare_digest(password, provider.password)
+        if not (username_ok and password_ok):
+            remaining = provider.record_login_failure(client_ip)
+            headers = {"cache-control": "no-store"}
+            if remaining == 0:
+                headers["retry-after"] = "900"
             return HTMLResponse(
                 "Invalid credentials.",
-                status_code=401,
-                headers={"cache-control": "no-store"},
+                status_code=401 if remaining else 429,
+                headers=headers,
             )
+        provider.clear_login_failures(client_ip)
         redirect = await provider.approve(request_id)
         if not redirect:
             return HTMLResponse(
                 "Authorization request expired or invalid.",
                 status_code=400,
+                headers={"cache-control": "no-store", "referrer-policy": "no-referrer"},
             )
         return RedirectResponse(
             redirect,
             status_code=303,
-            headers={"cache-control": "no-store"},
+            headers={"cache-control": "no-store", "referrer-policy": "no-referrer"},
         )
 
     return [

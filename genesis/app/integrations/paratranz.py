@@ -82,6 +82,8 @@ class ParaTranzIntegration:
                     time.sleep(delay)
                     continue
                 message, api_code = self._error_details(exc)
+                if self.token:
+                    message = message.replace(self.token, "[redacted]")
                 suffix = f" (API code {api_code})" if api_code is not None else ""
                 raise ParaTranzError(f"ParaTranz HTTP {status}: {message}{suffix}") from None
             except (URLError, TimeoutError) as exc:
@@ -203,7 +205,7 @@ class ParaTranzIntegration:
                 break
             signature = json.dumps(batch, sort_keys=True, ensure_ascii=False, default=str)
             if signature == previous_signature:
-                break
+                raise ParaTranzError("ParaTranz repeated a page; refusing to return a partial list")
             previous_signature = signature
             for item in batch:
                 identity = item.get("id")

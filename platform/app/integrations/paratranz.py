@@ -101,8 +101,15 @@ class ParaTranzAPI:
         max_retries: int = 3,
     ) -> None:
         parsed_base = urlsplit(base_url)
-        if parsed_base.scheme != "https" or not parsed_base.netloc or parsed_base.query or parsed_base.fragment:
-            raise ValueError("ParaTranz base URL must be an HTTPS URL without query or fragment")
+        if (
+            parsed_base.scheme != "https"
+            or not parsed_base.hostname
+            or parsed_base.username
+            or parsed_base.password
+            or parsed_base.query
+            or parsed_base.fragment
+        ):
+            raise ValueError("ParaTranz base URL must be HTTPS and cannot include credentials, query or fragment")
         self.token = (token or "").strip()
         # Accept a pasted "Bearer <token>" value but normalize it to the
         # raw token format expected by ParaTranz's API documentation.

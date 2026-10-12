@@ -271,8 +271,15 @@ class DawnNexusOAuthProvider(
     async def exchange_authorization_code(
         self, client: OAuthClientInformationFull, authorization_code: AuthorizationCode
     ) -> OAuthToken:
+        # Consume the authorization code atomically. Two concurrent token
+        # requests must not be able to exchange the same code twice.
         with self._connect() as conn:
-            conn.execute("DELETE FROM oauth_codes WHERE code = ?", (authorization_code.code,))
+            cur = conn.execute(
+                "DELETE FROM oauth_codes WHERE code = ? AND expires_at >= ?",
+                (authorization_code.code, time.time()),
+            )
+            if cur.rowcount != 1:
+                raise TokenError(error="invalid_grant", error_description="Authorization code is invalid or already used")
         access, refresh = self._mint_access(authorization_code)
         return OAuthToken(
             access_token=access.token,
@@ -312,10 +319,14 @@ class DawnNexusOAuthProvider(
         requested = scopes or ["discord:read"]
         if any(scope != "discord:read" for scope in requested):
             raise TokenError(error="invalid_scope", error_description="Unsupported scope")
+        # Rotation must be single-use even if two refresh requests race.
         with self._connect() as conn:
-            conn.execute(
-                "DELETE FROM oauth_refresh_tokens WHERE token = ?", (refresh_token.token,)
+            cur = conn.execute(
+                "DELETE FROM oauth_refresh_tokens WHERE token = ? AND expires_at >= ?",
+                (refresh_token.token, _now()),
             )
+            if cur.rowcount != 1:
+                raise TokenError(error="invalid_grant", error_description="Refresh token is invalid or already used")
         access, refresh = self._mint_access(
             RefreshToken(
                 token=refresh_token.token,

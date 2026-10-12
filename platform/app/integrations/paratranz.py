@@ -101,8 +101,15 @@ class ParaTranzAPI:
         max_retries: int = 3,
     ) -> None:
         parsed_base = urlsplit(base_url)
-        if parsed_base.scheme != "https" or not parsed_base.netloc or parsed_base.query or parsed_base.fragment:
-            raise ValueError("ParaTranz base URL must be an HTTPS URL without query or fragment")
+        if (
+            parsed_base.scheme != "https"
+            or not parsed_base.hostname
+            or parsed_base.username
+            or parsed_base.password
+            or parsed_base.query
+            or parsed_base.fragment
+        ):
+            raise ValueError("ParaTranz base URL must be HTTPS and cannot include credentials, query or fragment")
         self.token = (token or "").strip()
         # Accept a pasted "Bearer <token>" value but normalize it to the
         # raw token format expected by ParaTranz's API documentation.
@@ -148,10 +155,15 @@ class ParaTranzAPI:
     def get_json(self, path: str, *, params: dict[str, Any] | None = None) -> Any:
         if not self.token:
             raise ParaTranzAPIError("PARATRANZ_TOKEN is not configured")
-        if not path or path.startswith(("http://", "https://", "//")):
+        if not path or path.startswith(("http://", "https://", "//")) or "\\" in path:
             raise ValueError("ParaTranz path must be a relative API path")
+        path_only = path.split("?", 1)[0]
+        if any(segment in {".", ".."} for segment in path_only.split("/")):
+            raise ValueError("ParaTranz path cannot contain traversal segments")
 
         url = urljoin(self.base_url + "/", path.lstrip("/"))
+        if urlsplit(url).netloc != urlsplit(self.base_url).netloc:
+            raise ValueError("ParaTranz URL escaped the configured API host")
         headers = {
             "Authorization": self.token,
             "Accept": "application/json",
@@ -211,12 +223,15 @@ class ParaTranzAPI:
         page: int = 1,
         page_size: int = 100,
         collection_keys: tuple[str, ...] = (),
+        params: dict[str, Any] | None = None,
     ) -> tuple[list[dict], dict]:
-        if page < 1:
+        if isinstance(page, bool) or page < 1:
             raise ValueError("page must be >= 1")
-        if not 1 <= page_size <= 1000:
+        if isinstance(page_size, bool) or not 1 <= page_size <= 1000:
             raise ValueError("page_size must be between 1 and 1000")
-        payload = self.get_json(path, params={"page": page, "pageSize": page_size})
+        query = dict(params or {})
+        query.update({"page": page, "pageSize": page_size})
+        payload = self.get_json(path, params=query)
         return _list_payload(payload, collection_keys)
 
     def list_all(
@@ -226,8 +241,9 @@ class ParaTranzAPI:
         page_size: int = 100,
         max_pages: int = 100,
         collection_keys: tuple[str, ...] = (),
+        params: dict[str, Any] | None = None,
     ) -> list[dict]:
-        if max_pages < 1:
+        if isinstance(max_pages, bool) or max_pages < 1:
             raise ValueError("max_pages must be >= 1")
         items: list[dict] = []
         seen_ids: set[str] = set()
@@ -239,6 +255,7 @@ class ParaTranzAPI:
                 page=page,
                 page_size=page_size,
                 collection_keys=collection_keys,
+                params=params,
             )
             if not batch:
                 break
@@ -318,11 +335,137 @@ class ParaTranzClient:
         files, _ = _list_payload(payload, ("files",))
         return files
 
-    def members(self, *, page_size: int = 100) -> list[dict]:
+    # Read-only endpoint wrappers. Mutating endpoints are deliberately not
+    # exposed by this adapter so scheduled sync cannot alter source translations.
+    _COLLECTIONS = {
+        "files": ("files", "results", "items"),
+        "members": ("members", "results", "items"),
+        "terms": ("terms", "results", "items"),
+        "scores": ("scores", "results", "items"),
+        "strings": ("strings", "results", "items"),
+        "history": ("history", "results", "items"),
+        "issues": ("issues", "results", "items"),
+        "artifacts": ("artifacts", "results", "items"),
+    }
+
+    @staticmethod
+    def _resource_id(value: int | str, field: str) -> int:
+        if isinstance(value, bool):
+            raise ValueError(f"{field} must be a positive integer")
+        try:
+            result = int(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"{field} must be a positive integer") from exc
+        if result <= 0 or str(result) != str(value).strip():
+            raise ValueError(f"{field} must be a positive integer")
+        return result
+
+    def list_project_resource(
+        self,
+        resource: str,
+        *,
+        page: int = 1,
+        page_size: int = 100,
+        max_pages: int | None = None,
+        params: dict[str, Any] | None = None,
+    ) -> list[dict] | tuple[list[dict], dict]:
+        """Read a supported project collection, one page or all bounded pages."""
+        if resource not in self._COLLECTIONS:
+            raise ValueError(f"Unsupported read-only ParaTranz collection: {resource}")
+        project_id = self._resource_id(self.settings.paratranz_project_id, "project_id")
+        path = f"projects/{project_id}/{resource}"
+        keys = self._COLLECTIONS[resource]
+        if max_pages is not None:
+            return self.api.list_all(
+                path,
+                page_size=page_size,
+                max_pages=max_pages,
+                collection_keys=keys,
+                params=params,
+            )
+        return self.api.list_page(
+            path,
+            page=page,
+            page_size=page_size,
+            collection_keys=keys,
+            params=params,
+        )
+
+    def list_projects(self, *, page: int = 1, page_size: int = 100) -> tuple[list[dict], dict]:
+        return self.api.list_page(
+            "projects",
+            page=page,
+            page_size=page_size,
+            collection_keys=("projects", "results", "items"),
+        )
+
+    def file(self, file_id: int | str) -> dict:
+        project_id = self._resource_id(self.settings.paratranz_project_id, "project_id")
+        resource_id = self._resource_id(file_id, "file_id")
+        payload = _unwrap_data(self.api.get_json(f"projects/{project_id}/files/{resource_id}"))
+        if not isinstance(payload, dict):
+            raise ParaTranzDataError("ParaTranz file response is not an object")
+        return payload
+
+    def file_translation(self, file_id: int | str) -> Any:
+        project_id = self._resource_id(self.settings.paratranz_project_id, "project_id")
+        resource_id = self._resource_id(file_id, "file_id")
+        return self.api.get_json(f"projects/{project_id}/files/{resource_id}/translation")
+
+    def term(self, term_id: int | str) -> dict:
+        project_id = self._resource_id(self.settings.paratranz_project_id, "project_id")
+        resource_id = self._resource_id(term_id, "term_id")
+        payload = _unwrap_data(self.api.get_json(f"projects/{project_id}/terms/{resource_id}"))
+        if not isinstance(payload, dict):
+            raise ParaTranzDataError("ParaTranz term response is not an object")
+        return payload
+
+    def string(self, string_id: int | str) -> dict:
+        project_id = self._resource_id(self.settings.paratranz_project_id, "project_id")
+        resource_id = self._resource_id(string_id, "string_id")
+        payload = _unwrap_data(self.api.get_json(f"projects/{project_id}/strings/{resource_id}"))
+        if not isinstance(payload, dict):
+            raise ParaTranzDataError("ParaTranz string response is not an object")
+        return payload
+
+    def latest_artifact(self) -> Any:
+        project_id = self._resource_id(self.settings.paratranz_project_id, "project_id")
+        return self.api.get_json(f"projects/{project_id}/artifacts/latest")
+
+    def term_history(self, term_id: int | str, *, page: int = 1, page_size: int = 100) -> tuple[list[dict], dict]:
+        project_id = self._resource_id(self.settings.paratranz_project_id, "project_id")
+        resource_id = self._resource_id(term_id, "term_id")
+        return self.api.list_page(
+            f"projects/{project_id}/terms/{resource_id}/history",
+            page=page,
+            page_size=page_size,
+            collection_keys=("history", "results", "items"),
+        )
+
+    def file_revisions(self, *, page: int = 1, page_size: int = 100, params: dict[str, Any] | None = None) -> tuple[list[dict], dict]:
+        project_id = self._resource_id(self.settings.paratranz_project_id, "project_id")
+        return self.api.list_page(
+            f"projects/{project_id}/files/revisions",
+            page=page,
+            page_size=page_size,
+            collection_keys=("revisions", "history", "results", "items"),
+            params=params,
+        )
+
+    def artifact(self, artifact_id: int | str) -> dict:
+        project_id = self._resource_id(self.settings.paratranz_project_id, "project_id")
+        resource_id = self._resource_id(artifact_id, "artifact_id")
+        payload = _unwrap_data(self.api.get_json(f"projects/{project_id}/artifacts/{resource_id}"))
+        if not isinstance(payload, dict):
+            raise ParaTranzDataError("ParaTranz artifact response is not an object")
+        return payload
+
+    def members(self, *, page_size: int | None = None) -> list[dict]:
         project_id = _as_nonnegative_int(self.settings.paratranz_project_id, "project_id")
         return self.api.list_all(
             f"projects/{project_id}/members",
-            page_size=page_size,
+            page_size=page_size or getattr(self.settings, "paratranz_page_size", 100),
+            max_pages=getattr(self.settings, "paratranz_max_pages", 100),
             collection_keys=("members", "results", "items"),
         )
 

@@ -25,6 +25,28 @@ class ParaTranzConfig:
     page_size: int = 100
     max_pages: int = 100
 
+    def __post_init__(self) -> None:
+        if isinstance(self.project_id, bool) or int(self.project_id) <= 0:
+            raise ValueError("ParaTranz project_id must be a positive integer")
+        parsed = urlsplit(self.base_url)
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username
+            or parsed.password
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("ParaTranz base URL must be HTTPS and cannot include credentials, query or fragment")
+        if float(self.timeout) <= 0:
+            raise ValueError("ParaTranz timeout must be positive")
+        if isinstance(self.max_retries, bool) or self.max_retries < 0:
+            raise ValueError("ParaTranz max_retries cannot be negative")
+        if isinstance(self.page_size, bool) or not 1 <= self.page_size <= 1000:
+            raise ValueError("ParaTranz page_size must be between 1 and 1000")
+        if isinstance(self.max_pages, bool) or self.max_pages < 1:
+            raise ValueError("ParaTranz max_pages must be positive")
+
     @classmethod
     def from_env(cls) -> "ParaTranzConfig":
         raw = os.getenv("PARATRANZ_PROJECT_ID", "19621")
@@ -50,18 +72,36 @@ class ParaTranzIntegration:
     def __init__(self, config: ParaTranzConfig | None = None, token: str | None = None, timeout: float | None = None):
         self.config = config or ParaTranzConfig.from_env()
         parsed_base = urlsplit(self.config.base_url)
-        if parsed_base.scheme != "https" or not parsed_base.netloc or parsed_base.query or parsed_base.fragment:
-            raise ValueError("ParaTranz base URL must be an HTTPS URL without query or fragment")
+        if (
+            parsed_base.scheme != "https"
+            or not parsed_base.hostname
+            or parsed_base.username
+            or parsed_base.password
+            or parsed_base.query
+            or parsed_base.fragment
+        ):
+            raise ValueError("ParaTranz base URL must be HTTPS and cannot include credentials, query or fragment")
         raw_token = token if token is not None else os.getenv("PARATRANZ_TOKEN", "")
         self.token = (raw_token or "").strip()
         if self.token.lower().startswith("bearer "):
             self.token = self.token[7:].strip()
         self.timeout = max(1.0, float(timeout if timeout is not None else self.config.timeout))
+        if not self.token:
+            # Construction is allowed without a token for offline tooling; the
+            # first request fails with a clear, non-secret error.
+            self.token = ""
 
     def _get(self, path: str) -> object:
-        if not path or path.startswith(("http://", "https://", "//")):
+        if not path or path.startswith(("http://", "https://", "//")) or "\\" in path:
             raise ValueError("ParaTranz path must be relative")
+        path_only = path.split("?", 1)[0]
+        if any(segment in {".", ".."} for segment in path_only.split("/")):
+            raise ValueError("ParaTranz path cannot contain traversal segments")
+        if not self.token:
+            raise ParaTranzError("PARATRANZ_TOKEN is not configured")
         url = urljoin(self.config.base_url.rstrip("/") + "/", path.lstrip("/"))
+        if urlsplit(url).netloc != urlsplit(self.config.base_url).netloc:
+            raise ValueError("ParaTranz URL escaped the configured API host")
         headers = {"Accept": "application/json", "User-Agent": "MD-News-Genesis/11"}
         if self.token:
             headers["Authorization"] = self.token
@@ -191,12 +231,23 @@ class ParaTranzIntegration:
         files, _ = self._list_payload(payload, ("files",))
         return files
 
-    def _list_all(self, path: str, keys: tuple[str, ...]) -> list[dict]:
+    def _list_all(
+        self,
+        path: str,
+        keys: tuple[str, ...],
+        *,
+        page_size: int | None = None,
+        params: dict[str, object] | None = None,
+    ) -> list[dict]:
+        size = page_size or self.config.page_size
+        if not 1 <= size <= 1000:
+            raise ValueError("page_size must be between 1 and 1000")
         items: list[dict] = []
         seen: set[str] = set()
         previous_signature: str | None = None
         for page in range(1, self.config.max_pages + 1):
-            query = urlencode({"page": page, "pageSize": self.config.page_size})
+            query_values = {"page": page, "pageSize": size, **(params or {})}
+            query = urlencode(query_values)
             try:
                 payload = self._get(f"{path}?{query}")
             except ParaTranzError:
@@ -226,14 +277,137 @@ class ParaTranzIntegration:
                 if len(items) >= total_rows:
                     break
                 continue
-            if len(batch) < self.config.page_size:
+            if len(batch) < size:
                 break
         else:
             raise ParaTranzError("ParaTranz pagination exceeded safety limit")
         return items
 
+    _COLLECTIONS = {
+        "files": ("files", "results", "items"),
+        "members": ("members", "results", "items"),
+        "terms": ("terms", "results", "items"),
+        "scores": ("scores", "results", "items"),
+        "strings": ("strings", "results", "items"),
+        "history": ("history", "results", "items"),
+        "issues": ("issues", "results", "items"),
+        "artifacts": ("artifacts", "results", "items"),
+    }
+
+    @staticmethod
+    def _resource_id(value: int | str, field: str) -> int:
+        if isinstance(value, bool):
+            raise ValueError(f"{field} must be a positive integer")
+        try:
+            result = int(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"{field} must be a positive integer") from exc
+        if result <= 0 or str(result) != str(value).strip():
+            raise ValueError(f"{field} must be a positive integer")
+        return result
+
+    def list_resource(
+        self,
+        resource: str,
+        *,
+        page: int = 1,
+        page_size: int | None = None,
+        all_pages: bool = False,
+        params: dict[str, object] | None = None,
+    ) -> list[dict] | tuple[list[dict], dict]:
+        """Read an allow-listed project collection without exposing write routes."""
+        if resource not in self._COLLECTIONS:
+            raise ValueError(f"Unsupported read-only ParaTranz collection: {resource}")
+        if page < 1:
+            raise ValueError("page must be >= 1")
+        size = page_size or self.config.page_size
+        if not 1 <= size <= 1000:
+            raise ValueError("page_size must be between 1 and 1000")
+        path = f"projects/{self._resource_id(self.config.project_id, 'project_id')}/{resource}"
+        keys = self._COLLECTIONS[resource]
+        if all_pages:
+            return self._list_all(path, keys, page_size=size, params=params)
+        query = {"page": page, "pageSize": size, **(params or {})}
+        payload = self._get(f"{path}?{urlencode(query)}")
+        return self._list_payload(payload, keys)
+
+    def list_projects(self, *, page: int = 1, page_size: int | None = None) -> tuple[list[dict], dict]:
+        if page < 1:
+            raise ValueError("page must be >= 1")
+        size = page_size or self.config.page_size
+        if not 1 <= size <= 1000:
+            raise ValueError("page_size must be between 1 and 1000")
+        payload = self._get(f"projects?{urlencode({'page': page, 'pageSize': size})}")
+        return self._list_payload(payload, ("projects", "results", "items"))
+
+    def file(self, file_id: int | str) -> dict:
+        payload = self._payload(self._get(
+            f"projects/{self._resource_id(self.config.project_id, 'project_id')}/files/{self._resource_id(file_id, 'file_id')}"
+        ))
+        if not isinstance(payload, dict):
+            raise ParaTranzError("ParaTranz file response is not an object")
+        return payload
+
+    def file_translation(self, file_id: int | str) -> object:
+        return self._get(
+            f"projects/{self._resource_id(self.config.project_id, 'project_id')}/files/{self._resource_id(file_id, 'file_id')}/translation"
+        )
+
+    def term(self, term_id: int | str) -> dict:
+        payload = self._payload(self._get(
+            f"projects/{self._resource_id(self.config.project_id, 'project_id')}/terms/{self._resource_id(term_id, 'term_id')}"
+        ))
+        if not isinstance(payload, dict):
+            raise ParaTranzError("ParaTranz term response is not an object")
+        return payload
+
+    def string(self, string_id: int | str) -> dict:
+        payload = self._payload(self._get(
+            f"projects/{self._resource_id(self.config.project_id, 'project_id')}/strings/{self._resource_id(string_id, 'string_id')}"
+        ))
+        if not isinstance(payload, dict):
+            raise ParaTranzError("ParaTranz string response is not an object")
+        return payload
+
+    def latest_artifact(self) -> object:
+        return self._get(
+            f"projects/{self._resource_id(self.config.project_id, 'project_id')}/artifacts/latest"
+        )
+
+    def file_revisions(self, *, page: int = 1, page_size: int | None = None, params: dict[str, object] | None = None) -> tuple[list[dict], dict]:
+        if page < 1:
+            raise ValueError("page must be >= 1")
+        size = page_size or self.config.page_size
+        if not 1 <= size <= 1000:
+            raise ValueError("page_size must be between 1 and 1000")
+        project_id = self._resource_id(self.config.project_id, "project_id")
+        query = {"page": page, "pageSize": size, **(params or {})}
+        payload = self._get(f"projects/{project_id}/files/revisions?{urlencode(query)}")
+        return self._list_payload(payload, ("revisions", "history", "results", "items"))
+
+    def artifact(self, artifact_id: int | str) -> dict:
+        payload = self._payload(self._get(
+            f"projects/{self._resource_id(self.config.project_id, 'project_id')}/artifacts/{self._resource_id(artifact_id, 'artifact_id')}"
+        ))
+        if not isinstance(payload, dict):
+            raise ParaTranzError("ParaTranz artifact response is not an object")
+        return payload
+
+    def term_history(self, term_id: int | str, *, page: int = 1, page_size: int | None = None) -> tuple[list[dict], dict]:
+        if page < 1:
+            raise ValueError("page must be >= 1")
+        size = page_size or self.config.page_size
+        if not 1 <= size <= 1000:
+            raise ValueError("page_size must be between 1 and 1000")
+        path = (
+            f"projects/{self._resource_id(self.config.project_id, 'project_id')}/terms/"
+            f"{self._resource_id(term_id, 'term_id')}/history"
+        )
+        payload = self._get(f"{path}?{urlencode({'page': page, 'pageSize': size})}")
+        return self._list_payload(payload, ("history", "results", "items"))
+
     def members(self) -> list[dict]:
-        return self._list_all(f"projects/{self.config.project_id}/members", ("members",))
+        return self._list_all(f"projects/{self.config.project_id}/members", ("members", "results", "items"))
 
     def stats(self) -> ProjectStats:
         project = self.project()

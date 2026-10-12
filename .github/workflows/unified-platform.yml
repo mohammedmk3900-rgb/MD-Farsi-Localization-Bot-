@@ -444,8 +444,31 @@ jobs:
       - name: Verify OAuth resource metadata
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 2 --max-time 30 "$DAWNNEXUS_URL/.well-known/oauth-protected-resource" -o "$RUNNER_TEMP/resource.json"
-          python -c 'import json,sys; d=json.load(open(sys.argv[1])); assert isinstance(d,dict)' "$RUNNER_TEMP/resource.json"
+          base="${DAWNNEXUS_URL%/}"
+          verified=false
+          for path in "/.well-known/oauth-protected-resource/mcp" "/.well-known/oauth-protected-resource"; do
+            status="$(curl --fail --silent --show-error --retry 2 --retry-all-errors --retry-delay 2 --max-time 30 --output "$RUNNER_TEMP/resource.json" --write-out '%{http_code}' "$base$path" || true)"
+            if [[ "$status" =~ ^2[0-9][0-9]$ ]] && python - "$RUNNER_TEMP/resource.json" "$base/mcp" <<'PY'
+          import json
+          import sys
+          from urllib.parse import urlparse
+          data = json.load(open(sys.argv[1], encoding="utf-8"))
+          assert isinstance(data, dict), "metadata must be a JSON object"
+          assert isinstance(data.get("resource"), str), "metadata is missing resource URL"
+          assert isinstance(data.get("authorization_servers"), list) and data["authorization_servers"], "metadata is missing authorization_servers"
+          assert urlparse(data["resource"]).scheme == "https", "resource URL must use HTTPS"
+          PY
+            then
+              echo "Verified protected-resource metadata at $path (HTTP $status)"
+              verified=true
+              break
+            fi
+            echo "Protected-resource metadata probe failed at $path (HTTP ${status:-unknown})" >&2
+          done
+          if [[ "$verified" != true ]]; then
+            echo "::error::DawnNexus protected-resource metadata could not be verified at either supported well-known path."
+            exit 1
+          fi
 
   phase-10-scheduler:
     name: 'Phase 10 · Scheduler'

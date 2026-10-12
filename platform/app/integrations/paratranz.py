@@ -338,6 +338,7 @@ class ParaTranzClient:
     # Read-only endpoint wrappers. Mutating endpoints are deliberately not
     # exposed by this adapter so scheduled sync cannot alter source translations.
     _COLLECTIONS = {
+        "files": ("files", "results", "items"),
         "members": ("members", "results", "items"),
         "terms": ("terms", "results", "items"),
         "scores": ("scores", "results", "items"),
@@ -441,11 +442,30 @@ class ParaTranzClient:
             collection_keys=("history", "results", "items"),
         )
 
-    def members(self, *, page_size: int = 100) -> list[dict]:
+    def file_revisions(self, *, page: int = 1, page_size: int = 100, params: dict[str, Any] | None = None) -> tuple[list[dict], dict]:
+        project_id = self._resource_id(self.settings.paratranz_project_id, "project_id")
+        return self.api.list_page(
+            f"projects/{project_id}/files/revisions",
+            page=page,
+            page_size=page_size,
+            collection_keys=("revisions", "history", "results", "items"),
+            params=params,
+        )
+
+    def artifact(self, artifact_id: int | str) -> dict:
+        project_id = self._resource_id(self.settings.paratranz_project_id, "project_id")
+        resource_id = self._resource_id(artifact_id, "artifact_id")
+        payload = _unwrap_data(self.api.get_json(f"projects/{project_id}/artifacts/{resource_id}"))
+        if not isinstance(payload, dict):
+            raise ParaTranzDataError("ParaTranz artifact response is not an object")
+        return payload
+
+    def members(self, *, page_size: int | None = None) -> list[dict]:
         project_id = _as_nonnegative_int(self.settings.paratranz_project_id, "project_id")
         return self.api.list_all(
             f"projects/{project_id}/members",
-            page_size=page_size,
+            page_size=page_size or getattr(self.settings, "paratranz_page_size", 100),
+            max_pages=getattr(self.settings, "paratranz_max_pages", 100),
             collection_keys=("members", "results", "items"),
         )
 

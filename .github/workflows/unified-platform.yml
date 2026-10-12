@@ -453,10 +453,13 @@ jobs:
           import sys
           from urllib.parse import urlparse
           data = json.load(open(sys.argv[1], encoding="utf-8"))
+          expected_resource = sys.argv[2]
           assert isinstance(data, dict), "metadata must be a JSON object"
           assert isinstance(data.get("resource"), str), "metadata is missing resource URL"
+          assert data["resource"].rstrip("/") == expected_resource, "metadata resource does not match the configured MCP endpoint"
           assert isinstance(data.get("authorization_servers"), list) and data["authorization_servers"], "metadata is missing authorization_servers"
-          assert urlparse(data["resource"]).scheme == "https", "resource URL must use HTTPS"
+          parsed_resource = urlparse(data["resource"])
+          assert parsed_resource.scheme == "https" and parsed_resource.hostname, "resource URL must use HTTPS"
           PY
             then
               echo "Verified protected-resource metadata at $path (HTTP $status)"

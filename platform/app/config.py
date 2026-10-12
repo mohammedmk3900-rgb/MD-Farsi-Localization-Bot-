@@ -15,6 +15,9 @@ class Settings(BaseSettings):
 
     paratranz_project_id: int = 19621
     paratranz_token: str = ""
+    paratranz_base_url: str = "https://paratranz.cn/api"
+    paratranz_timeout_seconds: float = 20.0
+    paratranz_max_retries: int = 3
     discord_bot_token: str = ""
     discord_guild_id: str = ""
 

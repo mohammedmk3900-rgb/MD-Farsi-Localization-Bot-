@@ -1,26 +1,36 @@
 from __future__ import annotations
 
-import httpx
+from app.integrations.paratranz import ParaTranzAPI
 
 
 class ParaTranzTerms:
-    BASE = "https://paratranz.cn/api"
+    """Paginated read-only access to the project's ParaTranz glossary."""
 
-    def __init__(self, project_id: int, token: str):
-        self.project_id = project_id
-        self.token = token
+    BASE = ParaTranzAPI.DEFAULT_BASE_URL
+
+    def __init__(self, project_id: int, token: str, *, base_url: str = BASE,
+                 timeout: float = 20.0, max_retries: int = 3):
+        self.project_id = int(project_id)
+        self.api = ParaTranzAPI(
+            token,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
 
     def list(self, page: int = 1, page_size: int = 100) -> list[dict]:
-        if not self.token:
-            raise ValueError("PARATRANZ_TOKEN is required")
-        with httpx.Client(timeout=30) as client:
-            response = client.get(
-                f"{self.BASE}/projects/{self.project_id}/terms",
-                params={"page": page, "pageSize": page_size},
-                headers={"Authorization": f"Bearer {self.token}"},
-            )
-            response.raise_for_status()
-            data = response.json()
-        if isinstance(data, list):
-            return data
-        return data.get("data", data.get("terms", [])) if isinstance(data, dict) else []
+        items, _ = self.api.list_page(
+            f"projects/{self.project_id}/terms",
+            page=page,
+            page_size=page_size,
+            collection_keys=("terms",),
+        )
+        return items
+
+    def list_all(self, page_size: int = 100, max_pages: int = 100) -> list[dict]:
+        return self.api.list_all(
+            f"projects/{self.project_id}/terms",
+            page_size=page_size,
+            max_pages=max_pages,
+            collection_keys=("terms",),
+        )

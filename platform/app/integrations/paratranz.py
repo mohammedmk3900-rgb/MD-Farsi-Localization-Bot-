@@ -5,7 +5,7 @@ import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 
@@ -100,6 +100,9 @@ class ParaTranzAPI:
         timeout: float = 20.0,
         max_retries: int = 3,
     ) -> None:
+        parsed_base = urlsplit(base_url)
+        if parsed_base.scheme != "https" or not parsed_base.netloc or parsed_base.query or parsed_base.fragment:
+            raise ValueError("ParaTranz base URL must be an HTTPS URL without query or fragment")
         self.token = (token or "").strip()
         # Accept a pasted "Bearer <token>" value but normalize it to the
         # raw token format expected by ParaTranz's API documentation.
@@ -348,7 +351,7 @@ class ParaTranzClient:
         raw_members = project.get("members", project.get("memberCount"))
         if isinstance(raw_members, list):
             member_count = len(raw_members)
-        elif raw_members is not None:
+        elif isinstance(raw_members, (int, float, str)) and not isinstance(raw_members, bool):
             member_count = _as_nonnegative_int(raw_members, "members")
         else:
             member_count = len(self.members())

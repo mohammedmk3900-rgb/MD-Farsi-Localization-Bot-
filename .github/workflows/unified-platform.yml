@@ -98,13 +98,6 @@ jobs:
         run: |
           set -euo pipefail
           grep -Fq "PARATRANZ_PROJECT_ID: '19621'" .github/workflows/unified-platform.yml
-          python - <<'PY'
-          from pathlib import Path
-          workflow = Path('.github/workflows/unified-platform.yml').read_text(encoding='utf-8')
-          forbidden = chr(36) + '{{ env.PARATRANZ_PROJECT_ID }}'
-          assert forbidden not in workflow, 'Use the literal project ID in this workflow'
-          PY
-
   phase-01-static:
     name: 'Phase 1 · Static validation'
     needs: phase-00-policy

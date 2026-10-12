@@ -134,8 +134,11 @@ class ParaTranzAPI:
         if isinstance(body, dict):
             raw_message = body.get("message") or body.get("error")
             if isinstance(raw_message, str) and raw_message.strip():
-                # Bound untrusted server text and never include request headers.
+                # Bound untrusted server text and redact a token if an upstream
+                # error ever echoes request credentials.
                 message = raw_message.strip()[:300]
+                if self_token := getattr(response, "_paratranz_token", None):
+                    message = message.replace(self_token, "[redacted]")
             raw_code = body.get("code")
             if isinstance(raw_code, (str, int)) and not isinstance(raw_code, bool):
                 api_code = raw_code
@@ -179,6 +182,8 @@ class ParaTranzAPI:
 
             if response.status_code < 200 or response.status_code >= 300:
                 message, api_code = self._error_payload(response)
+                if self.token:
+                    message = message.replace(self.token, "[redacted]")
                 raise ParaTranzAPIError(
                     f"ParaTranz request failed: {message}",
                     status_code=response.status_code,
@@ -241,7 +246,9 @@ class ParaTranzAPI:
             # Some endpoints/proxies ignore pagination parameters and return
             # the same complete array on every request. Stop instead of looping.
             if signature == previous_signature:
-                break
+                raise ParaTranzDataError(
+                    f"ParaTranz repeated page {page}; refusing to return a partial list"
+                )
             previous_signature = signature
 
             for index, item in enumerate(batch):

@@ -39,7 +39,7 @@ class GlossaryService:
                 break
             signature = json.dumps(batch, sort_keys=True, ensure_ascii=False, default=str)
             if signature == previous_signature:
-                break
+                raise ValueError("ParaTranz repeated a glossary page; refusing to publish a partial glossary")
             previous_signature = signature
 
             for index, term in enumerate(batch):

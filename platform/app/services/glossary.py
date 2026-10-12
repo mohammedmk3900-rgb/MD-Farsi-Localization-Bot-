@@ -15,14 +15,17 @@ class GlossaryService:
             base_url=getattr(settings, "paratranz_base_url", ParaTranzTerms.BASE),
             timeout=getattr(settings, "paratranz_timeout_seconds", 20.0),
             max_retries=getattr(settings, "paratranz_max_retries", 3),
+            page_size=getattr(settings, "paratranz_page_size", 100),
+            max_pages=getattr(settings, "paratranz_max_pages", 100),
         )
 
-    def page(self, page: int = 1, page_size: int = 100) -> list[dict]:
-        return self.client.list(page, page_size)
+    def page(self, page: int = 1, page_size: int | None = None) -> list[dict]:
+        return self.client.list(page, page_size or self.client.page_size)
 
-    def sync_all(self, max_entries: int = 5000, page_size: int = 100) -> list[dict]:
+    def sync_all(self, max_entries: int = 5000, page_size: int | None = None) -> list[dict]:
         if max_entries < 1:
             raise ValueError("max_entries must be >= 1")
+        page_size = page_size or self.client.page_size
         if not 1 <= page_size <= 1000:
             raise ValueError("page_size must be between 1 and 1000")
 
@@ -31,7 +34,10 @@ class GlossaryService:
         previous_signature: str | None = None
         # A hard page cap protects the sync job if the upstream endpoint ignores
         # page parameters or returns malformed pagination metadata.
-        max_pages = min(100, (max_entries + page_size - 1) // page_size + 1)
+        max_pages = min(
+            self.client.max_pages,
+            (max_entries + page_size - 1) // page_size + 1,
+        )
 
         for page in range(1, max_pages + 1):
             batch = self.page(page, min(page_size, max_entries - len(terms)))

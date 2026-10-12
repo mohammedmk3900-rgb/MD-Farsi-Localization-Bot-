@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     paratranz_base_url: str = "https://paratranz.cn/api"
     paratranz_timeout_seconds: float = 20.0
     paratranz_max_retries: int = 3
+    paratranz_page_size: int = 100
+    paratranz_max_pages: int = 100
     discord_bot_token: str = ""
     discord_guild_id: str = ""
 

@@ -218,3 +218,66 @@ def test_failed_atomic_sync_does_not_replace_glossary_or_snapshot(tmp_path, monk
     runs = app.store.counts()["sync_runs"]
     assert runs == 1
     assert app.store.events()[0]["event_type"] == "paratranz.sync.failed"
+
+
+def test_genesis_read_only_endpoint_helpers(monkeypatch):
+    integration = ParaTranzIntegration(
+        ParaTranzConfig(19621, "https://example.test"),
+        token="example-token",
+    )
+    payloads = {
+        "projects/19621/files/421": {"id": 421, "name": "localisation.yml"},
+        "projects/19621/files/421/translation": [{"id": 1, "text": "Hello"}],
+        "projects/19621/terms/8": {"id": 8, "term": "Faction", "translation": "اتحاد"},
+        "projects/19621/strings/99": {"id": 99, "original": "Hello"},
+        "projects/19621/artifacts/latest": {"id": 12, "status": "completed"},
+    }
+    monkeypatch.setattr(integration, "_get", lambda path: payloads[path])
+    assert integration.file(421)["name"] == "localisation.yml"
+    assert integration.file_translation(421)[0]["text"] == "Hello"
+    assert integration.term(8)["translation"] == "اتحاد"
+    assert integration.string(99)["original"] == "Hello"
+    assert integration.latest_artifact()["status"] == "completed"
+
+
+def test_genesis_read_only_collection_allowlist_and_identifier_validation():
+    integration = ParaTranzIntegration(ParaTranzConfig(19621, "https://example.test"), token="x")
+    try:
+        integration.list_resource("delete")
+    except ValueError as exc:
+        assert "Unsupported read-only" in str(exc)
+    else:
+        assert False, "write-like resource must not be accepted"
+    try:
+        integration.file("../8")
+    except ValueError as exc:
+        assert "file_id" in str(exc)
+    else:
+        assert False, "path-like identifiers must be rejected"
+
+
+def test_genesis_api_rejects_path_traversal():
+    integration = ParaTranzIntegration(ParaTranzConfig(19621, "https://example.test"), token="x")
+    try:
+        integration._get("../users")
+    except ValueError as exc:
+        assert "traversal" in str(exc)
+    else:
+        assert False, "path traversal must be rejected"
+
+
+def test_genesis_list_resource_paginates_and_forwards_filters(monkeypatch):
+    integration = ParaTranzIntegration(ParaTranzConfig(19621, "https://example.test"), token="x")
+    seen = []
+    def fake_get(path):
+        seen.append(path)
+        return {"data": {"strings": [{"id": 5}], "pageCount": 1}}
+    monkeypatch.setattr(integration, "_get", fake_get)
+    rows, metadata = integration.list_resource(
+        "strings", page=2, page_size=25, params={"file": 421, "type": "translated"}
+    )
+    assert rows == [{"id": 5}]
+    assert metadata["pageCount"] == 1
+    assert "page=2" in seen[0]
+    assert "pageSize=25" in seen[0]
+    assert "file=421" in seen[0]

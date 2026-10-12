@@ -71,18 +71,14 @@ def test_project_snapshot_rejects_missing_file_metrics():
             ParaTranzClient(settings).project_snapshot()
 
 
-def test_project_snapshot_uses_members_endpoint_if_project_summary_omits_count():
+def test_project_snapshot_rejects_missing_project_member_count():
     settings = SimpleNamespace(paratranz_token="test-token", paratranz_project_id=19621)
 
-    class MembersFallbackClient(FakeHttpClient):
+    class MissingMembersClient(FakeHttpClient):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.responses["https://paratranz.cn/api/projects/19621"].pop("members")
-            self.responses["https://paratranz.cn/api/projects/19621/members"] = [
-                {"id": 1}, {"id": 2}, {"id": 3}
-            ]
 
-    with patch("app.integrations.paratranz.httpx.Client", MembersFallbackClient):
-        snapshot = ParaTranzClient(settings).project_snapshot()
-
-    assert snapshot.members == 3
+    with patch("app.integrations.paratranz.httpx.Client", MissingMembersClient):
+        with pytest.raises(ValueError, match="missing member count"):
+            ParaTranzClient(settings).project_snapshot()

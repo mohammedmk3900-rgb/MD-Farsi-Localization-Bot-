@@ -284,6 +284,7 @@ class ParaTranzIntegration:
         return items
 
     _COLLECTIONS = {
+        "files": ("files", "results", "items"),
         "members": ("members", "results", "items"),
         "terms": ("terms", "results", "items"),
         "scores": ("scores", "results", "items"),
@@ -372,6 +373,25 @@ class ParaTranzIntegration:
         return self._get(
             f"projects/{self._resource_id(self.config.project_id, 'project_id')}/artifacts/latest"
         )
+
+    def file_revisions(self, *, page: int = 1, page_size: int | None = None, params: dict[str, object] | None = None) -> tuple[list[dict], dict]:
+        if page < 1:
+            raise ValueError("page must be >= 1")
+        size = page_size or self.config.page_size
+        if not 1 <= size <= 1000:
+            raise ValueError("page_size must be between 1 and 1000")
+        project_id = self._resource_id(self.config.project_id, "project_id")
+        query = {"page": page, "pageSize": size, **(params or {})}
+        payload = self._get(f"projects/{project_id}/files/revisions?{urlencode(query)}")
+        return self._list_payload(payload, ("revisions", "history", "results", "items"))
+
+    def artifact(self, artifact_id: int | str) -> dict:
+        payload = self._payload(self._get(
+            f"projects/{self._resource_id(self.config.project_id, 'project_id')}/artifacts/{self._resource_id(artifact_id, 'artifact_id')}"
+        ))
+        if not isinstance(payload, dict):
+            raise ParaTranzError("ParaTranz artifact response is not an object")
+        return payload
 
     def term_history(self, term_id: int | str, *, page: int = 1, page_size: int | None = None) -> tuple[list[dict], dict]:
         if page < 1:

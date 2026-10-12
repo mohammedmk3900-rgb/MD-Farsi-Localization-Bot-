@@ -261,10 +261,14 @@ class ParaTranzAPI:
                  if isinstance(metadata.get(key), int) and not isinstance(metadata.get(key), bool)),
                 None,
             )
-            if total_pages is not None and page >= total_pages:
-                break
-            if total_rows is not None and len(items) >= total_rows:
-                break
+            if total_pages is not None:
+                if page >= total_pages:
+                    break
+                continue
+            if total_rows is not None:
+                if len(items) >= total_rows:
+                    break
+                continue
             if len(batch) < page_size:
                 break
         else:

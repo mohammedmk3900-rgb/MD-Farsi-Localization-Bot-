@@ -134,11 +134,9 @@ class ParaTranzAPI:
         if isinstance(body, dict):
             raw_message = body.get("message") or body.get("error")
             if isinstance(raw_message, str) and raw_message.strip():
-                # Bound untrusted server text and redact a token if an upstream
-                # error ever echoes request credentials.
+                # Bound untrusted server text; token redaction is applied by
+                # the request handler, which owns the credential.
                 message = raw_message.strip()[:300]
-                if self_token := getattr(response, "_paratranz_token", None):
-                    message = message.replace(self_token, "[redacted]")
             raw_code = body.get("code")
             if isinstance(raw_code, (str, int)) and not isinstance(raw_code, bool):
                 api_code = raw_code

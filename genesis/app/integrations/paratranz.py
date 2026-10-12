@@ -163,7 +163,12 @@ class ParaTranzIntegration:
         return result
 
     def project(self) -> dict:
-        payload = self._payload(self._get(f"projects/{self.config.project_id}"))
+        try:
+            payload = self._payload(self._get(f"projects/{self.config.project_id}"))
+        except ParaTranzError:
+            raise
+        except Exception as exc:
+            raise ParaTranzError("ParaTranz project request failed") from exc
         if not isinstance(payload, dict):
             raise ParaTranzError("ParaTranz project response is not an object")
         returned_id = payload.get("id")
@@ -172,7 +177,12 @@ class ParaTranzIntegration:
         return payload
 
     def files(self) -> list[dict]:
-        payload = self._get(f"projects/{self.config.project_id}/files")
+        try:
+            payload = self._get(f"projects/{self.config.project_id}/files")
+        except ParaTranzError:
+            raise
+        except Exception as exc:
+            raise ParaTranzError("ParaTranz files request failed") from exc
         files, _ = self._list_payload(payload, ("files",))
         return files
 
@@ -182,7 +192,12 @@ class ParaTranzIntegration:
         previous_signature: str | None = None
         for page in range(1, self.config.max_pages + 1):
             query = urlencode({"page": page, "pageSize": self.config.page_size})
-            payload = self._get(f"{path}?{query}")
+            try:
+                payload = self._get(f"{path}?{query}")
+            except ParaTranzError:
+                raise
+            except Exception as exc:
+                raise ParaTranzError("ParaTranz list request failed") from exc
             batch, metadata = self._list_payload(payload, keys)
             if not batch:
                 break

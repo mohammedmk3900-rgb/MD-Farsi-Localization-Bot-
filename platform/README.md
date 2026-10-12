@@ -94,3 +94,12 @@ Transport settings:
 - `PARATRANZ_MAX_PAGES`: pagination safety limit, default 100
 
 Successful responses with an unknown or incomplete shape are treated as errors, not empty collections. Empty/inconsistent project snapshots are rejected to prevent a broken upstream response from overwriting known-good project state. Glossary sync also de-duplicates repeated pages and protects a previously populated glossary from an empty response.
+
+
+### Expanded read-only API surface
+
+The adapter exposes typed read helpers for project metadata, project discovery, file metadata and translations, members, strings, terms and term history, scores, project history, file revisions, issues, artifacts and the latest artifact. Collection helpers support bounded pagination, query filters, response-shape validation and duplicate-page detection. The write/mutation endpoints (translation edits, file uploads, term imports/deletes and project changes) are intentionally not exposed to scheduled automation; translation decisions remain human-approved.
+
+The `PARATRANZ_PAGE_SIZE` and `PARATRANZ_MAX_PAGES` settings are wired into the glossary/member pagination paths. Requests use the raw ParaTranz API token in `Authorization`, never follow redirects with credentials, reject unsafe relative paths, use bounded retries for safe GET requests, and avoid logging credentials.
+
+Reference: [ParaTranz OpenAPI endpoint catalog](https://github.com/Gebardensprache/paratranz-rs#documentation-for-api-endpoints).

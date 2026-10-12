@@ -117,7 +117,7 @@ async def get_channels() -> list[dict[str, Any]]:
 async def get_message_channels() -> list[dict[str, Any]]:
     """Return message-bearing channels plus currently active thread channels."""
     channels = await get_channels()
-    result = [c for c in channels if c.get("type") in {0, 5, 10, 11, 12, 15}]
+    result = [c for c in channels if c.get("type") in {0, 5, 10, 11, 12, 15, 16}]
     try:
         active = await discord_get(f"/guilds/{GUILD_ID}/threads/active")
         known = {str(c.get("id")) for c in result}
@@ -237,17 +237,42 @@ async def read_thread(thread_id: str, limit: int = 200) -> list[dict[str, Any]]:
 
 
 async def fetch_archived_threads(parent_channel_id: str) -> list[dict[str, Any]]:
-    """Best-effort discovery of public and private archived threads."""
+    """Discover archived public/private threads page by page where the bot has access."""
     threads: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
     for endpoint in (
         f"/channels/{parent_channel_id}/threads/archived/public",
         f"/channels/{parent_channel_id}/threads/archived/private",
     ):
-        try:
-            payload = await discord_get(endpoint, params={"limit": 100})
-            threads.extend(payload.get("threads", []))
-        except httpx.HTTPStatusError:
-            continue
+        before: str | None = None
+        # A high safety bound prevents a malformed or non-advancing cursor from
+        # causing an unbounded scan; Discord's API rate limits are handled by
+        # discord_get().
+        for _ in range(1000):
+            params: dict[str, Any] = {"limit": 100}
+            if before:
+                params["before"] = before
+            try:
+                payload = await discord_get(endpoint, params=params)
+            except httpx.HTTPStatusError:
+                break
+
+            page = payload.get("threads", [])
+            if not page:
+                break
+            for thread in page:
+                thread_id = str(thread.get("id") or "")
+                if thread_id and thread_id not in seen_ids:
+                    seen_ids.add(thread_id)
+                    threads.append(thread)
+
+            if not payload.get("has_more"):
+                break
+            metadata = page[-1].get("thread_metadata") or {}
+            next_before = metadata.get("archive_timestamp")
+            if not next_before or next_before == before:
+                break
+            before = str(next_before)
     return threads
 
 
@@ -347,7 +372,7 @@ async def sync_server_history(max_pages_per_channel: int = 0, incremental: bool 
     known = {str(channel["id"]) for channel in channels}
     archived: list[dict[str, Any]] = []
     for channel in list(channels):
-        if channel.get("type") in {0, 5, 15}:
+        if channel.get("type") in {0, 5, 15, 16}:
             for thread in await fetch_archived_threads(str(channel["id"])):
                 if str(thread.get("id")) not in known:
                     archived.append(thread)
@@ -393,12 +418,46 @@ async def get_all_guild_members() -> list[dict[str, Any]]:
     return members
 
 
+def _resource_error_status(exc: httpx.HTTPStatusError) -> str:
+    if exc.response.status_code == 403:
+        return "permission_denied"
+    if exc.response.status_code == 404:
+        return "not_found_or_unsupported"
+    return "failed"
+
+
 async def get_optional_guild_resource(path: str, key: str) -> list[dict[str, Any]]:
+    """Best-effort compatibility helper for optional Discord resources."""
     try:
         payload = await discord_get(path)
         return payload if isinstance(payload, list) else payload.get(key, [])
     except httpx.HTTPStatusError:
         return []
+
+
+async def get_optional_guild_resource_with_status(
+    path: str, key: str
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Fetch an optional resource without confusing an API failure with an empty collection."""
+    try:
+        payload = await discord_get(path)
+    except httpx.HTTPStatusError as exc:
+        return [], {
+            "status": _resource_error_status(exc),
+            "http_status": exc.response.status_code,
+        }
+    except httpx.HTTPError as exc:
+        return [], {"status": "failed", "error": type(exc).__name__}
+
+    if isinstance(payload, list):
+        items = payload
+    elif isinstance(payload, dict):
+        items = payload.get(key, [])
+    else:
+        return [], {"status": "failed", "error": "unexpected_response_shape"}
+    if not isinstance(items, list):
+        return [], {"status": "failed", "error": "unexpected_response_shape"}
+    return items, {"status": "available", "count": len(items)}
 
 
 async def get_optional_single_resource(path: str) -> Any:
@@ -416,16 +475,33 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
     members = await get_all_guild_members()
     active_threads = await discord_get(f"/guilds/{GUILD_ID}/threads/active")
 
-    emojis = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/emojis", "items")
-    stickers = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/stickers", "items")
-    events = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/scheduled-events", "items")
-    bans = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/bans", "items")
-    integrations = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/integrations", "items")
-    auto_moderation_rules = await get_optional_guild_resource(
-        f"/guilds/{GUILD_ID}/auto-moderation/rules", "items"
+    resource_status: dict[str, dict[str, Any]] = {}
+    emojis, resource_status["emojis"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/emojis", "items"
     )
-    invites = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/invites", "items")
-    webhooks = await get_optional_guild_resource(f"/guilds/{GUILD_ID}/webhooks", "items")
+    stickers, resource_status["stickers"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/stickers", "items"
+    )
+    events, resource_status["scheduled_events"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/scheduled-events", "items"
+    )
+    bans, resource_status["bans"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/bans", "items"
+    )
+    integrations, resource_status["integrations"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/integrations", "items"
+    )
+    auto_moderation_rules, resource_status["auto_moderation_rules"] = (
+        await get_optional_guild_resource_with_status(
+            f"/guilds/{GUILD_ID}/auto-moderation/rules", "items"
+        )
+    )
+    invites, resource_status["invites"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/invites", "items"
+    )
+    webhooks, resource_status["webhooks"] = await get_optional_guild_resource_with_status(
+        f"/guilds/{GUILD_ID}/webhooks", "items"
+    )
     stage_instances = []
     for channel in channels:
         # Discord exposes a single stage instance by its channel ID; there is
@@ -434,8 +510,10 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
             stage = await get_optional_single_resource(f"/stage-instances/{channel['id']}")
             if stage and str(stage.get("guild_id") or GUILD_ID) == GUILD_ID:
                 stage_instances.append(stage)
-    audit_log = await get_optional_guild_resource(
-        f"/guilds/{GUILD_ID}/audit-logs", "audit_log_entries"
+    audit_log, resource_status["audit_log_entries"] = (
+        await get_optional_guild_resource_with_status(
+            f"/guilds/{GUILD_ID}/audit-logs", "audit_log_entries"
+        )
     )
 
     # Never expose webhook tokens or other credential-like fields through the MCP.
@@ -458,7 +536,7 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
             "permissions": channel.get("permission_overwrites", []),
             "thread_metadata": channel.get("thread_metadata"),
         }
-        if include_messages and channel.get("type") in {0, 5, 10, 11, 12, 15}:
+        if include_messages and channel.get("type") in {0, 5, 10, 11, 12, 15, 16}:
             row["messages"] = index.read_channel(str(channel["id"]), message_limit_per_channel)
         channel_rows.append(row)
 
@@ -508,6 +586,9 @@ async def build_full_server_snapshot(include_messages: bool = False, message_lim
         "webhooks": webhooks,
         "stage_instances": stage_instances,
         "audit_log_entries": audit_log,
+        # Empty data and unavailable data are different outcomes. Consumers can
+        # inspect this map before interpreting an empty collection as evidence.
+        "resource_status": resource_status,
         "indexed_activity": {
             "messages": index.count(),
             "channels": index.channel_count(),
@@ -551,7 +632,7 @@ async def get_server_snapshot(
         payload["messages"] = {
             str(channel["id"]): index.read_channel(str(channel["id"]), message_limit_per_channel)
             for channel in channels
-            if channel.get("type") in {0, 5, 10, 11, 12, 15}
+            if channel.get("type") in {0, 5, 10, 11, 12, 15, 16}
         }
     return payload
 
@@ -688,9 +769,18 @@ _allowed_hosts = [
     if item.strip()
 ]
 
+_allowed_origins = [
+    item.strip()
+    for item in os.getenv(
+        "MCP_ALLOWED_ORIGINS",
+        "https://chatgpt.com,https://chat.openai.com",
+    ).split(",")
+    if item.strip()
+]
+
 transport_security = TransportSecuritySettings(
     allowed_hosts=_allowed_hosts,
-    allowed_origins=[],
+    allowed_origins=_allowed_origins,
 )
 
 

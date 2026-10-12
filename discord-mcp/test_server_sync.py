@@ -79,3 +79,63 @@ def test_completed_incremental_sync_advances_newest_cursor(tmp_path, monkeypatch
 
 async def _async_value(value):
     return value
+
+
+def test_optional_resource_reports_permission_denied(monkeypatch):
+    import httpx
+
+    response = httpx.Response(403, request=httpx.Request("GET", "https://discord.com/api/v10/test"))
+
+    async def forbidden(path):
+        raise httpx.HTTPStatusError("forbidden", request=response.request, response=response)
+
+    monkeypatch.setattr(server, "discord_get", forbidden)
+    items, status = asyncio.run(server.get_optional_guild_resource_with_status("/test", "items"))
+
+    assert items == []
+    assert status == {"status": "permission_denied", "http_status": 403}
+
+
+def test_optional_empty_resource_is_not_marked_as_failed(monkeypatch):
+    async def empty(path):
+        return {"items": []}
+
+    monkeypatch.setattr(server, "discord_get", empty)
+    items, status = asyncio.run(server.get_optional_guild_resource_with_status("/test", "items"))
+
+    assert items == []
+    assert status == {"status": "available", "count": 0}
+
+
+def test_archived_thread_discovery_paginates(monkeypatch):
+    import httpx
+
+    calls = []
+    response = httpx.Response(403, request=httpx.Request("GET", "https://discord.com/api/v10/private"))
+
+    async def fake_discord_get(path, params=None):
+        calls.append((path, params or {}))
+        if path.endswith("/archived/private"):
+            raise httpx.HTTPStatusError("forbidden", request=response.request, response=response)
+        if not (params or {}).get("before"):
+            return {
+                "threads": [{
+                    "id": "thread-a",
+                    "thread_metadata": {"archive_timestamp": "2026-10-01T00:00:00+00:00"},
+                }],
+                "has_more": True,
+            }
+        return {
+            "threads": [{
+                "id": "thread-b",
+                "thread_metadata": {"archive_timestamp": "2026-09-01T00:00:00+00:00"},
+            }],
+            "has_more": False,
+        }
+
+    monkeypatch.setattr(server, "discord_get", fake_discord_get)
+    threads = asyncio.run(server.fetch_archived_threads("10"))
+
+    assert [thread["id"] for thread in threads] == ["thread-a", "thread-b"]
+    assert calls[1][1]["before"] == "2026-10-01T00:00:00+00:00"
+    assert len(calls) == 3

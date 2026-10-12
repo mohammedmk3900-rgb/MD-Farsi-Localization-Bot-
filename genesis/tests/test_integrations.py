@@ -1,36 +1,44 @@
 from __future__ import annotations
 
-import json
-
 from app.integrations.paratranz import ParaTranzConfig, ParaTranzError, ParaTranzIntegration
-from app.services.command_center import CommandCenterService
 
 
-def test_paratranz_stats_from_project_payload(monkeypatch):
+def test_paratranz_stats_aggregate_documented_file_payloads(monkeypatch):
     integration = ParaTranzIntegration(ParaTranzConfig(19621, "https://example.test"))
-    payload = {
-        "data": {
-            "stats": {"words": 100, "strings": 20, "translated": 7, "reviewed": 3},
-            "files": 4,
-            "members": 2,
-        }
+    payloads = {
+        "projects/19621": {"data": {"id": 19621, "members": 2}},
+        "projects/19621/files": {"data": [
+            {"name": "a.yml", "total": 12, "translated": 7, "reviewed": 3, "words": 100},
+            {"name": "b.yml", "total": 8, "translated": 4, "reviewed": 2, "words": 50},
+        ]},
     }
-    monkeypatch.setattr(integration, "_get", lambda path: payload)
-    assert integration.stats().translated == 7
-    assert integration.stats().reviewed == 3
-    assert integration.stats().files == 4
+    monkeypatch.setattr(integration, "_get", lambda path: payloads[path])
+    stats = integration.stats()
+    assert stats.project_id == 19621
+    assert stats.strings_total == 20
+    assert stats.translated == 11
+    assert stats.reviewed == 5
+    assert stats.words_total == 150
+    assert stats.files == 2
+    assert stats.members == 2
 
 
 def test_paratranz_terms(monkeypatch):
     integration = ParaTranzIntegration(ParaTranzConfig(19621, "https://example.test"))
-    monkeypatch.setattr(integration, "_get", lambda path: {"data": {"terms": [{"source": "Faction", "target": "اتحاد"}]}})
+    monkeypatch.setattr(
+        integration,
+        "_get",
+        lambda path: {"data": {"terms": [{"id": 1, "source": "Faction", "target": "اتحاد"}], "pageCount": 1}},
+    )
     assert integration.glossary()[0]["target"] == "اتحاد"
 
 
 def test_paratranz_errors_are_wrapped(monkeypatch):
     integration = ParaTranzIntegration(ParaTranzConfig(19621, "https://example.test"))
+
     def broken(path):
         raise ValueError("bad json")
+
     monkeypatch.setattr(integration, "_get", broken)
     try:
         integration.stats()
@@ -40,6 +48,48 @@ def test_paratranz_errors_are_wrapped(monkeypatch):
         pass
     else:
         assert False, "expected ParaTranzError"
+
+
+def test_paratranz_normalizes_bearer_prefixed_token(monkeypatch):
+    from unittest.mock import patch
+    from urllib.request import Request
+
+    integration = ParaTranzIntegration(
+        ParaTranzConfig(19621, "https://example.test"),
+        token="Bearer example-token",
+    )
+    seen = {}
+
+    class Response:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+        def read(self):
+            return b'{"id":19621}'
+
+    def fake_urlopen(request, timeout):
+        seen["authorization"] = request.get_header("Authorization")
+        return Response()
+
+    monkeypatch.setattr("app.integrations.paratranz.urlopen", fake_urlopen)
+    assert integration._get("projects/19621") == {"id": 19621}
+    assert seen["authorization"] == "example-token"
+
+
+def test_paratranz_rejects_empty_file_snapshot(monkeypatch):
+    integration = ParaTranzIntegration(ParaTranzConfig(19621, "https://example.test"))
+    payloads = {
+        "projects/19621": {"id": 19621, "members": 2},
+        "projects/19621/files": [],
+    }
+    monkeypatch.setattr(integration, "_get", lambda path: payloads[path])
+    try:
+        integration.stats()
+    except ParaTranzError as exc:
+        assert "no project files" in str(exc)
+    else:
+        assert False, "expected invalid empty snapshot to be rejected"
 
 
 from datetime import datetime, timezone

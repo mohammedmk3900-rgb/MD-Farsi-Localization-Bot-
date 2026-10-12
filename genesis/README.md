@@ -60,3 +60,12 @@ Optional settings:
 - `GENESIS_DATABASE` (default `data/genesis.sqlite3`)
 
 The scheduler persists leases, run counts, next-run timestamps, retry timestamps, and failures in SQLite. Failed upstream syncs create durable alerts. Run the bot and scheduler as separate processes sharing the same SQLite database path. Use a persistent local volume for `data/`; do not put the SQLite database on an unreliable network filesystem.
+
+
+## ParaTranz API client
+
+Genesis uses a read-only ParaTranz adapter for project metrics, file metadata/translations, members, strings, terms and term history, scores, project history, file revisions, issues, and artifacts. Collection reads support bounded pagination and filters; malformed or repeated pages fail explicitly rather than becoming empty data. Only GET operations are exposed by the integration. Translation writes, imports, and deletions remain outside scheduled automation so human review stays authoritative.
+
+Configure `PARATRANZ_TOKEN`, `PARATRANZ_PROJECT_ID`, `PARATRANZ_BASE_URL`, `PARATRANZ_TIMEOUT_SECONDS`, `PARATRANZ_MAX_RETRIES`, `PARATRANZ_PAGE_SIZE`, and `PARATRANZ_MAX_PAGES`. ParaTranz expects the raw token in the `Authorization` header. The adapter normalizes a pasted `Bearer ` prefix, refuses insecure base URLs and path traversal, and retries only safe GET requests for transient failures.
+
+Reference: [ParaTranz OpenAPI endpoint catalog](https://github.com/Gebardensprache/paratranz-rs#documentation-for-api-endpoints).

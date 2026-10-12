@@ -230,3 +230,17 @@ def test_list_project_resource_forwards_filters_and_pagination():
     assert metadata["pageCount"] == 1
     request = FakeHttpClient.requests[0]["get"][0]
     assert request["params"] == {"file": 421, "type": "translated", "page": 1, "pageSize": 25}
+
+def test_file_revisions_and_artifact_read_endpoints():
+    base = "https://paratranz.cn/api/projects/19621"
+    FakeHttpClient.responses[f"{base}/files/revisions"] = FakeResponse(
+        {"results": [{"id": 7, "file": 421}], "pageCount": 1}
+    )
+    FakeHttpClient.responses[f"{base}/artifacts/12"] = FakeResponse({"id": 12, "status": "completed"})
+    with patch("app.integrations.paratranz.httpx.Client", FakeHttpClient):
+        client = ParaTranzClient(settings())
+        revisions, metadata = client.file_revisions()
+        artifact = client.artifact(12)
+    assert revisions == [{"id": 7, "file": 421}]
+    assert metadata["pageCount"] == 1
+    assert artifact["status"] == "completed"

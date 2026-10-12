@@ -281,3 +281,21 @@ def test_genesis_list_resource_paginates_and_forwards_filters(monkeypatch):
     assert "page=2" in seen[0]
     assert "pageSize=25" in seen[0]
     assert "file=421" in seen[0]
+
+def test_genesis_file_revisions_and_artifact_endpoints(monkeypatch):
+    integration = ParaTranzIntegration(
+        ParaTranzConfig(19621, "https://example.test"),
+        token="example-token",
+    )
+    payloads = {
+        "projects/19621/files/revisions?page=1&pageSize=100": {
+            "results": [{"id": 7, "file": 421}], "pageCount": 1
+        },
+        "projects/19621/artifacts/12": {"id": 12, "status": "completed"},
+    }
+    monkeypatch.setattr(integration, "_get", lambda path: payloads[path])
+    revisions, metadata = integration.file_revisions()
+    artifact = integration.artifact(12)
+    assert revisions == [{"id": 7, "file": 421}]
+    assert metadata["pageCount"] == 1
+    assert artifact["status"] == "completed"

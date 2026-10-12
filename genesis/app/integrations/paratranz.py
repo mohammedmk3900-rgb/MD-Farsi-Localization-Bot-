@@ -25,6 +25,28 @@ class ParaTranzConfig:
     page_size: int = 100
     max_pages: int = 100
 
+    def __post_init__(self) -> None:
+        if isinstance(self.project_id, bool) or int(self.project_id) <= 0:
+            raise ValueError("ParaTranz project_id must be a positive integer")
+        parsed = urlsplit(self.base_url)
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username
+            or parsed.password
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("ParaTranz base URL must be HTTPS and cannot include credentials, query or fragment")
+        if float(self.timeout) <= 0:
+            raise ValueError("ParaTranz timeout must be positive")
+        if isinstance(self.max_retries, bool) or self.max_retries < 0:
+            raise ValueError("ParaTranz max_retries cannot be negative")
+        if isinstance(self.page_size, bool) or not 1 <= self.page_size <= 1000:
+            raise ValueError("ParaTranz page_size must be between 1 and 1000")
+        if isinstance(self.max_pages, bool) or self.max_pages < 1:
+            raise ValueError("ParaTranz max_pages must be positive")
+
     @classmethod
     def from_env(cls) -> "ParaTranzConfig":
         raw = os.getenv("PARATRANZ_PROJECT_ID", "19621")

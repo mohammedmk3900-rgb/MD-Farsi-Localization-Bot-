@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass
 from email.utils import parsedate_to_datetime
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urlencode, urljoin, urlsplit
 from urllib.request import Request, urlopen
 
 from app.integrations.contracts import ProjectStats
@@ -49,6 +49,9 @@ class ParaTranzIntegration:
 
     def __init__(self, config: ParaTranzConfig | None = None, token: str | None = None, timeout: float | None = None):
         self.config = config or ParaTranzConfig.from_env()
+        parsed_base = urlsplit(self.config.base_url)
+        if parsed_base.scheme != "https" or not parsed_base.netloc or parsed_base.query or parsed_base.fragment:
+            raise ValueError("ParaTranz base URL must be an HTTPS URL without query or fragment")
         raw_token = token if token is not None else os.getenv("PARATRANZ_TOKEN", "")
         self.token = (raw_token or "").strip()
         if self.token.lower().startswith("bearer "):
@@ -253,7 +256,7 @@ class ParaTranzIntegration:
         raw_members = project.get("members", project.get("memberCount"))
         if isinstance(raw_members, list):
             member_count = len(raw_members)
-        elif raw_members is not None:
+        elif isinstance(raw_members, (int, float, str)) and not isinstance(raw_members, bool):
             member_count = self._metric(raw_members, "members")
         else:
             member_count = len(self.members())

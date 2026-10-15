@@ -490,6 +490,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install platform dependencies
+        run: python -m pip install -e platform
       - name: Scheduler manifest
         working-directory: platform
         run: |

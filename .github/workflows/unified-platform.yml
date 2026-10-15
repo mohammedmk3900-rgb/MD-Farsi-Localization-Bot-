@@ -149,6 +149,12 @@ jobs:
             printf '%s\n' "$db_files"
             exit 1
           fi
+          echo "Checking that automated publication never pushes directly to main..."
+          if grep -Eq 'git push .*HEAD:(main|refs/heads/main)' .github/workflows/unified-platform.yml; then
+            echo "::error::Automated publication must use a pull request, never push directly to main"
+            exit 1
+          fi
+          grep -Fq 'gh pr create' .github/workflows/unified-platform.yml || { echo "::error::Publication must create a pull request"; exit 1; }
           echo "Git hygiene: OK"
 
   phase-02-language:

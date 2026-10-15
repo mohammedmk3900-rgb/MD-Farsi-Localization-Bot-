@@ -149,6 +149,12 @@ jobs:
             printf '%s\n' "$db_files"
             exit 1
           fi
+          echo "Checking that automated publication never pushes directly to main..."
+          if grep -Eq 'git push .*HEAD:(main|refs/heads/main)' .github/workflows/unified-platform.yml; then
+            echo "::error::Automated publication must use a pull request, never push directly to main"
+            exit 1
+          fi
+          grep -Fq 'gh pr create' .github/workflows/unified-platform.yml || { echo "::error::Publication must create a pull request"; exit 1; }
           echo "Git hygiene: OK"
 
   phase-02-language:
@@ -293,6 +299,15 @@ jobs:
         run: |
           python -m pip install -e 'platform[test]'
           python -m pytest -q platform/tests/test_api_auth.py platform/tests/test_database.py platform/tests/test_database_history.py platform/tests/test_paratranz_snapshot_integrity.py platform/tests/test_orchestrator.py platform/tests/test_scheduler.py
+          python - <<'PY'
+          from app.services.scheduler import build_scheduler
+          required = {'sync', 'glossary', 'discord_audit', 'polyglot_health', 'health', 'manager', 'daily_report', 'weekly_report'}
+          scheduler = build_scheduler()
+          actual = {job['name'] for job in scheduler.manifest()['jobs']}
+          missing = sorted(required - actual)
+          assert not missing, f'Missing required scheduler jobs: {missing}'
+          print(f'Scheduler manifest OK: {len(actual)} jobs')
+          PY
           python -m compileall -q genesis
       - name: Localization token scan
         run: |
@@ -490,6 +505,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install platform dependencies
+        run: python -m pip install -e platform
       - name: Scheduler manifest
         working-directory: platform
         run: |
@@ -617,6 +634,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      pull-requests: write
       actions: read
     steps:
       - uses: actions/checkout@v7
@@ -627,30 +645,40 @@ jobs:
         with:
           name: md-farsi-public-snapshots-${{ github.run_id }}-${{ github.run_attempt }}
           path: snapshots
-      - name: Publish public snapshots
+      - name: Prepare snapshot pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           manifest=snapshots/.public-snapshot-manifest
-          [[ -s "$manifest" ]] || exit 1
+          [[ -s "$manifest" ]] || { echo "::error::Public snapshot manifest is missing or empty"; exit 1; }
           mkdir -p platform/data
           while IFS= read -r f; do
             [[ -n "$f" ]] || continue
             [[ "$f" != */* ]] || { echo "::error::Invalid snapshot filename: $f"; exit 1; }
+            [[ -f "snapshots/$f" ]] || { echo "::error::Snapshot file listed but missing: $f"; exit 1; }
             cp "snapshots/$f" "platform/data/$f"
           done < "$manifest"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c automation/public-snapshots
           git add platform/data
           git diff --cached --check
-          git diff --cached --quiet && exit 0
+          if git diff --cached --quiet; then
+            echo 'No public snapshot changes; no pull request is needed.'
+            exit 0
+          fi
           git commit -m 'chore: refresh MD Farsi public snapshots'
-          for attempt in 1 2 3; do
-            git fetch origin main
-            if git rebase origin/main && git push origin HEAD:main; then exit 0; fi
-            git rebase --abort 2>/dev/null || true
-            sleep $((attempt * 3))
-          done
-          echo '::error::publication failed'; exit 1
+          # Only the dedicated automation branch is force-updated; main is never pushed.
+          git push --force origin HEAD:automation/public-snapshots
+          pr_number="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REPOSITORY_OWNER:automation/public-snapshots" --base main --json number --jq '.[0].number // empty')"
+          if [[ -n "$pr_number" ]]; then
+            echo "Updated existing snapshot PR #$pr_number"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head automation/public-snapshots \
+              --title 'chore: refresh MD Farsi public snapshots' \
+              --body 'Automated update of public localization snapshots. Review the generated changes before merging.'
+          fi
 
   phase-15-health:
     name: 'Phase 15 · Final health'

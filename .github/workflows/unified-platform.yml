@@ -293,6 +293,15 @@ jobs:
         run: |
           python -m pip install -e 'platform[test]'
           python -m pytest -q platform/tests/test_api_auth.py platform/tests/test_database.py platform/tests/test_database_history.py platform/tests/test_paratranz_snapshot_integrity.py platform/tests/test_orchestrator.py platform/tests/test_scheduler.py
+          python - <<'PY'
+          from app.services.scheduler import build_scheduler
+          required = {'sync', 'glossary', 'discord_audit', 'polyglot_health', 'health', 'manager', 'daily_report', 'weekly_report'}
+          scheduler = build_scheduler()
+          actual = {job['name'] for job in scheduler.manifest()['jobs']}
+          missing = sorted(required - actual)
+          assert not missing, f'Missing required scheduler jobs: {missing}'
+          print(f'Scheduler manifest OK: {len(actual)} jobs')
+          PY
           python -m compileall -q genesis
       - name: Localization token scan
         run: |
